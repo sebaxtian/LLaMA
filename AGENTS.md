@@ -28,6 +28,9 @@
 - Los `.gitkeep` actuales son `bin/.gitkeep`, `models/.gitkeep` y `src/.gitkeep`; deben conservarse.
 - `bin/deps/` contiene dependencias locales del entorno y `bin/llama-*` contiene versiones locales de llama.cpp.
 - `LICENSE`, `README.md`, `MEMORY.md`, `AGENTS.md`, `CHANGELOG.md` y `.gitignore` pertenecen al proyecto raíz.
+- `opencode.jsonc` contiene la configuración de OpenCode y de los servidores MCP del proyecto.
+- `example.env` es una plantilla versionable sin credenciales reales; `.env` es local, está ignorado y protegido contra lectura y edición por OpenCode.
+- `.vscode/` contiene configuración local del editor y está excluido del repositorio.
 - El repositorio Git raíz está inicializado; existen `main`, `dev` y la rama activa de trabajo según el estado documentado en `docs/Flujo_de_Trabajo_Git.md`.
 
 ## Ejecución local
@@ -47,6 +50,13 @@
 - Registrar cambios relevantes en `CHANGELOG.md` bajo `Unreleased` hasta que exista un release.
 - Los resultados permanentes de benchmark documentados pueden versionarse dentro de `docs/`; los resultados temporales deben guardarse en `logs/`, `results/` o `tmp/`, que están excluidos.
 - Seguir la gramática de ramas y la estrategia de integración definidas en `docs/Flujo_de_Trabajo_Git.md`; no aplicar una estrategia alternativa.
+
+## Configuración MCP y secretos
+
+- Todos los servidores MCP deben utilizar nombres con el sufijo `-mcp`; el servidor actual de GitHub se llama `github-mcp`.
+- Las referencias a herramientas y permisos MCP deben utilizar el nombre completo del servidor, por ejemplo `github-mcp_*`.
+- No incorporar tokens, claves API ni credenciales reales en archivos versionables.
+- Utilizar `example.env` únicamente como plantilla con valores ficticios y mantener las credenciales reales en `.env`.
 
 ## Restricciones de hardware
 

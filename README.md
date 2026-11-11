@@ -32,8 +32,10 @@ LLaMA/
 ├── .gitignore
 ├── AGENTS.md
 ├── CHANGELOG.md
+├── example.env                         # Plantilla sin credenciales reales
 ├── LICENSE
 ├── MEMORY.md
+├── opencode.jsonc                      # Configuración de OpenCode y MCP
 ├── README.md
 ├── bin/
 │   ├── .gitkeep                       # Conserva la carpeta estructural
@@ -70,6 +72,7 @@ Los archivos `.gitkeep` solo conservan los directorios estructurales en clones l
 | Scripts `.bat` dentro de `src/` | Binarios precompilados |
 | `AGENTS.md`, `MEMORY.md` y `CHANGELOG.md` | Dependencias, instaladores y controladores |
 | `README.md`, `LICENSE` y `.gitignore` | Contenido de `llama.cpp/` |
+| `opencode.jsonc`, `example.env` | `.env`, `.vscode/` y credenciales locales |
 | Documento maestro y flujo Git | Firmware y artefactos locales |
 | `.gitkeep` de `bin/`, `models/` y `src/` | `logs/`, `results/`, `tmp/`, logs, temporales y dumps |
 
@@ -80,6 +83,14 @@ Los resultados permanentes de benchmark que hayan sido revisados y documentados 
 La licencia MIT aplica al material propio del proyecto. `llama.cpp`, los modelos, binarios, CUDA, controladores, firmware y demás dependencias externas tienen licencias independientes y deben obtenerse desde sus fuentes oficiales.
 
 La titularidad de `LICENSE` está confirmada: `Agent Sebaxtian` es la identidad legal definitiva, `agent@sebaxtian.dev` es el correo que se desea publicar y el titular posee los derechos del material propio incluido. La licencia MIT del proyecto no cubre componentes externos.
+
+## Configuración de OpenCode y GitHub MCP
+
+La configuración del proyecto se encuentra en `opencode.jsonc`. El servidor remoto oficial de GitHub utiliza el nombre `github-mcp` y los toolsets `context`, `repos`, `issues` y `pull_requests`.
+
+El token se obtiene desde la variable de entorno `GITHUB_PERSONAL_ACCESS_TOKEN`. `example.env` contiene únicamente una plantilla con un valor ficticio; las credenciales reales deben mantenerse en `.env`, que está excluido de Git y protegido contra lectura y edición por OpenCode.
+
+Los servidores MCP nuevos deben utilizar nombres con el sufijo `-mcp`, y sus permisos o referencias de herramientas deben utilizar el nombre completo del servidor.
 
 ## Regla de protección de `llama.cpp/`
 
