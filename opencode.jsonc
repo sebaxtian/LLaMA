@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Use the primary implementation agent for project changes.
+  "default_agent": "build",
+
+  // MEMORY.md contains the project's operational context.
+  // AGENTS.md is discovered automatically by OpenCode.
+  "instructions": [
+    "MEMORY.md"
+  ],
+
+  // Ignore local artifacts and the external llama.cpp checkout in the watcher.
+  "watcher": {
+    "ignore": [
+      "bin/**",
+      "models/**",
+      "llama.cpp/**",
+      "logs/**",
+      "results/**",
+      "tmp/**"
+    ]
+  },
+
+  // The local llama.cpp checkout is reference-only and must not be edited.
+  "permissions": [
+    {
+      "action": "edit",
+      "resource": "llama.cpp/*",
+      "effect": "deny"
+    }
+  ]
+}
