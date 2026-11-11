@@ -10,6 +10,8 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.1.0] - 2026-11-10
+
 ### Added
 
 - Servidor MCP remoto oficial de GitHub con toolsets limitados para contexto, repositorios, issues y pull requests.
@@ -52,6 +54,8 @@ vMAJOR.MINOR.PATCH
 
 - Se excluye `/.env` de Git y se deniega a OpenCode su lectura y edición.
 
+- Approved by: Agent Sebaxtian
+
 ## Historial de releases
 
-Todavía no se ha publicado ningún release ni se ha creado ningún tag de versión.
+Se publicó `v0.1.0` como primera versión estructural y documental del proyecto.
