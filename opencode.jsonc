@@ -6,9 +6,7 @@
 
   // MEMORY.md contains the project's operational context.
   // AGENTS.md is discovered automatically by OpenCode.
-  "instructions": [
-    "MEMORY.md"
-  ],
+  "instructions": ["MEMORY.md"],
 
   // Ignore local artifacts and the external llama.cpp checkout in the watcher.
   "watcher": {
@@ -18,8 +16,8 @@
       "llama.cpp/**",
       "logs/**",
       "results/**",
-      "tmp/**"
-    ]
+      "tmp/**",
+    ],
   },
 
   // The local llama.cpp checkout is reference-only and must not be edited.
@@ -27,32 +25,32 @@
     {
       "action": "edit",
       "resource": "llama.cpp/*",
-      "effect": "deny"
+      "effect": "deny",
     },
     {
       "action": "read",
       "resource": ".env",
-      "effect": "deny"
+      "effect": "deny",
     },
     {
       "action": "edit",
       "resource": ".env",
-      "effect": "deny"
-    }
+      "effect": "deny",
+    },
   ],
 
   // Official remote GitHub MCP server. The token is read from the environment.
   "mcp": {
     "servers": {
-      "github": {
+      "github-mcp": {
         "type": "remote",
         "url": "https://api.githubcopilot.com/mcp/",
         "oauth": false,
         "headers": {
           "Authorization": "Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}",
-          "X-MCP-Toolsets": "context,repos,issues,pull_requests"
-        }
-      }
-    }
-  }
+          "X-MCP-Toolsets": "context,repos,issues,pull_requests",
+        },
+      },
+    },
+  },
 }
