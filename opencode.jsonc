@@ -28,6 +28,31 @@
       "action": "edit",
       "resource": "llama.cpp/*",
       "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": ".env",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".env",
+      "effect": "deny"
     }
-  ]
+  ],
+
+  // Official remote GitHub MCP server. The token is read from the environment.
+  "mcp": {
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}",
+          "X-MCP-Toolsets": "context,repos,issues,pull_requests"
+        }
+      }
+    }
+  }
 }
