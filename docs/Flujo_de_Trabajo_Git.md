@@ -433,10 +433,12 @@ La titularidad de `LICENSE` está confirmada por el propietario: `Agent Sebaxtia
 ## Estado actual
 
 - El repositorio Git raíz está inicializado.
-- La rama activa actual es `main`.
+- La rama activa actual es `feat/sync-git-state`.
 - Existe la rama `dev`, creada desde el commit inicial de `main`.
 - `main` y `dev` apuntan actualmente al commit inicial `cc8bed5`.
-- Aún no existen ramas `feat/*`, `fix/*` ni `hotfix/*`.
+- Existe la rama `feat/sync-git-state`, creada desde `dev`, con el commit `c783105`.
+- La rama `feat/sync-git-state` aún no ha sido integrada en `dev`.
+- Aún no existen ramas `fix/*` ni `hotfix/*`.
 - Todavía no se ha publicado ningún release ni tag.
 - `src/` y `models/` contienen únicamente sus respectivos `.gitkeep`.
 - El working tree está limpio.

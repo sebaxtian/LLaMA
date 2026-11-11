@@ -28,7 +28,7 @@
 - Los `.gitkeep` actuales son `bin/.gitkeep`, `models/.gitkeep` y `src/.gitkeep`; deben conservarse.
 - `bin/deps/` contiene dependencias locales del entorno y `bin/llama-*` contiene versiones locales de llama.cpp.
 - `LICENSE`, `README.md`, `MEMORY.md`, `AGENTS.md`, `CHANGELOG.md` y `.gitignore` pertenecen al proyecto raíz.
-- El repositorio Git raíz todavía no está inicializado; aún no existen ramas, commits, tags ni releases.
+- El repositorio Git raíz está inicializado; existen `main`, `dev` y la rama activa de trabajo según el estado documentado en `docs/Flujo_de_Trabajo_Git.md`.
 
 ## Ejecución local
 

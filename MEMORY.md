@@ -6,7 +6,7 @@
 - Objetivo: ejecutar, probar y comparar modelos LLM localmente mediante llama.cpp.
 - Plataforma: Windows 11.
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
-- El repositorio Git raíz todavía no está inicializado; no existen ramas, commits, tags ni releases.
+- El repositorio Git raíz está inicializado. `main` y `dev` existen; las ramas de trabajo, tags y releases se documentan según el estado actual de `docs/Flujo_de_Trabajo_Git.md`.
 
 ## Hardware objetivo
 

@@ -34,6 +34,7 @@ vMAJOR.MINOR.PATCH
 - Se formalizaron la protección de `main` y `dev`, las validaciones por tipo de cambio y el registro obligatorio de autorización de releases.
 - Se autorizó explícitamente el commit de preparación de release en `dev` como excepción exclusiva para actualizar `CHANGELOG.md`.
 - Se actualizó el documento maestro con los benchmarks de Phi-4, Codestral 22B, Gemma-2-27B y Qwen2.5-Coder-32B, las matrices LM Studio/llama.cpp, el catálogo de modelos, los estados de validación y las configuraciones propuestas para la RTX 5060 Ti de 16 GB sobre USB4.
+- Se sincronizó la documentación del estado Git actual y se creó `feat/sync-git-state` desde `dev`, pendiente de integración mediante `merge --no-ff`.
 
 ### Fixed
 
