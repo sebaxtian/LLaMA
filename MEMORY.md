@@ -96,6 +96,10 @@ La política vigente es determinista: merge `--no-ff`, sin rebase ni squash; ram
 
 `main` y `dev` son ramas protegidas por política. Los conflictos de features y fixes se resuelven en sus ramas de trabajo; los conflictos de sincronización de un hotfix se resuelven en `hotfix/*` o `dev` según el merge definido en `docs/Flujo_de_Trabajo_Git.md`.
 
+## Convención de nombres MCP
+
+Los servidores MCP configurados en OpenCode deben utilizar nombres con el sufijo `-mcp`, por ejemplo `github-mcp`. Esta convención también debe utilizarse al definir permisos o referencias a sus herramientas.
+
 ## Referencias principales
 
 - `docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md`

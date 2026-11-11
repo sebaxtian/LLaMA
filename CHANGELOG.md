@@ -32,6 +32,7 @@ vMAJOR.MINOR.PATCH
 - Se formalizó la estrategia de integración mediante `merge --no-ff`, sin rebase ni squash.
 - Se definieron el bootstrap determinista de `main` y `dev`, la gramática de ramas y la política exacta de tags anotados.
 - Se añadieron exclusiones para logs, resultados y archivos temporales locales.
+- Se añadió la convención de nombres MCP con el sufijo `-mcp` y la exclusión de configuración local de `.vscode/`.
 - Se formalizó el procedimiento obligatorio de hotfix, resolución de conflictos, validación de tags y publicación de releases.
 - Se definieron la gramática exacta de tags, el formato UTC del changelog y la regla para una sección `Unreleased` vacía.
 - Se formalizaron la protección de `main` y `dev`, las validaciones por tipo de cambio y el registro obligatorio de autorización de releases.
