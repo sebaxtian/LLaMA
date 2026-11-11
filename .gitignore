@@ -1,0 +1,21 @@
+# Dependencias y Versiones precompiladas de llama.cpp
+/bin/*
+!/bin/.gitkeep
+
+# Repositorio fuente local de llama.cpp
+/llama.cpp/
+
+# Modelos descargados
+/models/*
+!/models/.gitkeep
+
+# Scripts versionables y marcador estructural de src
+!/src/.gitkeep
+
+# Resultados y temporales locales
+/logs/
+/results/
+/tmp/
+*.log
+*.tmp
+*.dmp
