@@ -227,6 +227,8 @@ No existe actualmente una suite automatizada de tests para el proyecto raíz. La
 
 ## Bootstrap determinista
 
+El bootstrap inicial de este repositorio ya fue ejecutado correctamente. La siguiente secuencia documenta el procedimiento utilizado y debe emplearse como referencia; no debe repetirse mientras exista la carpeta `.git`.
+
 Git 2.28 o superior es requisito para utilizar `git init -b main`.
 
 Ejecutar desde la raíz del proyecto:
@@ -428,10 +430,17 @@ Estos componentes deben obtenerse desde sus fuentes oficiales y tienen licencias
 
 La titularidad de `LICENSE` está confirmada por el propietario: `Agent Sebaxtian` es la identidad legal definitiva, `agent@sebaxtian.dev` es el correo que se desea publicar y el titular posee los derechos del material propio incluido. La licencia MIT no autoriza redistribuir componentes externos cuyas licencias sean diferentes.
 
-## Estado actual
+## Consulta del estado Git
 
-- El repositorio Git todavía no ha sido inicializado.
-- Aún no existen las ramas `main` ni `dev`.
-- Aún no existen ramas `feat/*`, `fix/*` ni `hotfix/*`.
-- Todavía no se ha publicado ningún release ni tag.
-- `src/` y `models/` contienen únicamente sus respectivos `.gitkeep`.
+Este documento es la línea base normativa del flujo Git y no mantiene un registro histórico de commits, merges, ramas temporales ni estados puntuales del working tree.
+
+El estado real del repositorio debe consultarse directamente con Git mediante, como mínimo:
+
+```bash
+git status --short --branch
+git branch --all --verbose --no-abbrev
+git log --oneline --decorate --graph --all
+git tag --list
+```
+
+Los cambios históricos se conservan en el historial Git y los cambios relevantes del proyecto se resumen en `CHANGELOG.md` bajo `Unreleased` hasta que se publique un release.

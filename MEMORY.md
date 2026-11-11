@@ -6,7 +6,7 @@
 - Objetivo: ejecutar, probar y comparar modelos LLM localmente mediante llama.cpp.
 - Plataforma: Windows 11.
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
-- El repositorio Git raíz todavía no está inicializado; no existen ramas, commits, tags ni releases.
+- El repositorio Git raíz está inicializado. `main` y `dev` existen; las ramas de trabajo, tags y releases se documentan según el estado actual de `docs/Flujo_de_Trabajo_Git.md`.
 
 ## Hardware objetivo
 
@@ -29,6 +29,10 @@
 - `AGENTS.md`: reglas obligatorias para agentes.
 - `README.md`: guía general del proyecto.
 - `CHANGELOG.md`: historial de cambios y releases.
+- `opencode.jsonc`: configuración de OpenCode, permisos y servidores MCP.
+- `example.env`: plantilla versionable para variables de entorno sin credenciales reales.
+- `.env`: variables locales ignoradas y protegidas contra lectura y edición por OpenCode.
+- `.vscode/`: configuración local del editor, excluida del repositorio.
 - `.gitkeep`: conserva `bin/`, `models/` y `src/` en clones limpios.
 - `main.bat`: pendiente de implementación; será el menú principal.
 - `logs/`, `results/` y `tmp/`: resultados temporales y archivos locales excluidos.
@@ -95,6 +99,10 @@ El flujo de ramas, releases y tags está definido en `docs/Flujo_de_Trabajo_Git.
 La política vigente es determinista: merge `--no-ff`, sin rebase ni squash; ramas con nombres `feat/*`, `fix/*` o `hotfix/*` usando minúsculas, números y guiones; tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`; primera versión funcional `v0.1.0`.
 
 `main` y `dev` son ramas protegidas por política. Los conflictos de features y fixes se resuelven en sus ramas de trabajo; los conflictos de sincronización de un hotfix se resuelven en `hotfix/*` o `dev` según el merge definido en `docs/Flujo_de_Trabajo_Git.md`.
+
+## Convención de nombres MCP
+
+Los servidores MCP configurados en OpenCode deben utilizar nombres con el sufijo `-mcp`, por ejemplo `github-mcp`. Esta convención también debe utilizarse al definir permisos o referencias a sus herramientas.
 
 ## Referencias principales
 

@@ -10,8 +10,13 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.1.0] - 2026-11-10
+
 ### Added
 
+- Servidor MCP remoto oficial de GitHub con toolsets limitados para contexto, repositorios, issues y pull requests.
+- `example.env` como plantilla para `GITHUB_PERSONAL_ACCESS_TOKEN` sin credenciales reales.
+- `opencode.jsonc` con configuración de proyecto, contexto operativo y protección de `llama.cpp/`.
 - Estructura inicial del proyecto para ejecutar modelos LLM localmente con llama.cpp.
 - Documentación de la arquitectura local y los benchmarks iniciales.
 - `AGENTS.md` con las reglas operativas para agentes.
@@ -29,11 +34,15 @@ vMAJOR.MINOR.PATCH
 - Se formalizó la estrategia de integración mediante `merge --no-ff`, sin rebase ni squash.
 - Se definieron el bootstrap determinista de `main` y `dev`, la gramática de ramas y la política exacta de tags anotados.
 - Se añadieron exclusiones para logs, resultados y archivos temporales locales.
+- Se añadió la convención de nombres MCP con el sufijo `-mcp` y la exclusión de configuración local de `.vscode/`.
+- Se actualizó la documentación operativa para distinguir la línea base normativa del flujo Git frente al estado histórico del repositorio.
+- Se documentaron en `AGENTS.md`, `README.md` y `MEMORY.md` la configuración de `github-mcp`, el uso de `example.env` y la protección de credenciales locales.
 - Se formalizó el procedimiento obligatorio de hotfix, resolución de conflictos, validación de tags y publicación de releases.
 - Se definieron la gramática exacta de tags, el formato UTC del changelog y la regla para una sección `Unreleased` vacía.
 - Se formalizaron la protección de `main` y `dev`, las validaciones por tipo de cambio y el registro obligatorio de autorización de releases.
 - Se autorizó explícitamente el commit de preparación de release en `dev` como excepción exclusiva para actualizar `CHANGELOG.md`.
 - Se actualizó el documento maestro con los benchmarks de Phi-4, Codestral 22B, Gemma-2-27B y Qwen2.5-Coder-32B, las matrices LM Studio/llama.cpp, el catálogo de modelos, los estados de validación y las configuraciones propuestas para la RTX 5060 Ti de 16 GB sobre USB4.
+- Se sincronizó la documentación del estado Git actual y se creó `feat/sync-git-state` desde `dev`; la rama fue validada e integrada en `dev` mediante `merge --no-ff`.
 
 ### Fixed
 
@@ -43,6 +52,10 @@ vMAJOR.MINOR.PATCH
 
 ### Security
 
+- Se excluye `/.env` de Git y se deniega a OpenCode su lectura y edición.
+
+- Approved by: Agent Sebaxtian
+
 ## Historial de releases
 
-Todavía no se ha publicado ningún release ni se ha creado ningún tag de versión.
+Se publicó `v0.1.0` como primera versión estructural y documental del proyecto.
