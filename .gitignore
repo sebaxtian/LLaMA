@@ -5,6 +5,9 @@
 # Repositorio fuente local de llama.cpp
 /llama.cpp/
 
+# Configuración local del editor
+/.vscode/
+
 # Modelos descargados
 /models/*
 !/models/.gitkeep
