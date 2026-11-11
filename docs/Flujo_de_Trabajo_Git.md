@@ -430,15 +430,17 @@ Estos componentes deben obtenerse desde sus fuentes oficiales y tienen licencias
 
 La titularidad de `LICENSE` está confirmada por el propietario: `Agent Sebaxtian` es la identidad legal definitiva, `agent@sebaxtian.dev` es el correo que se desea publicar y el titular posee los derechos del material propio incluido. La licencia MIT no autoriza redistribuir componentes externos cuyas licencias sean diferentes.
 
-## Estado actual
+## Consulta del estado Git
 
-- El repositorio Git raíz está inicializado.
-- La rama activa de trabajo actual es `dev`.
-- Existe la rama `dev`, creada desde el commit inicial de `main`.
-- `main` y `dev` apuntan actualmente al commit inicial `cc8bed5`.
-- Existe la rama `feat/sync-git-state`, creada desde `dev` e integrada en `dev` mediante `merge --no-ff`.
-- El merge de `feat/sync-git-state` en `dev` está registrado en el commit `780eae2`.
-- Aún no existen ramas `fix/*` ni `hotfix/*`.
-- Todavía no se ha publicado ningún release ni tag.
-- `src/` y `models/` contienen únicamente sus respectivos `.gitkeep`.
-- El working tree está limpio.
+Este documento es la línea base normativa del flujo Git y no mantiene un registro histórico de commits, merges, ramas temporales ni estados puntuales del working tree.
+
+El estado real del repositorio debe consultarse directamente con Git mediante, como mínimo:
+
+```bash
+git status --short --branch
+git branch --all --verbose --no-abbrev
+git log --oneline --decorate --graph --all
+git tag --list
+```
+
+Los cambios históricos se conservan en el historial Git y los cambios relevantes del proyecto se resumen en `CHANGELOG.md` bajo `Unreleased` hasta que se publique un release.

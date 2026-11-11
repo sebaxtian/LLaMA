@@ -29,6 +29,10 @@
 - `AGENTS.md`: reglas obligatorias para agentes.
 - `README.md`: guía general del proyecto.
 - `CHANGELOG.md`: historial de cambios y releases.
+- `opencode.jsonc`: configuración de OpenCode, permisos y servidores MCP.
+- `example.env`: plantilla versionable para variables de entorno sin credenciales reales.
+- `.env`: variables locales ignoradas y protegidas contra lectura y edición por OpenCode.
+- `.vscode/`: configuración local del editor, excluida del repositorio.
 - `.gitkeep`: conserva `bin/`, `models/` y `src/` en clones limpios.
 - `main.bat`: pendiente de implementación; será el menú principal.
 - `logs/`, `results/` y `tmp/`: resultados temporales y archivos locales excluidos.
