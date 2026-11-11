@@ -227,6 +227,8 @@ No existe actualmente una suite automatizada de tests para el proyecto raíz. La
 
 ## Bootstrap determinista
 
+El bootstrap inicial de este repositorio ya fue ejecutado correctamente. La siguiente secuencia documenta el procedimiento utilizado y debe emplearse como referencia; no debe repetirse mientras exista la carpeta `.git`.
+
 Git 2.28 o superior es requisito para utilizar `git init -b main`.
 
 Ejecutar desde la raíz del proyecto:
@@ -430,8 +432,13 @@ La titularidad de `LICENSE` está confirmada por el propietario: `Agent Sebaxtia
 
 ## Estado actual
 
-- El repositorio Git todavía no ha sido inicializado.
-- Aún no existen las ramas `main` ni `dev`.
-- Aún no existen ramas `feat/*`, `fix/*` ni `hotfix/*`.
+- El repositorio Git raíz está inicializado.
+- La rama activa actual es `feat/sync-git-state`.
+- Existe la rama `dev`, creada desde el commit inicial de `main`.
+- `main` y `dev` apuntan actualmente al commit inicial `cc8bed5`.
+- Existe la rama `feat/sync-git-state`, creada desde `dev`, con el commit `c783105`.
+- La rama `feat/sync-git-state` aún no ha sido integrada en `dev`.
+- Aún no existen ramas `fix/*` ni `hotfix/*`.
 - Todavía no se ha publicado ningún release ni tag.
 - `src/` y `models/` contienen únicamente sus respectivos `.gitkeep`.
+- El working tree está limpio.

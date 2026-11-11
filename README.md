@@ -227,8 +227,9 @@ Los resultados de `llama-bench` no deben interpretarse automáticamente como ren
 ## Estado actual
 
 - Estructura base del proyecto creada.
-- Repositorio Git raíz todavía no inicializado.
-- No existen ramas, commits, tags ni releases.
+- Repositorio Git raíz inicializado.
+- Existen las ramas `main`, `dev` y la rama de trabajo documentada en `docs/Flujo_de_Trabajo_Git.md`.
+- No existen tags ni releases.
 - Archivos `.gitkeep` presentes para conservar `bin/`, `models/` y `src/` inicializadas.
 - Dependencias y binarios precompilados disponibles localmente en `bin/`, excluidos de Git.
 - Repositorio fuente oficial disponible en `llama.cpp/`, excluido de Git y protegido contra modificaciones.
