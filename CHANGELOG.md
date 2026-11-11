@@ -12,6 +12,7 @@ vMAJOR.MINOR.PATCH
 
 ### Added
 
+- `opencode.jsonc` con configuración de proyecto, contexto operativo y protección de `llama.cpp/`.
 - Estructura inicial del proyecto para ejecutar modelos LLM localmente con llama.cpp.
 - Documentación de la arquitectura local y los benchmarks iniciales.
 - `AGENTS.md` con las reglas operativas para agentes.
