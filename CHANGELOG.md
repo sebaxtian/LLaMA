@@ -12,6 +12,8 @@ vMAJOR.MINOR.PATCH
 
 ### Added
 
+- Servidor MCP remoto oficial de GitHub con toolsets limitados para contexto, repositorios, issues y pull requests.
+- `example.env` como plantilla para `GITHUB_PERSONAL_ACCESS_TOKEN` sin credenciales reales.
 - `opencode.jsonc` con configuración de proyecto, contexto operativo y protección de `llama.cpp/`.
 - Estructura inicial del proyecto para ejecutar modelos LLM localmente con llama.cpp.
 - Documentación de la arquitectura local y los benchmarks iniciales.
@@ -44,6 +46,8 @@ vMAJOR.MINOR.PATCH
 ### Removed
 
 ### Security
+
+- Se excluye `/.env` de Git y se deniega a OpenCode su lectura y edición.
 
 ## Historial de releases
 

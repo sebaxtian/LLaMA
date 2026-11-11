@@ -13,6 +13,7 @@
 !/src/.gitkeep
 
 # Resultados y temporales locales
+/.env
 /logs/
 /results/
 /tmp/
