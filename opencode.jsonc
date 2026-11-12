@@ -2,11 +2,29 @@
   "$schema": "https://opencode.ai/config.json",
 
   // Use the primary implementation agent for project changes.
-  "default_agent": "build",
+  "default_agent": "plan",
 
   // MEMORY.md contains the project's operational context.
   // AGENTS.md is discovered automatically by OpenCode.
   "instructions": ["MEMORY.md"],
+
+  // Local llama.cpp server exposed through its OpenAI-compatible API.
+  "providers": {
+    "LLaMA": {
+      "name": "LLaMA.cpp Local",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:9931/v1",
+        "encoding": "none",
+      },
+      "models": {
+        "Gemma-4-26B-A4B": {
+          "name": "Gemma-4-26B-A4B",
+          "modelID": "Gemma-4-26B-A4B",
+        },
+      },
+    },
+  },
 
   // Ignore local artifacts and the external llama.cpp checkout in the watcher.
   "watcher": {

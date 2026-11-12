@@ -10,6 +10,14 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- Configuración del proveedor local `LLaMA` en `opencode.jsonc` mediante la API compatible con OpenAI de llama.cpp.
+
+### Changed
+
+- Se actualizó `default_agent` a `plan` en `opencode.jsonc`.
+
 ## [v0.1.0] - 2026-11-10
 
 ### Added
