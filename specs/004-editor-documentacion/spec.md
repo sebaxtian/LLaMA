@@ -1,13 +1,13 @@
 ---
 id: SPEC-004
 title: Subagente documenter para correcciones normativas
-status: validated
-version: 0.8.0
+status: released
+version: 0.9.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
 branch: feat/editor-documentacion
-release: ""
+release: "v0.4.0"
 supersedes: ""
 superseded_by: ""
 ---
@@ -163,3 +163,4 @@ Cubre: `RF-006`, `CB-001`.
 | 0.6.0 | 2026-11-13 | Implementación del subagente documenter y de O-02 |
 | 0.7.0 | 2026-11-13 | Ratificación de la fila de documenter en §10 y cierre de BRE-01 |
 | 0.8.0 | 2026-11-13 | G4 aprobada con dictamen CONVERGIDO |
+| 0.9.0 | 2026-11-13 | Release v0.4.0 autorizado por el propietario |
