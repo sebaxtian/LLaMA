@@ -5,6 +5,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | ID | Título | Estado | Rama | Release | Ruta |
 |---|---|---|---|---|---|
 | SPEC-001 | Menú principal main.bat | released | feat/main-menu | v0.2.0 | specs/001-main-menu/ |
+| SPEC-002 | Orquestación de subagentes SDD | validated | feat/orquestacion-subagentes-sdd | — | specs/002-orquestacion-subagentes-sdd/ |
 
 ## Reglas
 
