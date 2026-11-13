@@ -1,13 +1,13 @@
 ---
 id: SPEC-001
 title: Menú principal main.bat
-status: validated
+status: released
 version: 0.1.0
 created: 2026-11-12
 updated: 2026-11-12
 owner: Agent Sebaxtian
 branch: feat/main-menu
-release: ""
+release: "v0.2.0"
 supersedes: ""
 superseded_by: ""
 ---

@@ -10,6 +10,8 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.2.0] - 2026-11-12
+
 ### Added
 
 - Configuración del proveedor local `LLaMA` en `opencode.jsonc` mediante la API compatible con OpenAI de llama.cpp.
@@ -25,6 +27,8 @@ vMAJOR.MINOR.PATCH
 - Skills `sdd-lifecycle`, `ears-spec`, `sdd-plan-tasks`, `tdd-implement` y `llama-validation`.
 - Normalización del corpus `docs/sdd/` (sufijo `-mcp`, IDs de 3 dígitos, rutas `specs/NNN-slug/`, `validation_report.md`).
 
+- `main.bat` como menú raíz que descubre y ejecuta los scripts de `src/` (piloto `SPEC-001`).
+
 ### Changed
 
 - Se actualizó `default_agent` a `plan` en `opencode.jsonc`.
@@ -32,6 +36,8 @@ vMAJOR.MINOR.PATCH
 - Se añadieron permisos en `opencode.jsonc`: deny de edición en `bin/` y `models/`, y `ask` para `git push` y `git tag`.
 - Se integraron las compuertas SDD (G5/G6) y las excepciones de bootstrap y editorial en `docs/Flujo_de_Trabajo_Git.md`.
 - Se actualizaron `README.md` y `MEMORY.md` con la metodología SDD y la nueva estructura.
+
+- Approved by: Agent Sebaxtian
 
 ## [v0.1.0] - 2026-11-10
 
