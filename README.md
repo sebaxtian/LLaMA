@@ -12,6 +12,19 @@ El proyecto está orientado principalmente a:
 - Ejecución local y privada de modelos LLM.
 - Benchmarking de modelos bajo restricciones reales de VRAM y USB4.
 
+## Metodología de desarrollo (SDD)
+
+El proyecto se desarrolla con **Desarrollo Basado en Especificaciones (SDD)** en su variante **Spec-Anchored**. Toda feature, fix o cambio de configuración exige una especificación aprobada.
+
+- **Norma suprema:** `docs/constitution.md`.
+- **Norma ejecutable:** `docs/sdd/PROTOCOLO_OPERATIVO.md`.
+- **Reglas para agentes:** `AGENTS.md`.
+- **Ciclo:** Specify → Clarify → Plan → Tasks → Implement (TDD) → Validate.
+- **Trazabilidad:** `RF/CB → CA → T → evidencia → commit → merge → release`.
+- **Validador:** `python tools\sdd\validate.py --all`.
+
+Las specs viven en `specs/NNN-slug/`. El corpus de referencia SDD está en `docs/sdd/`. Los agentes, comandos y skills de OpenCode están en `.opencode/`.
+
 ## Arquitectura
 
 Hardware objetivo:
@@ -30,21 +43,31 @@ La estructura actual del proyecto es:
 ```text
 LLaMA/
 ├── .gitignore
-├── AGENTS.md
+├── AGENTS.md                           # Reglas operativas para agentes
 ├── CHANGELOG.md
 ├── example.env                         # Plantilla sin credenciales reales
 ├── LICENSE
 ├── MEMORY.md
 ├── opencode.jsonc                      # Configuración de OpenCode y MCP
 ├── README.md
+├── .opencode/                          # Agentes, comandos y skills
+│   ├── agents/{sdd,planner,coder,reviewer}.md
+│   ├── commands/sdd-*.md
+│   └── skills/*/SKILL.md
 ├── bin/
 │   ├── .gitkeep                       # Conserva la carpeta estructural
 │   ├── deps/                          # Dependencias locales, no versionadas
 │   └── llama-master-bin-win-rtx5060ti-cuda-13.5-x64/
 │                                      # Binarios locales, no versionados
 ├── docs/
+│   ├── constitution.md                 # Norma suprema del proyecto
 │   ├── Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md
-│   └── Flujo_de_Trabajo_Git.md
+│   ├── Flujo_de_Trabajo_Git.md
+│   └── sdd/                            # Corpus y protocolo SDD
+├── specs/
+│   └── INDEX.md                        # Registro de especificaciones
+├── tools/
+│   └── sdd/                            # Validador SDD y pruebas
 ├── llama.cpp/                         # Repositorio oficial local, no versionado
 ├── models/
 │   └── .gitkeep                       # Conserva la carpeta estructural
@@ -240,12 +263,12 @@ Los resultados de `llama-bench` no deben interpretarse automáticamente como ren
 - Estructura base del proyecto creada.
 - Repositorio Git raíz inicializado.
 - Existen las ramas `main`, `dev` y la rama de trabajo documentada en `docs/Flujo_de_Trabajo_Git.md`.
-- No existen tags ni releases.
+- Metodología SDD configurada: constitución, protocolo operativo, corpus, validador, agentes, comandos y skills.
 - Archivos `.gitkeep` presentes para conservar `bin/`, `models/` y `src/` inicializadas.
 - Dependencias y binarios precompilados disponibles localmente en `bin/`, excluidos de Git.
 - Repositorio fuente oficial disponible en `llama.cpp/`, excluido de Git y protegido contra modificaciones.
 - Documentación de benchmarks y flujo Git disponible en `docs/`.
 - Pendiente de crear los scripts de modelos en `src/`.
 - Pendiente de descargar y organizar modelos en `models/`.
-- Pendiente de implementar el menú `main.bat`.
+- Pendiente de implementar el menú `main.bat` (piloto `SPEC-001`).
 - Las carpetas `logs/`, `results/` y `tmp/` están reservadas para resultados temporales locales.

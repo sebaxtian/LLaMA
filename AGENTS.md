@@ -1,70 +1,61 @@
-# Instrucciones del proyecto
+# Instrucciones del proyecto LLaMA
+
+Reglas operativas para agentes. La norma suprema es `docs/constitution.md`; el procedimiento SDD es `docs/sdd/PROTOCOLO_OPERATIVO.md`; el flujo Git es `docs/Flujo_de_Trabajo_Git.md`. Ante contradicción, prevalece el documento de mayor rango y se detiene el trabajo.
 
 ## Alcance
 
-- Este repositorio contiene scripts y configuraciones para ejecutar modelos LLM localmente con llama.cpp en Windows 11.
-- `src/` contiene los scripts `.bat` de ejecución por modelo y sus configuraciones específicas; estos archivos sí forman parte del código versionable.
-- `models/` contiene los modelos descargados, organizados en carpetas por modelo; los modelos no se versionan.
-- `bin/` contiene dependencias y versiones precompiladas o compiladas de llama.cpp; sus artefactos locales no se versionan.
-- `docs/` contiene el documento maestro de benchmarks y la documentación del flujo Git.
-- `MEMORY.md` contiene el contexto operativo compacto para agentes.
-- `CHANGELOG.md` registra los cambios del proyecto y sus releases.
-- `main.bat`, cuando se cree, será el menú raíz para descubrir y ejecutar los scripts disponibles en `src/`.
+- Repositorio para ejecutar y probar modelos LLM localmente con llama.cpp en Windows 11.
+- `src/`: scripts `.bat` por modelo (versionables). `models/`: modelos (no versionados). `bin/`: dependencias y binarios de llama.cpp (no versionados).
+- `docs/`: documentación técnica y de proceso. `MEMORY.md`: contexto operativo. `CHANGELOG.md`: historial y releases.
 
-## Regla no negociable: `llama.cpp/`
+## Desarrollo (SDD)
 
-- `llama.cpp/` debe contener el repositorio oficial clonado desde GitHub.
-- Los agentes no deben crear, modificar, eliminar, mover, renombrar ni sobrescribir ningún archivo o carpeta dentro de `llama.cpp/`.
-- `llama.cpp/` solo puede consultarse para leer documentación y código de referencia de llama.cpp.
-- `llama.cpp/` solo es necesario cuando se desea generar una versión compilada para la arquitectura de hardware local; no es necesario para ejecutar versiones precompiladas almacenadas en `bin/`.
-- Antes de compilar localmente, clonar el repositorio oficial de llama.cpp en `llama.cpp/`.
-- No generar nuevas compilaciones dentro de `llama.cpp/`, incluida cualquier carpeta `build/` existente.
-- Las compilaciones, archivos temporales y resultados generados deben quedar fuera de `llama.cpp/`, preferiblemente dentro de una carpeta de salida excluida en `bin/`.
-- Las instrucciones internas de `llama.cpp/` no autorizan a los agentes a modificar esa carpeta; la protección de este archivo tiene prioridad para el proyecto raíz.
+- Toda feature, fix, refactor o cambio de configuración exige una spec aprobada (`specs/NNN-slug/`).
+- Ciclo de 7 etapas: Specify → Clarify → Plan → Tasks → Implement (TDD) → Validate.
+- Identificadores: `SPEC-001`, `RF-001`, `RNF-001`, `CB-001`, `AMB-001`, `CA-001`, `T-001`, `DEC-001`.
+- Requisitos en notación EARS. Trazabilidad obligatoria `RF/CB → CA → T → evidencia`.
+- Aprobaciones humanas en G1 (spec), G4 (implementación) y G6 (release), registradas como `- Approved by: Agent Sebaxtian`.
+- Prohibida la autoaprobación. Un agente no modifica requisitos para ajustarlos al código.
+- Excepción sin spec: solo cambios exclusivamente editoriales (commit `docs:` o `chore:`).
 
-## Estructura y archivos de soporte
+## Guardrails no negociables
 
-- Los archivos `.gitkeep` conservan directorios estructurales en clones limpios, incluso cuando el contenido local de esas carpetas está excluido; no son scripts ni archivos de configuración funcionales.
-- Los `.gitkeep` actuales son `bin/.gitkeep`, `models/.gitkeep` y `src/.gitkeep`; deben conservarse.
-- `bin/deps/` contiene dependencias locales del entorno y `bin/llama-*` contiene versiones locales de llama.cpp.
-- `LICENSE`, `README.md`, `MEMORY.md`, `AGENTS.md`, `CHANGELOG.md` y `.gitignore` pertenecen al proyecto raíz.
-- `opencode.jsonc` contiene la configuración de OpenCode y de los servidores MCP del proyecto.
-- `example.env` es una plantilla versionable sin credenciales reales; `.env` es local, está ignorado y protegido contra lectura y edición por OpenCode.
-- `.vscode/` contiene configuración local del editor y está excluido del repositorio.
-- El repositorio Git raíz está inicializado; existen `main`, `dev` y la rama activa de trabajo según el estado documentado en `docs/Flujo_de_Trabajo_Git.md`.
+- `llama.cpp/`: repositorio oficial. Prohibido crear, modificar, eliminar, mover, renombrar o sobrescribir nada en su interior. Solo lectura de referencia.
+- `bin/`: sin modelos dentro. `models/`: sin binarios dentro. `.env`: protegido contra lectura y edición.
+- Conservar `.gitkeep` de `bin/`, `models/` y `src/`.
 
 ## Ejecución local
 
-- Los scripts deben funcionar desde cualquier directorio y construir sus rutas relativas a `%~dp0`; no depender del directorio actual desde el que se invoque el `.bat`.
-- Usar rutas relativas a `bin`, `models` y `src` siempre que sea posible.
-- Seleccionar explícitamente el ejecutable de llama.cpp y el archivo de modelo; no asumir que `llama.exe` o el modelo están en el `PATH`.
-- Mantener separados los binarios precompilados de `bin/` y los artefactos generados al compilar llama.cpp.
-- Antes de añadir una configuración nueva, comprobar que el ejecutable utilizado existe en la versión concreta de llama.cpp seleccionada.
-- Verificar que el ejecutable y el modelo existan antes de iniciar una ejecución.
+- Los `.bat` resuelven la raíz con `%~dp0`; no dependen del directorio actual ni del `PATH`.
+- Seleccionar explícitamente el ejecutable de llama.cpp y el `.gguf`; verificar que ambos existan antes de ejecutar.
+- Mantener separados los binarios precompilados de `bin/` de los artefactos de compilación.
 
-## Control de versiones
+## Hardware objetivo
 
-- Revisar `.gitignore` antes del primer commit y confirmar que `bin/`, `models/` y `llama.cpp/` están excluidos, mientras que los scripts de `src/` y los `.gitkeep` quedan versionables.
-- No incorporar modelos, binarios, dependencias, controladores, firmware ni el contenido de `llama.cpp` al repositorio raíz.
-- Seguir `docs/Flujo_de_Trabajo_Git.md` para ramas, integraciones, releases y tags.
-- Registrar cambios relevantes en `CHANGELOG.md` bajo `Unreleased` hasta que exista un release.
-- Los resultados permanentes de benchmark documentados pueden versionarse dentro de `docs/`; los resultados temporales deben guardarse en `logs/`, `results/` o `tmp/`, que están excluidos.
-- Seguir la gramática de ramas y la estrategia de integración definidas en `docs/Flujo_de_Trabajo_Git.md`; no aplicar una estrategia alternativa.
+- GPU NVIDIA RTX 5060 Ti (16 GB VRAM, eGPU USB4); RAM ~32 GB; CPU Intel i9 13.ª gen.
+- Parámetros iniciales: `-ngl 99`, `-lm none`; modelos ≥20B con `-np 1`; 10B–15B con `-c 8192`; 20B–24B validar VRAM; 25B–28B con `-c 4096 -np 1` y `-fa off` en Gemma; 30B–35B con cuantización Q3, `-c 4096`, `-np 1`.
+- No declarar un modelo optimizado sin comprobar carga, VRAM/RAM y velocidad.
 
-## Configuración MCP y secretos
+## Git
 
-- Todos los servidores MCP deben utilizar nombres con el sufijo `-mcp`; el servidor actual de GitHub se llama `github-mcp`.
-- Las referencias a herramientas y permisos MCP deben utilizar el nombre completo del servidor, por ejemplo `github-mcp_*`.
-- No incorporar tokens, claves API ni credenciales reales en archivos versionables.
-- Utilizar `example.env` únicamente como plantilla con valores ficticios y mantener las credenciales reales en `.env`.
+- Ramas `feat/*`, `fix/*`, `hotfix/*` en minúsculas, números y guiones. Integración solo con `merge --no-ff`.
+- Sin rebase ni squash. Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`.
+- `main` y `dev` protegidas por política; no se trabaja directamente sobre ellas.
+- Commits de implementación referencian `Spec: SPEC-NNN` en el cuerpo.
+- Registrar cambios en `CHANGELOG.md` bajo `Unreleased` hasta publicar release.
 
-## Restricciones de hardware
+## Validación
 
-- La GPU objetivo es una NVIDIA RTX 5060 Ti con 16 GB de VRAM conectada por USB4; el desbordamiento hacia RAM puede reducir drásticamente el rendimiento.
-- Usar `-ngl 99` como configuración inicial para descargar el máximo de capas a la GPU.
-- Usar `-lm none` cuando el objetivo sea evitar el comportamiento de mmap documentado en las pruebas locales.
-- Usar `-np 1` en modelos de 20B o más, salvo que una prueba específica demuestre que hay memoria suficiente para más slots.
-- Los modelos de 10B-15B pueden probarse inicialmente con `-c 8192`; los modelos de 20B-24B requieren verificar el consumo real de VRAM antes de conservar ese contexto.
-- Para modelos de 25B-28B, comenzar con `-c 4096`, `-np 1` y `-fa off` cuando pertenezcan a arquitecturas tipo Gemma.
-- Para modelos de 30B-35B, comenzar con cuantización Q3, `-c 4096` y `-np 1`; tratarlos como ejecuciones analíticas o por lotes, no como configuraciones interactivas garantizadas.
-- No declarar que un modelo está optimizado sin comprobar al menos carga, VRAM/RAM y velocidad con la configuración concreta.
+- Antes de integrar: `git diff --check`, `git status --short`, revisar alcance y ejecutar `python tools\sdd\validate.py --all`.
+- No incorporar modelos, binarios, dependencias, credenciales ni contenido de `llama.cpp/` al repositorio.
+- Un script se considera validado solo si se ejecuta correctamente con el modelo configurado; `llama-bench` no sustituye la validación de un servidor con contexto largo.
+
+## MCP y secretos
+
+- Servidores MCP con sufijo `-mcp` (ej. `github-mcp`). Referencias a herramientas como `github-mcp_*`.
+- Sin tokens ni credenciales en archivos versionables; usar `example.env` como plantilla.
+
+## Referencias
+
+- `docs/constitution.md` (norma suprema) y `docs/sdd/PROTOCOLO_OPERATIVO.md` (SDD).
+- `docs/sdd/README.md` (índice del corpus) y `docs/Flujo_de_Trabajo_Git.md` (Git).
