@@ -10,6 +10,8 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.5.0] - 2026-11-13
+
 ### Added
 
 - La compuerta G3 verifica que todas las tareas estén marcadas como completadas (`SPEC-005`).
@@ -20,6 +22,8 @@ vMAJOR.MINOR.PATCH
 - La comprobación de rama con Git se omite en las specs publicadas, cuya rama ya se integró (`SPEC-005`).
 - SPEC-001 declara en sus criterios de aceptación la cobertura de los requisitos (`SPEC-005`).
 - El protocolo describe el bookkeeping Git de `sdd` limitado a artefactos de control (`SPEC-005`).
+
+- Approved by: Agent Sebaxtian
 
 ## [v0.4.0] - 2026-11-13
 
