@@ -4,6 +4,14 @@
 
 - [x] Cerrado (todos los AMB resueltos y parches aplicados).
 
+## Reapertura
+
+- **Motivo:** dictamen `NO CONVERGIDO` del 2026-11-13 (`validation_report.md`), con las brechas B-01 a B-05 abiertas sobre RF-006 y RNF-001.
+- **Versión de la spec:** 0.6.0, con estado `implementing` y revalidación completa pendiente.
+- **Hallazgos nuevos:** AMB-005, AMB-006 y AMB-007.
+- **Alcance:** se añadieron CA-007 a CA-010 y se documentaron decisiones de permisos y de orden de compuertas. No se alteró ningún `RF`, `RNF` ni `CB`.
+- **Ratificación:** el propietario ratificó G1 el 2026-11-13 sobre la reapertura (versiones 0.5.0 y 0.6.0 de `spec.md`). G4 y G6 continúan pendientes.
+
 ## Hallazgos de ambigüedad
 
 ### AMB-001
@@ -42,6 +50,33 @@
 - **Fecha:** 2026-11-13 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-005
+
+- **Descripción:** el protocolo es internamente contradictorio en el orden de las compuertas: §2 sitúa G3 al final de Implement y G4 al final de Validate, mientras §6 define G4 como autorización de la implementación. La tabla de precondiciones del orquestador adoptaba la lectura de §6 y exigía G4 antes de Implement, lo que hacía inalcanzable la etapa.
+- **Pregunta:** ¿Implement se gatea con G2 o con G4, y en qué momento se aprueba G4?
+- **Respuesta:** G4 es la aprobación posterior a Validate; Implement se gatea con G2. La redacción de §6 del protocolo se interpretará como aprobación de la implementación ya realizada y se corregirá en un cambio editorial posterior.
+- **Decisión:** el propietario resolvió el orden G3/G4: Implement exige G2 aprobada y spec en `tasked`; G4 se solicita después de Validate. No se modifica `docs/sdd/PROTOCOLO_OPERATIVO.md` en esta spec porque esa corrección editorial queda fuera de su alcance. Se alineó CA-005 con esa resolución (la compuerta previa a Implement es G2). CB-001 se alineó asimismo a G2 por decisión del propietario el 2026-11-13, de modo que no queda ninguna referencia a G4 como precondición de Implement.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
+### AMB-006
+
+- **Descripción:** la regla `shell` de `sdd` se declaraba solo como excepción (`allow` del validador) sin regla general previa, por lo que la política base dejaba la terminal sin acotar; una regla general `deny` habría bloqueado el propio validador.
+- **Pregunta:** ¿se acota `shell` con una regla general `deny` o con una regla general `ask` más una lista blanca de solo lectura?
+- **Respuesta:** regla general `shell *` con efecto `ask`, seguida de `allow` para el validador y para los comandos de solo lectura del repositorio; merge, tag y push permanecen en `ask`.
+- **Decisión:** `ask` como regla general, con lista blanca de solo lectura (`git status`, `git diff`, `git log`, `git show`, `git branch`, `git rev-parse`) y el validador. Sustituye a AMB-003 en el acotamiento de `shell`.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
+### AMB-007
+
+- **Descripción:** `planner` y `coder` no declaraban reglas `subagent`, por lo que heredaban la política base y podían delegar en otros agentes, contra el mínimo privilegio del protocolo §10.
+- **Pregunta:** ¿se permite que `planner` y `coder` lancen subagentes?
+- **Respuesta:** no; la capacidad de lanzar subagentes queda reservada a `sdd`.
+- **Decisión:** añadir `subagent *` con efecto `deny` en `planner` y en `coder`.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
 Ninguno adicional; se conservan `CB-001`, `CB-002` y `CB-003`.
@@ -52,6 +87,15 @@ Ninguno adicional; se conservan `CB-001`, `CB-002` y `CB-003`.
 - [x] Añadido CB-003 (fallo del validador durante la verificación de compuerta).
 - [x] Añadido CA-006 (comandos `sdd-*` siguen operando como primarios).
 - [x] Añadido RF-007 (contexto mínimo en la solicitud al subagente).
+- [x] Añadida la línea «Cubre:» a CA-001 a CA-006 para completar la trazabilidad `RF/CB → CA`.
+- [x] Añadido CA-007 (verificación de compuerta previa con el validador y parada ante código distinto de `0`), cubre RF-006 y CB-003.
+- [x] Añadido CA-008 (solicitud con spec, etapa y resultado esperado, y bloqueo por ambigüedad registrado), cubre RF-007 y CB-002.
+- [x] Añadido CA-009 (reglas generales antes de las excepciones en la configuración cargada), cubre RNF-001.
+- [x] Añadido CA-010 (entrada en `CHANGELOG.md` bajo `Unreleased` antes de la release), cubre RNF-002.
+- [x] Actualizado el frontmatter a `implementing` y versión 0.5.0, con la fila correspondiente en el historial de cambios.
+- [x] Alineado CA-005 con AMB-005: la compuerta previa a `coder` es G2; G4 se solicita al final de Validate.
+- [x] CB-001 alineado a G2 (antes G4).
+- [x] Sin cambios en RF-001 a RF-007, RNF-001 ni RNF-002 durante la reapertura.
 
 ## Decisiones de negocio
 

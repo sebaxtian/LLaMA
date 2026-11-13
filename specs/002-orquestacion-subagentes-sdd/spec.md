@@ -2,7 +2,7 @@
 id: SPEC-002
 title: Orquestación de subagentes SDD
 status: implemented
-version: 0.4.0
+version: 0.7.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
@@ -70,7 +70,7 @@ Los cambios de configuración DEBEN quedar registrados en `CHANGELOG.md` bajo `U
 
 ### CB-001
 
-SI `coder` se lanza sin aprobación G4, ENTONCES `sdd` DEBE detenerse y reportar el bloqueo.
+SI `coder` se lanza sin aprobación G2, ENTONCES `sdd` DEBE detenerse y reportar el bloqueo.
 
 ### CB-002
 
@@ -93,31 +93,67 @@ SI la compuerta previa no puede verificarse porque el validador devuelve un erro
 
 DADO el agente `sdd` activo, CUANDO se solicita la etapa Plan, ENTONCES `planner` está disponible como subagente y produce `plan.md`.
 
+Cubre: `RF-001`, `RF-002`.
+
 ### CA-002
 
 DADO el agente `sdd` activo, CUANDO se solicita la etapa Implement, ENTONCES `coder` está disponible como subagente.
+
+Cubre: `RF-003`.
 
 ### CA-003
 
 DADO el agente `sdd` activo, CUANDO se intenta lanzar un agente no autorizado, ENTONCES el lanzamiento queda denegado.
 
+Cubre: `RF-004`.
+
 ### CA-004
 
 DADO el agente `sdd` activo, CUANDO se intenta editar un archivo del proyecto, ENTONCES la edición queda denegada.
 
+Cubre: `RF-005`.
+
 ### CA-005
 
-DADO `sdd` y una spec sin G4 aprobada, CUANDO se intenta lanzar `coder`, ENTONCES `sdd` detiene el flujo y reporta el bloqueo.
+DADO `sdd` y una spec sin G2 aprobada, CUANDO se intenta lanzar `coder`, ENTONCES `sdd` detiene el flujo y reporta el bloqueo.
+
+Cubre: `RF-006`, `CB-001`.
 
 ### CA-006
 
 DADO `planner` y `coder` configurados para doble modo, CUANDO se invocan desde los comandos `sdd-*`, ENTONCES responden como agentes primarios.
 
+Cubre: `RF-002`, `RF-003`.
+
+### CA-007
+
+DADO `sdd` a punto de lanzar un subagente, CUANDO verifica la compuerta previa con el validador determinista, ENTONCES registra el código de salida y, si es distinto de `0`, detiene el lanzamiento y reporta el error de validación.
+
+Cubre: `RF-006`, `CB-003`.
+
+### CA-008
+
+DADO `sdd` a punto de lanzar un subagente, CUANDO compone la solicitud, ENTONCES incluye el identificador de la spec, la etapa en curso y el resultado esperado, y SI el subagente se detiene por ambigüedad, ENTONCES registra el bloqueo sin emitir resultados supuestos.
+
+Cubre: `RF-007`, `CB-002`.
+
+### CA-009
+
+DADO la configuración de permisos cargada, CUANDO se inspecciona la lista ordenada de cada agente, ENTONCES las reglas generales aparecen antes que las excepciones y cada regla declara acción, recurso y efecto.
+
+Cubre: `RNF-001`.
+
+### CA-010
+
+DADO un cambio de configuración implementado, CUANDO se prepara la release, ENTONCES existe la entrada correspondiente en `CHANGELOG.md` bajo `Unreleased`, registrada antes de publicar la release.
+
+Cubre: `RNF-002`.
+
 ## Aprobaciones
 
 <!-- Solo el propietario puede rellenar esta sección. -->
 
-- [x] G1: - Approved by: Agent Sebaxtian (2026-11-13)
+- [x] G1: - Approved by: Agent Sebaxtian (2026-11-13) — ratificada tras la reapertura v0.5.0
 
 ## Historial de cambios
 
@@ -127,3 +163,6 @@ DADO `planner` y `coder` configurados para doble modo, CUANDO se invocan desde l
 | 0.2.0 | 2026-11-13 | Aprobación G1 |
 | 0.3.0 | 2026-11-13 | Clarificación, plan y tareas |
 | 0.4.0 | 2026-11-13 | Implementación de la orquestación |
+| 0.5.0 | 2026-11-13 | Reapertura por reauditoría NO CONVERGIDO: CA-007 a CA-010 |
+| 0.6.0 | 2026-11-13 | Ratificación G1 y alineación de CB-001 a G2 |
+| 0.7.0 | 2026-11-13 | Implementación de las correcciones B-01 a B-05 |

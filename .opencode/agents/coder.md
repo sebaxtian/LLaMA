@@ -11,6 +11,9 @@ permissions:
   - action: edit
     resource: "specs/*/tasks.md"
     effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
 ---
 
 Eres el agente `coder` del Desarrollo Basado en Especificaciones (SDD).
