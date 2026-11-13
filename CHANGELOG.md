@@ -10,6 +10,12 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Changed
+
+- La tabla de agentes del protocolo describe a `sdd` como orquestador de solo lectura sobre artefactos y código, con bookkeeping Git limitado a artefactos de control (`SPEC-006`).
+- La memoria operativa enumera los agentes del proyecto y documenta cómo consultar la configuración cargada (`SPEC-006`).
+- La clarificación de SPEC-005 registra la confirmación del propietario sobre la regla de celda superada (`SPEC-006`).
+
 ## [v0.5.0] - 2026-11-13
 
 ### Added
