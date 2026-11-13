@@ -10,6 +10,20 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.4.0] - 2026-11-13
+
+### Added
+
+- Subagente `documenter` para correcciones editoriales y normativas en `docs/` y `AGENTS.md`, con permiso de edición acotado y sin terminal (`SPEC-004`).
+
+### Changed
+
+- G4 se describe como aprobación de la implementación validada en el protocolo operativo y en `AGENTS.md` (`SPEC-004`).
+- El commit de release puede registrar `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de la spec del release (`SPEC-004`).
+- Se documenta el criterio de incremento cuando un release combina correcciones con adiciones derivadas de ellas (`SPEC-004`).
+
+- Approved by: Agent Sebaxtian
+
 ## [v0.3.1] - 2026-11-13
 
 ### Added
