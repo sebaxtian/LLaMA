@@ -25,6 +25,11 @@
 - `bin/deps/`: dependencias locales excluidas de Git.
 - `bin/llama-*`: versiones precompiladas o compiladas de llama.cpp, excluidas de Git.
 - `docs/`: documento maestro de benchmarks y flujo de trabajo Git.
+- `docs/constitution.md`: norma suprema del proyecto.
+- `docs/sdd/`: corpus de referencia y protocolo operativo SDD.
+- `specs/`: registro (`INDEX.md`) y artefactos de cada feature (`NNN-slug/`).
+- `tools/sdd/`: validador determinista (`validate.py`, `validate.bat`, `tests/`).
+- `.opencode/`: agentes (`sdd`, `planner`, `coder`, `reviewer`), comandos `sdd-*` y skills.
 - `llama.cpp/`: repositorio oficial para consulta y compilación local; nunca modificarlo.
 - `AGENTS.md`: reglas obligatorias para agentes.
 - `README.md`: guía general del proyecto.
@@ -34,8 +39,19 @@
 - `.env`: variables locales ignoradas y protegidas contra lectura y edición por OpenCode.
 - `.vscode/`: configuración local del editor, excluida del repositorio.
 - `.gitkeep`: conserva `bin/`, `models/` y `src/` en clones limpios.
-- `main.bat`: pendiente de implementación; será el menú principal.
+- `main.bat`: pendiente de implementación; será el menú principal (piloto `SPEC-001`).
 - `logs/`, `results/` y `tmp/`: resultados temporales y archivos locales excluidos.
+
+## Metodología SDD
+
+- Desarrollo estricto con **Desarrollo Basado en Especificaciones (SDD)**, variante Spec-Anchored.
+- Ciclo de 7 etapas: Specify → Clarify → Plan → Tasks → Implement (TDD) → Validate.
+- Identificadores: `SPEC-001`, `RF-001`, `RNF-001`, `CB-001`, `AMB-001`, `CA-001`, `T-001`, `DEC-001`.
+- Requisitos en notación EARS. Trazabilidad `RF/CB → CA → T → evidencia`.
+- Compuertas G1 (spec), G4 (implementación) y G6 (release) requieren aprobación del propietario (`- Approved by: Agent Sebaxtian`).
+- Validador: `python tools\sdd\validate.py --all` (códigos `0/1/2`).
+- Norma: `docs/constitution.md` (suprema) y `docs/sdd/PROTOCOLO_OPERATIVO.md` (ejecutable).
+- Excepción sin spec: solo cambios exclusivamente editoriales (commit `docs:` o `chore:`).
 
 ## Regla crítica sobre `llama.cpp/`
 
@@ -106,5 +122,8 @@ Los servidores MCP configurados en OpenCode deben utilizar nombres con el sufijo
 
 ## Referencias principales
 
+- `docs/constitution.md`
+- `docs/sdd/PROTOCOLO_OPERATIVO.md`
+- `docs/sdd/README.md`
 - `docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md`
 - `docs/Flujo_de_Trabajo_Git.md`
