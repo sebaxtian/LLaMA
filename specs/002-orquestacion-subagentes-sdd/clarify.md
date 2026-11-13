@@ -102,6 +102,7 @@
 - **Decisión:** la evidencia de CA-001 y CA-002 se registra en `tasks.md` con las sesiones de subagente verificadas y con la configuración de `/api/agent`. AMB-009 sustituye a AMB-004 en la forma de acreditar la disponibilidad de subagentes.
 - **Fecha:** 2026-11-13 (UTC).
 - **Responsable:** Agent Sebaxtian.
+- **Confirmación:** AMB-009 confirmada por el propietario al aprobar G4 (2026-11-13).
 
 ## Casos borde nuevos
 
@@ -134,3 +135,5 @@ Ninguno adicional; se conservan `CB-001`, `CB-002` y `CB-003`.
 - El orquestador no redacta artefactos: delega en el agente especializado de cada etapa.
 - Las compuertas siguen siendo humanas; la delegación no autoriza aprobaciones.
 - `explore` se admite por su carácter de solo lectura.
+
+A partir de G4, `sdd` usará el literal “Etapa: <etapa>” en cada solicitud a un subagente, para cerrar la observación O-16.

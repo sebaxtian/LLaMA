@@ -1,8 +1,8 @@
 ---
 id: SPEC-002
 title: Orquestación de subagentes SDD
-status: implemented
-version: 0.10.0
+status: validated
+version: 0.11.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
@@ -154,6 +154,7 @@ Cubre: `RNF-002`.
 <!-- Solo el propietario puede rellenar esta sección. -->
 
 - [x] G1: - Approved by: Agent Sebaxtian (2026-11-13) — ratificada tras la reapertura v0.5.0
+- [x] G4: - Approved by: Agent Sebaxtian (2026-11-13)
 
 ## Historial de cambios
 
@@ -169,3 +170,4 @@ Cubre: `RNF-002`.
 | 0.8.0 | 2026-11-13 | Segunda reapertura: B-06 a B-09 y O-03 |
 | 0.9.0 | 2026-11-13 | Implementación de B-06 a B-09 y O-03 |
 | 0.10.0 | 2026-11-13 | Registro de evidencia de delegación (B-08) |
+| 0.11.0 | 2026-11-13 | G4 aprobada con dictamen CONVERGIDO |
