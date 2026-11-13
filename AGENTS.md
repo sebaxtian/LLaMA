@@ -14,7 +14,7 @@ Reglas operativas para agentes. La norma suprema es `docs/constitution.md`; el p
 - Ciclo de 7 etapas: Specify → Clarify → Plan → Tasks → Implement (TDD) → Validate.
 - Identificadores: `SPEC-001`, `RF-001`, `RNF-001`, `CB-001`, `AMB-001`, `CA-001`, `T-001`, `DEC-001`.
 - Requisitos en notación EARS. Trazabilidad obligatoria `RF/CB → CA → T → evidencia`.
-- Aprobaciones humanas en G1 (spec), G4 (implementación) y G6 (release), registradas como `- Approved by: Agent Sebaxtian`.
+- Aprobaciones humanas en G1 (spec), G4 (implementación validada) y G6 (release), registradas como `- Approved by: Agent Sebaxtian`.
 - Prohibida la autoaprobación. Un agente no modifica requisitos para ajustarlos al código.
 - Excepción sin spec: solo cambios exclusivamente editoriales (commit `docs:` o `chore:`).
 

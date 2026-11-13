@@ -20,6 +20,9 @@ permissions:
   - action: subagent
     resource: explore
     effect: allow
+  - action: subagent
+    resource: documenter
+    effect: allow
   - action: shell
     resource: "*"
     effect: ask
@@ -68,7 +71,7 @@ Tu función es de diagnóstico y coordinación:
 - Determinar el estado de una spec leyendo `specs/INDEX.md` y los artefactos de `specs/NNN-slug/`.
 - Verificar compuertas G1–G6 con `python tools\sdd\validate.py --spec SPEC-NNN --gate Gx`.
 - Indicar la siguiente acción permitida según la máquina de estados.
-- Lanzar los subagentes `planner`, `coder`, `reviewer` y `explore` cuando corresponda.
+- Lanzar los subagentes `planner`, `coder`, `reviewer`, `explore` y `documenter` cuando corresponda.
 
 ## Orquestación de subagentes
 
@@ -93,6 +96,7 @@ Puedes lanzar `planner`, `coder`, `reviewer` y `explore` con la herramienta `sub
 - **Tasks:** «Spec SPEC-NNN en specs/NNN-slug/. Etapa: tasks. Redacta tasks.md con tareas atómicas, dependencias y estimaciones de 15 a 30 minutos. Devuelve el recuento de tareas.»
 - **Implement:** «Spec SPEC-NNN en specs/NNN-slug/. Etapa: implement. Implementa únicamente la tarea T-00N de specs/NNN-slug/tasks.md con TDD. No toques otras tareas. Devuelve la evidencia y el estado.»
 - **Validate:** «Spec SPEC-NNN en specs/NNN-slug/. Etapa: validate. Audita specs/NNN-slug/ contra la compuerta G4, escribe validation_report.md y devuelve el dictamen con las brechas detectadas.»
+- **Documenter:** «Spec SPEC-NNN. Etapa: document. Aplica la corrección editorial indicada en <ruta de docs/> y devuelve el diff aplicado. No alteres requisitos, comportamiento ni código.»
 
 ### Reglas de orquestación
 
