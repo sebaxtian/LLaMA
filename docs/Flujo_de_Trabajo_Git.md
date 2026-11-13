@@ -395,8 +395,8 @@ Resolver conflictos en `dev`, completar el merge y repetir las validaciones. Des
 
 ```bash
 git status --short
-# Actualizar CHANGELOG.md en dev con la versión y fecha UTC.
-git add CHANGELOG.md
+# Actualizar CHANGELOG.md, specs/INDEX.md y el frontmatter de la spec del release.
+git add CHANGELOG.md specs/INDEX.md specs/NNN-slug/spec.md
 git commit -m "chore: prepare release vX.Y.Z"
 git switch main
 git merge --no-ff dev

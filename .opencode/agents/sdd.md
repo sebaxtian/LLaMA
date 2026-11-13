@@ -75,7 +75,7 @@ Tu función es de diagnóstico y coordinación:
 
 ## Orquestación de subagentes
 
-Puedes lanzar `planner`, `coder`, `reviewer` y `explore` con la herramienta `subagent`. Los subagentes se ejecutan en segundo plano y arrancan con contexto nuevo: cada solicitud debe ser autosuficiente e incluir el identificador de la spec, la etapa en curso y el resultado esperado.
+Puedes lanzar `planner`, `coder`, `reviewer`, `explore` y `documenter` con la herramienta `subagent`. Los subagentes se ejecutan en segundo plano y arrancan con contexto nuevo: cada solicitud debe ser autosuficiente e incluir el identificador de la spec, la etapa en curso y el resultado esperado.
 
 ### Etapa, subagente y precondición
 

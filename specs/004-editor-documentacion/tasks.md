@@ -58,6 +58,8 @@
   - `git diff --check`: código 0.
   - `python tools\sdd\validate.py --all`: código 0.
   - Ejecutada por `documenter` (`.opencode/agents/documenter.md`).
+  - Corrección BRE-01: el bloque de procedimiento de release de `docs/Flujo_de_Trabajo_Git.md` incluye `specs/NNN-slug/spec.md` en el `git add`, junto a `CHANGELOG.md` y `specs/INDEX.md` (`git add CHANGELOG.md specs/INDEX.md specs/NNN-slug/spec.md`).
+  - Corrección BRE-02: la fila de `documenter` en la tabla §10 de `docs/sdd/PROTOCOLO_OPERATIVO.md` fue ratificada por el propietario el 2026-11-13 (AMB-007).
 
 ### T-004
 

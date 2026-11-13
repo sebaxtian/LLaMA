@@ -64,6 +64,15 @@
 - **Fecha:** 2026-11-13 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-007 «Fila de documenter en §10»
+
+- **Descripción:** La reauditoría (BRE-02) detectó que la fila de `documenter` en la tabla de agentes del protocolo (§10) no estaba cubierta por ningún RF ni CA.
+- **Pregunta:** ¿Se mantiene la fila de `documenter` en la tabla de agentes del protocolo?
+- **Respuesta:** Sí. El propietario ratificó la fila el 2026-11-13. La tabla debe listar el rol nuevo.
+- **Decisión:** Se mantiene. Queda registrada como parte de la corrección normativa de RF-006. Sin cambio de requisitos.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
 Ninguno. Los casos borde existentes (CB-001 a CB-003) cubren las situaciones detectadas en esta clarificación.
@@ -76,6 +85,7 @@ Ninguno. Los casos borde existentes (CB-001 a CB-003) cubren las situaciones det
 - [x] AMB-005: sección «Actores y permisos», entrada de `coder`, registra la excepción de escritura en `.opencode/agents/` para T-001 y T-002.
 - [x] AMB-006: sección «Actores y permisos», entrada de `documenter`, registra que no puede ejecutar comandos de shell.
 - [x] Frontmatter: `version: 0.5.0`; historial: fila 0.5.0 «Decisiones del propietario AMB-005 y AMB-006».
+- [x] AMB-007: la ratificación de la fila de `documenter` en §10 queda registrada en el historial de `spec.md` (0.7.0). La fila ya está aplicada en el protocolo por T-003, así que no requiere cambio de texto en `spec.md`.
 
 ## Decisiones de negocio
 
