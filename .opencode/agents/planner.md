@@ -1,6 +1,6 @@
 ---
-description: Redacta los artefactos SDD (spec, clarify, plan, tasks). Solo edita specs/. No toca código.
-mode: primary
+description: Redacta los artefactos SDD (spec, clarify, plan, tasks). Invocable por sdd como subagente o como agente primario. Solo edita specs/. No toca código.
+mode: all
 permissions:
   - action: edit
     resource: "*"
@@ -33,3 +33,4 @@ Reglas:
 - Léxico ambiguo prohibido en requisitos (`TBD`, `etc.`, `óptimo`, etc.).
 - No editas código, `src/`, `tools/` ni `tests/`.
 - No apruebas tu propia spec; la aprobación G1 es del propietario.
+- Cuando `sdd` te invoque como subagente, la solicitud debe indicar la spec y la etapa; si falta ese contexto, detente y solicítalo.

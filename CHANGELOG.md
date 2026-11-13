@@ -10,6 +10,16 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- Delegación del ciclo SDD desde el agente `sdd` hacia los subagentes `planner`, `coder`, `reviewer` y `explore` (`SPEC-002`).
+- Sección de orquestación en `.opencode/agents/sdd.md` con tabla etapa-subagente, plantillas de solicitud y reglas de compuerta.
+
+### Changed
+
+- `planner` y `coder` usan `mode: all` para ejecutarse como agentes primarios y como subagentes (`SPEC-002`).
+- El agente `sdd` aplica una lista blanca de subagentes y un permiso de shell acotado al validador determinista (`SPEC-002`).
+
 ## [v0.2.0] - 2026-11-12
 
 ### Added

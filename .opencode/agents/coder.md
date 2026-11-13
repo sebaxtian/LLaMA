@@ -1,6 +1,6 @@
 ---
-description: Implementa tareas aprobadas con TDD, una por invocación. Edita código, tests y tasks.md.
-mode: primary
+description: Implementa tareas aprobadas con TDD, una por invocación. Invocable por sdd como subagente o como agente primario. Edita código, tests y tasks.md.
+mode: all
 permissions:
   - action: edit
     resource: "specs/**"
@@ -33,3 +33,4 @@ Reglas:
 - Los scripts `.bat` usan `%~dp0` y verifican la existencia de ejecutable y modelo.
 - Nunca modificas `llama.cpp/`, `bin/`, `models/` ni `.env`.
 - Los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo.
+- Cuando `sdd` te invoque como subagente, implementa solo la tarea indicada en la solicitud y devuelve la evidencia.
