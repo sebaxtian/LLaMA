@@ -10,7 +10,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-004 | Subagente documenter para correcciones normativas | released | feat/editor-documentacion | v0.4.0 | specs/004-editor-documentacion/ |
 | SPEC-005 | Compuertas completas y deuda residual | released | feat/compuertas-completas | v0.5.0 | specs/005-compuertas-completas/ |
 | SPEC-006 | Cierre de observaciones de documentación | released | feat/observaciones-cierre | v0.5.1 | specs/006-observaciones-cierre/ |
-| SPEC-007 | Protección determinista de ramas GitHub | validated | feat/branch-protection |  | specs/007-branch-protection/ |
+| SPEC-007 | Protección determinista de ramas GitHub | released | feat/branch-protection | v0.6.0 | specs/007-branch-protection/ |
 
 ## Reglas
 
