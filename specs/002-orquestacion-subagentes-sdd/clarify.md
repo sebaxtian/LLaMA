@@ -94,6 +94,15 @@
 - **Fecha:** 2026-11-13 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-009
+
+- **Descripción:** la evidencia de delegación de B-08 citaba una sesión cuyo último turno terminó con error, por lo que la auditoría de `b7fe653` la consideró inválida. AMB-004 previó una captura manual de la TUI que no forma parte del registro de evidencia.
+- **Pregunta:** ¿cómo se acredita la disponibilidad de subagentes para CA-001 y CA-002, y qué cuenta como invocación para PROTOCOLO §7?
+- **Respuesta:** la disponibilidad se acredita con la configuración cargada en `/api/agent` y con las delegaciones reales registradas en `tasks.md`, en sustitución de la captura manual de la TUI prevista en AMB-004. Cada turno de una sesión de subagente cuenta como una invocación para PROTOCOLO §7.
+- **Decisión:** la evidencia de CA-001 y CA-002 se registra en `tasks.md` con las sesiones de subagente verificadas y con la configuración de `/api/agent`. AMB-009 sustituye a AMB-004 en la forma de acreditar la disponibilidad de subagentes.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
 Ninguno adicional; se conservan `CB-001`, `CB-002` y `CB-003`.
@@ -118,6 +127,7 @@ Ninguno adicional; se conservan `CB-001`, `CB-002` y `CB-003`.
 - [x] AMB-008 añadido: G2 se verifica con `python tools\sdd\validate.py --spec SPEC-NNN --gate G2`; la aprobación humana queda reservada a G1, G4 y G6 (§6). Cubre O-03.
 - [x] DEC-006 y DEC-007 de `plan.md` alineados con AMB-006 y AMB-008; matriz de cobertura con T-009 y T-010.
 - [x] Añadidas a `tasks.md` las tareas T-009 (`sdd.md`, cubre B-09) y T-010 (`CHANGELOG.md`, cubre B-06). Su ejecución se registra en `tasks.md`; no son parches de `spec.md`.
+- [x] AMB-009 añadido: la disponibilidad de subagentes se acredita con `/api/agent` y con las delegaciones reales registradas en `tasks.md`, en sustitución de la captura manual de AMB-004; cada turno de una sesión de subagente cuenta como invocación para PROTOCOLO §7. Cubre B-08.
 
 ## Decisiones de negocio
 

@@ -80,7 +80,9 @@ La feature no introduce código ejecutable. Ajusta tres definiciones de agentes 
 
 - Validación determinista: `python tools\sdd\validate.py --all`, `--spec SPEC-002 --gate G2` y `--spec SPEC-002 --gate G4`.
 - Inspección de frontmatter: confirmar `mode: all` en `planner` y `coder`, y las reglas `subagent`/`shell` en `sdd`.
-- Prueba manual en la TUI: abrir el agente `sdd` y comprobar que `planner`, `coder`, `reviewer` y `explore` aparecen como subagentes disponibles.
+- Disponibilidad de subagentes: se verifica con `/api/agent` (configuración cargada) y con delegaciones reales registradas en `tasks.md` (AMB-009).
+- Verificación de modos y permisos: consultar `/api/agent` para comprobar los modos (`mode`) y los permisos efectivos de `sdd`, `planner`, `coder` y `reviewer`.
+- Delegación real: `planner` y `coder` lanzados como subagentes desde `sdd`, con sus sesiones registradas en `tasks.md`, como evidencia de CA-001 y CA-002.
 - Prueba negativa manual: intentar editar un archivo desde `sdd` y confirmar la denegación.
 - Higiene de integración: `git diff --check` y `git status --short`.
 
@@ -88,7 +90,7 @@ La feature no introduce código ejecutable. Ajusta tres definiciones de agentes 
 
 | Requisito | Componente | Prueba / comando |
 |---|---|---|
-| RF-001 | `sdd.md` reglas `subagent` | `planner` y `coder` disponibles en la TUI |
+| RF-001 | `sdd.md` reglas `subagent` | `planner` y `coder` disponibles en `/api/agent` y en delegación real |
 | RF-002 | `planner.md` `mode: all` | inspección de frontmatter |
 | RF-003 | `coder.md` `mode: all` | inspección de frontmatter |
 | RF-004 | `subagent deny *` | intento de lanzar agente no autorizado |

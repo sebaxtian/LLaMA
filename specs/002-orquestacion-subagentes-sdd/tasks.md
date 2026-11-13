@@ -57,7 +57,7 @@
 - **Requisitos cubiertos:** `RNF-001`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 20 min.
-- **Validación:** la lista cargada en `/api/agent/sdd` muestra la regla general `shell *` con efecto `ask` antes del `allow` del validador y antes de la lista blanca de solo lectura (`git status *`, `git diff *`, `git log *`, `git show *`, `git branch *`, `git rev-parse *`); merge, tag y push permanecen en `ask`.
+- **Validación:** la lista cargada en `/api/agent/sdd` declara la regla general `shell *` con efecto `ask` seguida de diez reglas `allow`: `git status *`, `git diff *`, `git log *`, `git show *`, `git rev-parse *`, `git branch --show-current`, `git branch --all *`, `git add *`, `git commit *` y `python tools\sdd\validate.py *`; merge, tag y push permanecen en `ask`.
 - [x] Completada.
 
 ### T-007
@@ -99,8 +99,10 @@
 ## Evidencia
 
 - B-08, delegación real (segunda reapertura, 2026-11-13, UTC):
-  - `planner` ejecutado como subagente en la sesión `ses_e2a69fdefffe45VbPSPIvaSGKN`; produjo `spec.md`, `clarify.md`, `plan.md` y `tasks.md` de esta spec. Evidencia de CA-001 (`planner` disponible como subagente y produce `plan.md`).
-  - `coder` ejecutado como subagente en la sesión `ses_e2a65fccdffeub1UpD5YFQA9cC`; implementó T-006, T-007 y T-008 en `.opencode/agents/`. Evidencia de CA-002 (`coder` disponible como subagente).
+  - `ses_e2a57522dffeRRIkHak1lRKfgp`: `planner` ejecutado como subagente en la segunda reapertura (v0.8.0); produjo AMB-006, AMB-008, DEC-006, DEC-007 y las tareas T-009 y T-010. Evidencia de CA-001 (`planner` disponible como subagente).
+  - `ses_e2a5440c4ffeNYOxtM6zwgOvOP`: `planner` ejecutado como subagente en el cierre a estado `implemented` y versión 0.9.0. Evidencia de CA-001 (`planner` disponible como subagente).
+  - `ses_e2a65fccdffeub1UpD5YFQA9cC`: `coder` ejecutado como subagente; implementó T-006, T-007 y T-008 en `.opencode/agents/`. Evidencia de CA-002 (`coder` disponible como subagente).
+  - `ses_e2a55d9c4ffe7V95BmavPV7hEg`: `coder` ejecutado como subagente; implementó T-009 en `.opencode/agents/sdd.md` y T-010 en `CHANGELOG.md`. Evidencia de CA-002 (`coder` disponible como subagente).
 
 - `opencode api get '/api/agent?location[directory]=C:\Users\sebax\Documents\Workspaces\LLaMA'` devuelve `coder | all`, `planner | all`, `reviewer | subagent` y `sdd | primary`: OpenCode cargó la configuración y publica los agentes con el modo esperado.
 - `opencode api get '/api/agent/sdd?location[directory]=C:\Users\sebax\Documents\Workspaces\LLaMA'` devuelve los permisos efectivos: `edit *` deny, `subagent *` deny seguido de `allow` para `planner`, `coder`, `reviewer` y `explore`, y `shell` acotado a `python tools\sdd\validate.py *` (estado previo a T-006; tras T-006 el permiso se acota con `shell *` en `ask` más la lista blanca registrada en la evidencia de T-006).
