@@ -10,6 +10,27 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.3.0] - 2026-11-13
+
+### Added
+
+- Delegación del ciclo SDD desde el agente `sdd` hacia los subagentes `planner`, `coder`, `reviewer` y `explore` (`SPEC-002`).
+- Sección de orquestación en `.opencode/agents/sdd.md` con tabla etapa-subagente, plantillas de solicitud y reglas de compuerta.
+
+### Changed
+
+- `planner` y `coder` usan `mode: all` para ejecutarse como agentes primarios y como subagentes (`SPEC-002`).
+- `sdd` aplica una lista blanca de subagentes: `planner`, `coder`, `reviewer` y `explore`; el resto queda denegado (`SPEC-002`).
+- `sdd` acota los comandos de shell con una regla general `ask` y una lista blanca: validador determinista, git de lectura, `git add` y `git commit` (`SPEC-002`).
+- `planner` y `coder` deniegan el lanzamiento de subagentes (`SPEC-002`).
+
+### Fixed
+
+- La tabla de compuertas de `.opencode/agents/sdd.md` se alinea con `docs/sdd/PROTOCOLO_OPERATIVO.md` §2: Implement se verifica con G2 y G4 queda al final de Validate (`SPEC-002`).
+- Se añaden los criterios de aceptación CA-007 a CA-010 y se alinea CB-001 a G2 (`SPEC-002`).
+
+- Approved by: Agent Sebaxtian
+
 ## [v0.2.0] - 2026-11-12
 
 ### Added
