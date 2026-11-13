@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 title: Menú principal main.bat
-status: tasked
+status: validated
 version: 0.1.0
 created: 2026-11-12
 updated: 2026-11-12
@@ -88,6 +88,7 @@ DADO un menú mostrado y un script ejecutado, CUANDO el script termina, ENTONCES
 ## Aprobaciones
 
 - [x] G1: - Approved by: Agent Sebaxtian (2026-11-12)
+- [x] G4: - Approved by: Agent Sebaxtian (2026-11-12)
 
 ## Historial de cambios
 
@@ -95,3 +96,4 @@ DADO un menú mostrado y un script ejecutado, CUANDO el script termina, ENTONCES
 |---|---|---|
 | 0.1.0 | 2026-11-12 | Redacción inicial |
 | 0.2.0 | 2026-11-12 | Aprobación G1, plan y tareas |
+| 0.3.0 | 2026-11-12 | Implementación y validación |
