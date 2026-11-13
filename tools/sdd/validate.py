@@ -64,6 +64,14 @@ TECHNICAL_MARKERS = [
 ID_RE = re.compile(rf"\b({'|'.join(ID_PREFIXES)})-([0-9]{{1,3}})\b")
 THREE_DIGIT_ID_RE = re.compile(rf"\b({'|'.join(ID_PREFIXES)})-([0-9]{{1,2}})\b")
 
+# Dictamen de validation_report.md (DEC-001): solo casillas de viñeta al inicio de línea.
+DICTAMEN_RE = re.compile(r"^\s*-\s*\[([ xX])\]\s*(NO CONVERGIDO|CONVERGIDO)\b", re.MULTILINE)
+# Celdas de tabla que indican una fila no superada (DEC-002).
+FAILING_CELLS = {"FALLADO", "NO PASADO"}
+# Compuertas y estados que exigen validation_report.md (DEC-003).
+GATES_REQUIRING_REPORT = {"G4", "G5", "G6"}
+STATES_REQUIRING_REPORT = {"validated", "released"}
+
 
 class Finding:
     def __init__(self, severity: str, path: str, message: str):
@@ -147,6 +155,70 @@ def has_technical_content(text: str) -> list[str]:
     return [m for m in TECHNICAL_MARKERS if re.search(m, text)]
 
 
+def parse_dictamen(text: str) -> dict[str, bool]:
+    """Devuelve qué casillas del dictamen están marcadas. Una casilla ausente cuenta como False."""
+    result = {"CONVERGIDO": False, "NO CONVERGIDO": False}
+    for mark, label in DICTAMEN_RE.findall(text):
+        if mark in "xX":
+            result[label] = True
+    return result
+
+
+def failing_rows(text: str) -> list[str]:
+    """Líneas de tabla (que empiezan por «|») con una celda exactamente igual a FALLADO o NO PASADO."""
+    rows: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if any(c in FAILING_CELLS for c in cells):
+            rows.append(stripped)
+    return rows
+
+
+def _section(body: str, title: str) -> str:
+    """Texto de la primera sección de nivel 2 cuyo título contiene `title` (sin el encabezado de otras)."""
+    for part in re.split(r"^(?=## )", body, flags=re.MULTILINE):
+        first_line = part.split("\n", 1)[0]
+        if first_line.startswith("## ") and re.search(title, first_line, re.IGNORECASE):
+            return part
+    return ""
+
+
+def coverage_gaps(spec_body: str) -> list[str]:
+    """RF-NNN y CB-NNN declarados que no aparecen en ninguna línea «Cubre:» de los criterios (DEC-004)."""
+    declared: list[str] = []
+    for title in (r"Requisitos funcionales", r"Casos borde"):
+        declared += re.findall(r"^###\s+((?:RF|CB)-\d{3})\b", _section(spec_body, title), re.MULTILINE)
+
+    covered: set[str] = set()
+    for line in _section(spec_body, r"Criterios de aceptaci").splitlines():
+        if line.strip().startswith("Cubre:"):
+            covered.update(re.findall(r"\b(?:RF|CB)-\d{3}\b", line))
+
+    gaps: list[str] = []
+    for req in declared:
+        if req not in covered and req not in gaps:
+            gaps.append(req)
+    return gaps
+
+
+def report_required(gate: str | None, status: str) -> bool:
+    """True si la ausencia de validation_report.md debe ser error (DEC-003)."""
+    return gate in GATES_REQUIRING_REPORT or status in STATES_REQUIRING_REPORT
+
+
+def read_status(spec_dir: Path) -> str:
+    spec_path = spec_dir / "spec.md"
+    if not spec_path.exists():
+        return ""
+    fm, _, err = parse_frontmatter(read_text(spec_path))
+    if err or not fm:
+        return ""
+    return fm.get("status", "")
+
+
 # ------------------------------------------------------------------ validators
 
 
@@ -195,6 +267,10 @@ def validate_spec(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
 
     if rf_count == 0:
         rep.warn(rel, "no se detectaron requisitos funcionales (RF-NNN)")
+
+    # Cobertura RF/CB → CA: solo advertencias, nunca errores (RF-004, AMB-003)
+    for req in coverage_gaps(body):
+        rep.warn(rel, f"{req} no aparece en ninguna línea «Cubre:» de los criterios de aceptación")
 
     # Ambigüedad y contenido técnico en RF/RNF/CA
     if has_ambiguous(body):
@@ -307,17 +383,25 @@ def _has_cycle(deps: dict[str, list[str]]) -> bool:
     return any(visit(n) for n in deps if color[n] == WHITE)
 
 
-def validate_report(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
+def validate_report(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | None) -> None:
     path = spec_dir / "validation_report.md"
     rel = str(path.relative_to(ROOT))
     if not path.exists():
-        rep.warn(rel, "validation_report.md no existe")
+        if report_required(gate, read_status(spec_dir)):
+            rep.error(rel, "validation_report.md ausente (obligatorio con G4/G5/G6 o en estado validated/released)")
+        else:
+            rep.warn(rel, "validation_report.md no existe")
         return
+
     text = read_text(path)
-    if not re.search(r"CONVERGIDO", text):
-        rep.error(rel, "dictamen CONVERGIDO ausente")
-    if re.search(r"Estado\s*\|\s*FALLADO|NO PASADO", text):
-        rep.error(rel, "hay estados no PASADO en la matriz")
+    dictamen = parse_dictamen(text)
+    if dictamen["NO CONVERGIDO"]:
+        rep.error(rel, "dictamen NO CONVERGIDO marcado")
+    elif not dictamen["CONVERGIDO"]:
+        rep.error(rel, "dictamen CONVERGIDO no marcado (se requiere '- [x] CONVERGIDO')")
+
+    for row in failing_rows(text):
+        rep.error(rel, f"fila no superada en la matriz: {row}")
 
 
 def validate_global(rep: Reporter) -> None:
@@ -418,7 +502,7 @@ def main(argv: list[str] | None = None) -> int:
             validate_plan(target, spec_dirs[target], rep)
             validate_tasks(target, spec_dirs[target], rep)
         if gate is None or int(gate[1]) >= 4:
-            validate_report(target, spec_dirs[target], rep)
+            validate_report(target, spec_dirs[target], rep, gate)
         if args.git:
             branch = None
             spec_path = spec_dirs[target] / "spec.md"
@@ -437,7 +521,7 @@ def main(argv: list[str] | None = None) -> int:
                 validate_plan(spec_id, spec_dir, rep)
                 validate_tasks(spec_id, spec_dir, rep)
             if gate is None or int(gate[1]) >= 4:
-                validate_report(spec_id, spec_dir, rep)
+                validate_report(spec_id, spec_dir, rep, gate)
 
     rep.print()
     return 1 if rep.has_errors() else 0
