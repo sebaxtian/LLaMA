@@ -53,3 +53,9 @@ No se añaden casos borde nuevos. CB-001 y CB-002 de `spec.md` quedan precisados
 - SPEC-005 no crea un agente nuevo ni cambia permisos de `.opencode/`. La descripción de `sdd` en §10 se alinea con los permisos ya vigentes.
 - La advertencia de cobertura RF/CB sigue siendo advertencia (no error). La conversión a error queda fuera de alcance, como indica `spec.md`.
 - Los reportes históricos (SPEC-001 a SPEC-004) no se modifican. Su validez se comprueba con la regla nueva (CB-003).
+
+## Nota de confirmación (SPEC-006)
+
+- **Confirmación de AMB-001:** el propietario confirma que solo cuenta como superada una celda PASADO, con paréntesis de observación opcional. NO PASADO, PENDIENTE, PARCIAL y las celdas compuestas con estado negativo son error.
+- **Fecha:** 2026-11-13 (UTC).
+- **Responsable:** Agent Sebaxtian.
