@@ -1,13 +1,13 @@
 ---
 id: SPEC-007
 title: Protección determinista de ramas GitHub
-status: validated
+status: released
 version: 0.2.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
 branch: feat/branch-protection
-release: ""
+release: v0.6.0
 supersedes: ""
 superseded_by: ""
 ---
