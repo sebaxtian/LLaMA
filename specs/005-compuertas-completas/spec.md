@@ -1,8 +1,8 @@
 ---
 id: SPEC-005
 title: Compuertas completas y deuda residual
-status: implemented
-version: 0.4.0
+status: validated
+version: 0.5.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
@@ -151,6 +151,7 @@ Cubre: `CB-003`, `RNF-001`, `RNF-002`, `RNF-003`.
 <!-- Solo el propietario puede rellenar esta sección. -->
 
 - [x] G1: - Approved by: Agent Sebaxtian (2026-11-13)
+- [x] G4: - Approved by: Agent Sebaxtian (2026-11-13)
 
 ## Historial de cambios
 
@@ -160,3 +161,4 @@ Cubre: `CB-003`, `RNF-001`, `RNF-002`, `RNF-003`.
 | 0.2.0 | 2026-11-13 | Aprobación G1 y clarificación (AMB-001 a AMB-003); precisiones en RF-004, RF-005 y CB-001 |
 | 0.3.0 | 2026-11-13 | Plan (DEC-001 a DEC-006) y desglose de tareas (T-001 a T-009) |
 | 0.4.0 | 2026-11-13 | Implementación de compuertas completas |
+| 0.5.0 | 2026-11-13 | G4 aprobada con dictamen CONVERGIDO |

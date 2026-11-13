@@ -8,7 +8,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-002 | Orquestación de subagentes SDD | released | feat/orquestacion-subagentes-sdd | v0.3.0 | specs/002-orquestacion-subagentes-sdd/ |
 | SPEC-003 | Validación estricta de la compuerta G4 | released | feat/validacion-g4 | v0.3.1 | specs/003-validacion-g4/ |
 | SPEC-004 | Subagente documenter para correcciones normativas | released | feat/editor-documentacion | v0.4.0 | specs/004-editor-documentacion/ |
-| SPEC-005 | Compuertas completas y deuda residual | implemented | feat/compuertas-completas | | specs/005-compuertas-completas/ |
+| SPEC-005 | Compuertas completas y deuda residual | validated | feat/compuertas-completas | | specs/005-compuertas-completas/ |
 
 ## Reglas
 
