@@ -113,9 +113,9 @@ Antes del primer commit:
 
 El flujo de ramas, releases y tags está definido en `docs/Flujo_de_Trabajo_Git.md`.
 
-La política vigente es determinista: merge `--no-ff`, sin rebase ni squash; ramas con nombres `feat/*`, `fix/*` o `hotfix/*` usando minúsculas, números y guiones; tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`; primera versión funcional `v0.1.0`.
+La política vigente es determinista: merge `--no-ff`, con desactivación de squash y rebase en favor exclusivo de merge `--no-ff`; ramas de trabajo `feat/*`, `fix/*`, `hotfix/*` y ramas de empaquetado `release/vX-Y-Z` usando minúsculas, números y guiones; tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`; primera versión funcional `v0.1.0`.
 
-`main` y `dev` son ramas protegidas por política. Los conflictos de features y fixes se resuelven en sus ramas de trabajo; los conflictos de sincronización de un hotfix se resuelven en `hotfix/*` o `dev` según el merge definido en `docs/Flujo_de_Trabajo_Git.md`.
+Las ramas `main` y `dev` cuentan con protección de ramas formal (política local y reglas remotas de GitHub): queda prohibido el push o commit directo a `dev` y `main`, requiriendo Pull Request obligatorio para cualquier cambio e integración exclusiva con `merge --no-ff`. Los conflictos de features y fixes se resuelven en sus ramas de trabajo; los conflictos de sincronización de un hotfix se resuelven en `hotfix/*` o `dev` según el merge definido en `docs/Flujo_de_Trabajo_Git.md`.
 
 ## Convención de nombres MCP
 

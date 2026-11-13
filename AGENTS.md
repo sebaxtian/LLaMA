@@ -38,9 +38,9 @@ Reglas operativas para agentes. La norma suprema es `docs/constitution.md`; el p
 
 ## Git
 
-- Ramas `feat/*`, `fix/*`, `hotfix/*` en minúsculas, números y guiones. Integración solo con `merge --no-ff`.
-- Sin rebase ni squash. Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`.
-- `main` y `dev` protegidas por política; no se trabaja directamente sobre ellas.
+- Ramas de trabajo `feat/*`, `fix/*`, `hotfix/*` y de empaquetado `release/vX-Y-Z` en minúsculas, números y guiones. Integración solo con `merge --no-ff`.
+- Sin rebase ni squash (desactivados en GitHub). Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`.
+- `main` y `dev` protegidas contra commits o push directos; todo cambio entra exclusivamente vía Pull Request.
 - Commits de implementación referencian `Spec: SPEC-NNN` en el cuerpo.
 - Registrar cambios en `CHANGELOG.md` bajo `Unreleased` hasta publicar release.
 

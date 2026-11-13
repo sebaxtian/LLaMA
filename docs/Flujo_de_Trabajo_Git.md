@@ -9,37 +9,64 @@ Este documento define de forma determinista la estrategia de ramas, integración
 - `feat/<nombre>`: nueva funcionalidad, creada desde `dev`.
 - `fix/<nombre>`: corrección detectada en `dev`, creada desde `dev`.
 - `hotfix/<nombre>`: corrección detectada en `main`, creada desde `main`.
+- `release/vX-Y-Z`: rama auxiliar para empaquetado y publicación de versiones, creada desde `dev`.
 
 Flujos:
 
 ```text
-dev  -> feat/<nombre>   -> dev
-dev  -> fix/<nombre>    -> dev
-main -> hotfix/<nombre> -> main -> dev
+dev  -> feat/<nombre>    -> dev
+dev  -> fix/<nombre>     -> dev
+dev  -> release/vX-Y-Z   -> dev & main
+main -> hotfix/<nombre>  -> main -> dev
 ```
 
-No se utilizarán ramas `release/*` en esta etapa.
-
-`main` y `dev` son ramas protegidas por política del proyecto:
+`main` y `dev` son ramas protegidas por política del proyecto y por reglas de protección remota en GitHub:
 
 - No se permite crear commits directos de trabajo en `main`.
-- No se permite crear commits directos de trabajo en `dev`; los cambios deben llegar mediante `feat/*`, `fix/*` o `hotfix/*`.
+- No se permite crear commits directos de trabajo ni push directo en `dev`; todos los cambios deben integrarse a través de Pull Requests desde ramas `feat/*`, `fix/*`, `hotfix/*` o `release/vX-Y-Z`.
 - Los únicos commits adicionales permitidos durante una integración son los commits de merge `--no-ff` y los commits de resolución de conflictos definidos en este documento.
-- El commit `chore: prepare release vX.Y.Z` está autorizado directamente en `dev` como excepción exclusiva para preparar un release; solo puede modificar `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de la spec del release, debe realizarse después de las validaciones y debe integrarse posteriormente en `main` mediante `merge --no-ff`.
-- En un repositorio remoto, estas reglas deben implementarse mediante protección de ramas. En un repositorio local, deben cumplirse mediante este procedimiento operativo.
+- Se elimina cualquier excepción de push o commit directo en `dev`: todo release se empaqueta en una rama auxiliar `release/vX-Y-Z` (con guiones en la versión, ej. `release/v0-1-0`) que solo modifica `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de las specs involucradas, integrándose posteriormente en `dev` y en `main` mediante Pull Requests con `merge --no-ff`.
+- En el repositorio remoto en GitHub, estas restricciones se aplican deterministamente mediante reglas de protección de ramas clásicas y ajustes del repositorio. En el repositorio local, se respetan mediante este procedimiento operativo.
+
+### Mapeo de protección remota en GitHub
+
+Para garantizar la integridad del historial y la gobernanza del proyecto, GitHub aplica las siguientes reglas de protección y ajustes de repositorio para `main` y `dev`:
+
+| Parámetro GitHub API | main | dev | Justificación normativa |
+|---|---|---|---|
+| `enforce_admins` | `true` | `true` | Aplica reglas sin excepción a todos los roles; bypass reservado al propietario en contingencias críticas (RF-008). |
+| `required_pull_request_reviews` | Activo (`count: 0`) | Activo (`count: 0`) | Exige Pull Request para toda integración; 0 aprobaciones obligatorias en etapa unipersonal (RF-002, RF-009). |
+| `dismiss_stale_reviews` | `true` | `true` | Invalida aprobaciones previas si se envían nuevos commits a la rama origen de un Pull Request. |
+| `restrictions` | `users: [], teams: [], apps: []` | `users: [], teams: [], apps: []` | Bloqueo absoluto de push directo a cualquier usuario, equipo o aplicación (RF-002, CB-005). |
+| `allow_force_pushes` | `false` | `false` | Prohibición irrevocable de envíos forzados (`--force`, `--force-with-lease`) (RF-003, CB-001). |
+| `allow_deletions` | `false` | `false` | Prohibición absoluta de borrado accidental o deliberado de las ramas base (RF-004, CB-006). |
+| `required_linear_history` | `false` | `false` | Permite commits explícitos de fusión `merge --no-ff` requeridos por la constitución (RF-005). |
+| `require_signed_commits` | `false` | `false` | No exige firma criptográfica en la etapa operativa actual (RF-010). |
+| `required_status_checks` | `null` | `null` | Diferido hasta el aprovisionamiento de flujos CI remotos (RF-006). |
+
+Ajustes a nivel de repositorio (`PATCH /repos/{owner}/{repo}`):
+
+| Opción de repositorio | Valor | Justificación normativa |
+|---|---|---|
+| `allow_merge_commit` | `true` | Habilita fusiones explícitas con commit de merge sin avance rápido (`--no-ff`) (RF-005). |
+| `allow_squash_merge` | `false` | Prohibición absoluta de fusiones squash en el servidor remoto (RF-005, CB-004). |
+| `allow_rebase_merge` | `false` | Prohibición absoluta de fusiones rebase en el servidor remoto (RF-005, CB-004). |
+| `delete_branch_on_merge` | `false` | Conserva el control determinista sobre el borrado de ramas tras validación de integración. |
+| `allow_auto_merge` | `false` | Desactiva fusiones automáticas desatendidas. |
 
 ## Nombres de ramas
 
 El nombre completo debe cumplir esta gramática de caracteres:
 
 ```text
-^(feat|fix|hotfix)/(?=[a-z0-9-]{3,63}$)[a-z0-9]+(-[a-z0-9]+)*$
+^(feat|fix|hotfix|release)/(?=[a-z0-9-]{3,63}$)[a-z0-9]+(-[a-z0-9]+)*$
 ```
 
 Reglas:
 
 - Solo se permiten minúsculas, números y guiones.
-- `<nombre>` debe tener entre 3 y 63 caracteres, sin contar el prefijo `feat/`, `fix/` o `hotfix/`.
+- `<nombre>` debe tener entre 3 y 63 caracteres, sin contar el prefijo `feat/`, `fix/`, `hotfix/` o `release/`.
+- En ramas de release se utiliza obligatoriamente la convención de guiones `vX-Y-Z` (ej. `release/v0-1-0`), evitando puntos en el nombre de la rama para prevenir colisiones en Git.
 - La longitud se mide sobre `<nombre>` y no sobre la cadena completa.
 - No se permiten espacios, guiones bajos, caracteres especiales ni prefijos alternativos.
 - No se permiten nombres duplicados de ramas activas.
@@ -54,6 +81,7 @@ feat/main-menu
 feat/phi4-script
 fix/model-path
 hotfix/server-startup
+release/v0-1-0
 ```
 
 ## Estrategia de integración
@@ -232,7 +260,7 @@ El flujo Git está subordinado al protocolo SDD definido en `docs/sdd/PROTOCOLO_
 
 Reglas de vínculo spec ↔ Git:
 
-- Toda rama `feat/*`, `fix/*` o `hotfix/*` requiere una spec aprobada, salvo las excepciones de la Etapa 1 y del cambio editorial.
+- Toda rama `feat/*`, `fix/*` o `hotfix/*` requiere una spec aprobada, salvo las excepciones de la Etapa 1, del cambio editorial y de las ramas de empaquetado `release/vX-Y-Z`.
 - Una spec por rama y una rama por spec. La spec declara `branch` en su frontmatter y debe coincidir con la rama real.
 - No se integra una rama con una spec por debajo del estado `validated`.
 - Los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo del mensaje.
@@ -250,6 +278,10 @@ La rama que crea la constitución y el protocolo SDD puede existir sin spec prev
 ### Excepción editorial
 
 Solo un cambio exclusivamente editorial (erratas, formato, enlaces) puede integrarse sin spec, siempre que no altere comportamiento, configuración, requisitos ni scripts. Debe ir en un commit `docs:` o `chore:`.
+
+### Excepción de ramas de release
+
+Las ramas auxiliares `release/vX-Y-Z` son exclusivamente operativas para empaquetado y publicación de versión (`CHANGELOG.md`, `specs/INDEX.md`, frontmatter de specs publicadas). No introducen código funcional ni modificaciones de especificación, por lo que están exentas de requerir una spec SDD previa.
 
 ## Bootstrap determinista
 
@@ -381,27 +413,59 @@ Sin esa entrada no se crea el tag.
 Flujo de release:
 
 ```text
-dev -> sincronizar con main -> validación -> CHANGELOG.md -> main -> tag vX.Y.Z
+dev -> sincronizar con main -> release/vX-Y-Z (empaquetado) -> PR hacia dev -> PR hacia main -> tag vX.Y.Z
 ```
 
 Procedimiento obligatorio de release:
+
+1. Sincronizar `dev` con `main`:
 
 ```bash
 git switch dev
 git merge --no-ff main
 ```
 
-Resolver conflictos en `dev`, completar el merge y repetir las validaciones. Después:
+Resolver conflictos en `dev` si los hubiera, completar el merge y repetir las validaciones.
+
+2. Crear la rama auxiliar de empaquetado `release/vX-Y-Z` desde `dev` (ej. `release/v0-1-0`):
 
 ```bash
-git status --short
-# Actualizar CHANGELOG.md, specs/INDEX.md y el frontmatter de la spec del release.
+git switch -c release/vX-Y-Z dev
+```
+
+3. Actualizar los artefactos de release exclusivamente en `release/vX-Y-Z`: `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de las specs correspondientes.
+
+4. Crear el commit de empaquetado:
+
+```bash
 git add CHANGELOG.md specs/INDEX.md specs/NNN-slug/spec.md
 git commit -m "chore: prepare release vX.Y.Z"
+```
+
+5. Ejecutar las validaciones completas:
+
+```bash
+python tools/sdd/validate.py --all
+```
+
+6. Integrar `release/vX-Y-Z` en `dev` mediante Pull Request con `merge --no-ff` (o localmente con `merge --no-ff`):
+
+```bash
+git switch dev
+git merge --no-ff release/vX-Y-Z
+```
+
+7. Integrar en `main` mediante Pull Request con `merge --no-ff` (o localmente con `merge --no-ff`):
+
+```bash
 git switch main
-git merge --no-ff dev
-git rev-parse main
-git rev-parse dev
+git merge --no-ff release/vX-Y-Z
+```
+
+8. Eliminar la rama auxiliar `release/vX-Y-Z` tras confirmar la integración:
+
+```bash
+git branch -d release/vX-Y-Z
 ```
 
 El commit de `main` debe contener el changelog actualizado. Antes de crear el tag, verificar que no exista y después comprobar su tipo, mensaje y commit objetivo:
