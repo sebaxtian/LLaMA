@@ -17,7 +17,7 @@ Orden TDD: T-001 y T-003 escriben las pruebas en rojo. T-002 y T-004 implementan
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests`. Salida esperada: código `1`. Fallan en rojo las pruebas de `no-convergido-marcado`, `convergido-sin-marcar`, `fila-fallado`, `sin-reporte-tasked` con G4 y `sin-reporte-validated` sin compuerta. Pasan `dictamen-ok`, `prosa-no-converge`, `fila-no-pasado`, `sin-reporte-draft`, `sin-reporte-tasked` sin compuerta y la guarda de RNF-002.
 - **Evidencia:**
-  - Pruebas nuevas: 11 (`TestDictamenG4` 4, `TestMatrizG4` 2, `TestReporteAusente` 4, `TestDependencias` 1). Fixtures nuevos: 10 carpetas en `tools/sdd/tests/fixtures/g4/`.
+  - Pruebas nuevas: 11 (`TestDictamenG4` 4, `TestMatrizG4` 2, `TestReporteAusente` 4, `TestDependencias` 1). Fixtures nuevos: 9 carpetas en `tools/sdd/tests/fixtures/g4/` (11 en total con `cobertura/`).
   - Ejecución: `python -m unittest discover -s tools\sdd\tests` → `Ran 24 tests`, `FAILED (failures=5)`, código de salida `1`. Línea base previa: 13 pruebas en verde.
   - Fallan por aserción (no por import ni sintaxis): `no-convergido-marcado`, `convergido-sin-marcar`, `fila-fallado`, `sin-reporte-tasked` con G4, `sin-reporte-validated` sin compuerta.
   - Pasan: `dictamen-ok`, `prosa-no-converge`, `fila-no-pasado`, `sin-reporte-draft`, `sin-reporte-tasked` sin compuerta, guarda RNF-002.
