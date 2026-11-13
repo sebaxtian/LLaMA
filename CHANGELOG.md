@@ -10,6 +10,20 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.6.0] - 2026-11-13
+
+### Added
+
+- Herramientas deterministas de aprovisionamiento y verificación de protección de ramas en tools/git/ (configure_branch_protection.py y verify_branch_protection.py) y especificaciones declarativas JSON (tools/git/protection_rules/).
+- Suite de pruebas unitarias (test_verify_branch_protection.py) y pruebas de rechazo deterministas en repositorio remoto (test_remote_rejection.py) para verificación de ramas protegidas.
+
+### Changed
+
+- Configuración remota de GitHub para sebaxtian/LLaMA: protección clásica estricta en ramas main y dev (PR obligatorio, enforce_admins, sin force push ni borrado) y desactivación de fusiones squash y rebase en favor exclusivo de merge --no-ff.
+- Actualización normativa de docs/Flujo_de_Trabajo_Git.md, docs/sdd/PROTOCOLO_OPERATIVO.md, AGENTS.md y MEMORY.md: formalización de ramas auxiliares de empaquetado release/vX-Y-Z, actualización de gramática de ramas y erradicación de commits directos en dev.
+
+- Approved by: Agent Sebaxtian
+
 ## [v0.5.1] - 2026-11-13
 
 ### Changed

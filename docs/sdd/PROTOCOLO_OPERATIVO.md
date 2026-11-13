@@ -138,6 +138,10 @@ La única rama que puede existir sin spec previa es la que crea la constitución
 
 Sin spec solo se permite un cambio **exclusivamente editorial** (erratas, formato, enlaces) que no altere comportamiento, configuración, requisitos ni scripts. Debe ir en commit `docs:` o `chore:`.
 
+### Ramas de release
+
+Las ramas auxiliares `release/vX-Y-Z` (o `release/*`) son ramas operativas dedicadas exclusivamente al empaquetado y publicación de versiones (`CHANGELOG.md`, `specs/INDEX.md`, frontmatter de specs publicadas). No introducen código funcional ni cambios de especificación, por lo que están exentas de requerir una spec SDD previa. Se integran mediante Pull Request con `merge --no-ff`.
+
 Un hotfix exige spec, aunque sea mínima.
 
 ## 9. Validador determinista
