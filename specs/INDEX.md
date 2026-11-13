@@ -4,6 +4,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 
 | ID | Título | Estado | Rama | Release | Ruta |
 |---|---|---|---|---|---|
+| SPEC-001 | Menú principal main.bat | validated | feat/main-menu | - | specs/001-main-menu/ |
 
 ## Reglas
 

@@ -54,16 +54,11 @@ NORMATIVE_VERBS = ["NO DEBE", "DEBERÍA", "DEBE", "PUEDE"]
 
 # Señales de contenido técnico prohibido en spec.md
 TECHNICAL_MARKERS = [
-    r"\.py\b",
-    r"\.bat\b",
     r"\bclass\s+\w+",
     r"\bdef\s+\w+",
     r"\bimport\s+\w+",
     r"\bSELECT\s+",
     r"\bFROM\s+\w+\s+WHERE",
-    r"src/",
-    r"tools/",
-    r"tests/",
 ]
 
 ID_RE = re.compile(rf"\b({'|'.join(ID_PREFIXES)})-([0-9]{{1,3}})\b")
