@@ -10,15 +10,19 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.3.1] - 2026-11-13
+
 ### Added
 
-- Validaci?n estricta de la compuerta G4 en `tools/sdd/validate.py`: dictamen por casilla marcada, filas no superadas y reporte obligatorio con G4, G5, G6 o estado validado (`SPEC-003`).
-- Advertencia de cobertura `RF/CB ? CA` mediante las l?neas `Cubre:` de los criterios de aceptaci?n (`SPEC-003`).
+- Validación estricta de la compuerta G4 en `tools/sdd/validate.py`: dictamen por casilla marcada, filas no superadas y reporte obligatorio con G4, G5, G6 o estado validado (`SPEC-003`).
+- Advertencia de cobertura `RF/CB → CA` mediante las líneas `Cubre:` de los criterios de aceptación (`SPEC-003`).
 
 ### Fixed
 
-- La compuerta G4 ya no acepta ?NO CONVERGIDO? como convergencia (`SPEC-003`).
-- La detecci?n de filas FALLADO o NO PASADO ahora eval?a las celdas reales de la matriz (`SPEC-003`).
+- La compuerta G4 ya no acepta «NO CONVERGIDO» como convergencia (`SPEC-003`).
+- La detección de filas FALLADO o NO PASADO ahora evalúa las celdas reales de la matriz (`SPEC-003`).
+
+- Approved by: Agent Sebaxtian
 
 ## [v0.3.0] - 2026-11-13
 

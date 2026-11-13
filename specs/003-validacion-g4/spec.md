@@ -1,13 +1,13 @@
 ---
 id: SPEC-003
 title: Validación estricta de la compuerta G4
-status: validated
-version: 0.5.0
+status: released
+version: 0.6.0
 created: 2026-11-13
 updated: 2026-11-13
 owner: Agent Sebaxtian
 branch: feat/validacion-g4
-release: ""
+release: "v0.3.1"
 supersedes: ""
 superseded_by: ""
 ---
@@ -157,3 +157,4 @@ Cubre: `RF-005`, `CB-002`, `CB-003`, `RNF-001`, `RNF-002`, `RNF-003`.
 | 0.3.0 | 2026-11-13 | Plan y tareas |
 | 0.4.0 | 2026-11-13 | Implementación del validador estricto |
 | 0.5.0 | 2026-11-13 | G4 aprobada con dictamen CONVERGIDO |
+| 0.6.0 | 2026-11-13 | Release v0.3.1 autorizado por el propietario |
