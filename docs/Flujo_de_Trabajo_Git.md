@@ -174,7 +174,8 @@ Antes de cada integración:
 3. Ejecutar `git diff --check`.
 4. Confirmar que no se añadieron modelos, binarios, dependencias ni archivos de `llama.cpp`.
 5. Confirmar que los cambios mantienen coherencia con `AGENTS.md`, `README.md` y `MEMORY.md`.
-6. Registrar cambios relevantes en `CHANGELOG.md` bajo `Unreleased`.
+6. Ejecutar `python tools\sdd\validate.py --all` (o `--spec SPEC-NNN` para una rama con spec).
+7. Registrar cambios relevantes en `CHANGELOG.md` bajo `Unreleased`.
 
 La validación se clasifica por tipo de cambio:
 
@@ -224,6 +225,31 @@ Un release pasa la validación únicamente cuando:
 - La validación estructural y las validaciones funcionales aplicables han pasado.
 
 No existe actualmente una suite automatizada de tests para el proyecto raíz. La ausencia de una suite no elimina las validaciones obligatorias anteriores.
+
+## Integración con el desarrollo basado en especificaciones (SDD)
+
+El flujo Git está subordinado al protocolo SDD definido en `docs/sdd/PROTOCOLO_OPERATIVO.md` y a la norma suprema `docs/constitution.md`.
+
+Reglas de vínculo spec ↔ Git:
+
+- Toda rama `feat/*`, `fix/*` o `hotfix/*` requiere una spec aprobada, salvo las excepciones de la Etapa 1 y del cambio editorial.
+- Una spec por rama y una rama por spec. La spec declara `branch` en su frontmatter y debe coincidir con la rama real.
+- No se integra una rama con una spec por debajo del estado `validated`.
+- Los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo del mensaje.
+- El validador comprueba la correspondencia: `python tools\sdd\validate.py --spec SPEC-NNN --gate G5 --git`.
+
+Compuertas Git del SDD:
+
+- **G5 (integración):** `merge --no-ff`, validación posterior, rama eliminada.
+- **G6 (release):** autorización del propietario, tag anotado, `specs/INDEX.md` y `CHANGELOG.md` actualizados.
+
+### Excepción de la Etapa 1 (Constitución / Setup)
+
+La rama que crea la constitución y el protocolo SDD puede existir sin spec previa, porque la metodología aún no existe. Es la única excepción de bootstrap, autorizada una sola vez por el propietario y registrada en `CHANGELOG.md`.
+
+### Excepción editorial
+
+Solo un cambio exclusivamente editorial (erratas, formato, enlaces) puede integrarse sin spec, siempre que no altere comportamiento, configuración, requisitos ni scripts. Debe ir en un commit `docs:` o `chore:`.
 
 ## Bootstrap determinista
 

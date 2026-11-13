@@ -46,6 +46,16 @@
       "effect": "deny",
     },
     {
+      "action": "edit",
+      "resource": "bin/*",
+      "effect": "deny",
+    },
+    {
+      "action": "edit",
+      "resource": "models/*",
+      "effect": "deny",
+    },
+    {
       "action": "read",
       "resource": ".env",
       "effect": "deny",
@@ -54,6 +64,16 @@
       "action": "edit",
       "resource": ".env",
       "effect": "deny",
+    },
+    {
+      "action": "shell",
+      "resource": "git push *",
+      "effect": "ask",
+    },
+    {
+      "action": "shell",
+      "resource": "git tag *",
+      "effect": "ask",
     },
   ],
 

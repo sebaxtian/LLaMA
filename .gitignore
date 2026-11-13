@@ -23,3 +23,8 @@
 *.log
 *.tmp
 *.dmp
+
+# Caché de Python
+__pycache__/
+*.pyc
+
