@@ -10,6 +10,8 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.3.0] - 2026-11-13
+
 ### Added
 
 - Delegación del ciclo SDD desde el agente `sdd` hacia los subagentes `planner`, `coder`, `reviewer` y `explore` (`SPEC-002`).
@@ -26,6 +28,8 @@ vMAJOR.MINOR.PATCH
 
 - La tabla de compuertas de `.opencode/agents/sdd.md` se alinea con `docs/sdd/PROTOCOLO_OPERATIVO.md` §2: Implement se verifica con G2 y G4 queda al final de Validate (`SPEC-002`).
 - Se añaden los criterios de aceptación CA-007 a CA-010 y se alinea CB-001 a G2 (`SPEC-002`).
+
+- Approved by: Agent Sebaxtian
 
 ## [v0.2.0] - 2026-11-12
 
