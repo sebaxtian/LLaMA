@@ -29,7 +29,8 @@
 - `docs/sdd/`: corpus de referencia y protocolo operativo SDD.
 - `specs/`: registro (`INDEX.md`) y artefactos de cada feature (`NNN-slug/`).
 - `tools/sdd/`: validador determinista (`validate.py`, `validate.bat`, `tests/`).
-- `.opencode/`: agentes (`sdd`, `planner`, `coder`, `reviewer`), comandos `sdd-*` y skills.
+- `.opencode/`: agentes (`sdd`, `planner`, `coder`, `reviewer` y `documenter`), comandos `sdd-*` y skills. `explore` es un subagente integrado de OpenCode.
+- Consulta de agentes: `opencode debug agents` desde la raíz del repositorio; `opencode api get '/api/agent?location[directory]=<raíz>'` devuelve la configuración cargada del proyecto. Sin ese parámetro el endpoint responde con los agentes del directorio por defecto.
 - `llama.cpp/`: repositorio oficial para consulta y compilación local; nunca modificarlo.
 - `AGENTS.md`: reglas obligatorias para agentes.
 - `README.md`: guía general del proyecto.
