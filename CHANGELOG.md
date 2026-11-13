@@ -18,7 +18,14 @@ vMAJOR.MINOR.PATCH
 ### Changed
 
 - `planner` y `coder` usan `mode: all` para ejecutarse como agentes primarios y como subagentes (`SPEC-002`).
-- El agente `sdd` aplica una lista blanca de subagentes y un permiso de shell acotado al validador determinista (`SPEC-002`).
+- `sdd` aplica una lista blanca de subagentes: `planner`, `coder`, `reviewer` y `explore`; el resto queda denegado (`SPEC-002`).
+- `sdd` acota los comandos de shell con una regla general `ask` y una lista blanca: validador determinista, git de lectura, `git add` y `git commit` (`SPEC-002`).
+- `planner` y `coder` deniegan el lanzamiento de subagentes (`SPEC-002`).
+
+### Fixed
+
+- La tabla de compuertas de `.opencode/agents/sdd.md` se alinea con `docs/sdd/PROTOCOLO_OPERATIVO.md` §2: Implement se verifica con G2 y G4 queda al final de Validate (`SPEC-002`).
+- Se añaden los criterios de aceptación CA-007 a CA-010 y se alinea CB-001 a G2 (`SPEC-002`).
 
 ## [v0.2.0] - 2026-11-12
 

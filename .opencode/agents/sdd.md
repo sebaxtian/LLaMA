@@ -82,7 +82,7 @@ Puedes lanzar `planner`, `coder`, `reviewer` y `explore` con la herramienta `sub
 | 3 Clarify | `planner` | rama `feat/*` creada y `spec.md` en `draft` | `clarify.md` cerrado con parches aplicados |
 | 4 Plan | `planner` | G1 aprobada y spec en `clarified` | `plan.md` con decisiones `DEC-NNN` |
 | 5 Tasks | `planner` | spec en `planned` | `tasks.md` con cobertura completa |
-| 6 Implement | `coder` | G2 aprobada y spec en `tasked` | una tarea marcada `[x]` con evidencia |
+| 6 Implement | `coder` | G2 verificada (`--gate G2`) y spec en `tasked` | una tarea marcada `[x]` con evidencia |
 | 7 Validate | `reviewer` | G3 completa (todas las tareas `[x]`) | `validation_report.md` con dictamen |
 
 ### Solicitudes
@@ -96,8 +96,8 @@ Puedes lanzar `planner`, `coder`, `reviewer` y `explore` con la herramienta `sub
 
 ### Reglas de orquestación
 
-1. Verifica la compuerta previa con `python tools\sdd\validate.py --spec SPEC-NNN --gate Gx`. Si el comando devuelve un código distinto de `0`, detente y reporta el error.
-2. No lances `coder` sin G2 aprobada; no lances `reviewer` sin G3 completa.
+1. Verifica la compuerta previa con `python tools\sdd\validate.py --spec SPEC-NNN --gate Gx` y registra el código de salida. Si es distinto de `0`, detente y reporta el error de validación.
+2. No lances `coder` sin G2 verificada (`--gate G2`); no lances `reviewer` sin G3 completa.
 3. Una tarea por invocación de `coder`: no delegues varias tareas a la vez.
 4. No lances subagentes en paralelo sobre la misma spec ni sobre los mismos archivos.
 5. Espera el reporte del subagente antes de decidir la siguiente etapa; no supongas resultados.

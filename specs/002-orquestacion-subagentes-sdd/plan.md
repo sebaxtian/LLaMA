@@ -60,13 +60,13 @@ La feature no introduce código ejecutable. Ajusta tres definiciones de agentes 
 
 ### DEC-006
 
-- **Decisión:** la compuerta G4 se solicita al final de Validate; la etapa Implement se gatea con G2 aprobada y la spec en `tasked`.
+- **Decisión:** la compuerta G4 se solicita al final de Validate; la etapa Implement se gatea con G2 verificada con `python tools\sdd\validate.py --spec SPEC-002 --gate G2` y la spec en `tasked`. G2 no es una aprobación humana: §6 reserva la aprobación a G1, G4 y G6 (AMB-008).
 - **Alternativas descartadas:** exigir G4 antes de Implement (lectura de PROTOCOLO §6) hacía la etapa inalcanzable porque G4 exige un `validation_report.md` convergido; gatear Implement con G1 dejaría sin control el paso de Tasks a Implement.
 - **Motivo:** reconcilia `docs/sdd/PROTOCOLO_OPERATIVO.md` §2 (G3 fin de Implement, G4 fin de Validate) con la práctica del proyecto; §6 se interpreta como aprobación de la implementación ya realizada. Resuelve B-02 y B-03 (AMB-005).
 
 ### DEC-007
 
-- **Decisión:** la acción `shell` se declara con la regla general `shell *` con efecto `ask`, seguida de `allow` para el validador (`python tools\sdd\validate.py *`) y para la lista blanca de solo lectura `git status *`, `git diff *`, `git log *`, `git show *`, `git branch *` y `git rev-parse *`. Merge, tag y push permanecen en `ask`.
+- **Decisión:** la acción `shell` se declara con la regla general `shell *` con efecto `ask`, seguida de `allow` para el validador (`python tools\sdd\validate.py *`) y para la lista blanca exacta: `git status *`, `git diff *`, `git log *`, `git show *`, `git rev-parse *`, `git branch --show-current`, `git branch --all *`, `git add *` y `git commit *`. Merge, tag y push permanecen en `ask`. `git add *` y `git commit *` son una excepción autorizada por el propietario el 2026-11-13 (UTC) a la descripción «Solo lectura» de `docs/sdd/PROTOCOLO_OPERATIVO.md` §10; el resto de la descripción se mantiene.
 - **Alternativas descartadas:** `shell * deny` bloquea el validador que RNF-001 y RF-006 necesitan; dejar solo la excepción `allow` del validador, como en DEC-003, hereda la política base `allow` y no acota nada (B-01).
 - **Motivo:** el orden «general antes de excepciones» de RNF-001 produce una lista blanca efectiva con confirmación humana fuera de ella. Sustituye a DEC-003 en el acotamiento de `shell` (AMB-006).
 
@@ -107,6 +107,8 @@ La feature no introduce código ejecutable. Ajusta tres definiciones de agentes 
 | T-006 | `sdd.md` regla general `shell *` y lista blanca | `/api/agent/sdd` muestra la regla general antes de las excepciones |
 | T-007 | `sdd.md` tabla de precondiciones y regla 2 | contraste con PROTOCOLO §2 sin contradicción |
 | T-008 | `planner.md` y `coder.md` `subagent * deny` | `/api/agent` muestra la denegación en ambos |
+| RF-006, CB-003 | `sdd.md` fila 6 y regla 1 (T-009) | `/api/agent/sdd` y contraste con el código de salida del validador |
+| RNF-002 | `CHANGELOG.md` `Unreleased` (T-010) | entrada que refleja la configuración final |
 
 ## Alcance de la reapertura
 

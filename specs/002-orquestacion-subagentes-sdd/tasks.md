@@ -2,7 +2,7 @@
 
 ## Progreso
 
-- [x] 8 de 8 tareas completadas.
+- [x] 10 de 10 tareas completadas.
 
 ## Tareas
 
@@ -78,7 +78,29 @@
 - **Validación:** `/api/agent` muestra `subagent *` con efecto `deny` en las listas de permisos de `planner` y de `coder`.
 - [x] Completada.
 
+### T-009
+
+- **Dependencias:** `T-007`.
+- **Requisitos cubiertos:** `RF-006`, `CB-003`.
+- **Archivos:** `.opencode/agents/sdd.md`.
+- **Estimación:** 20 min.
+- **Validación:** la fila «6 Implement» de la tabla «Etapa, subagente y precondición» declara «G2 verificada (`python tools\sdd\validate.py --spec SPEC-002 --gate G2`) y spec en `tasked`»; la regla 1 exige registrar el código de salida del validador antes de decidir y detener el lanzamiento si es distinto de `0`.
+- [x] Completada.
+
+### T-010
+
+- **Dependencias:** `T-006`, `T-008`, `T-009`.
+- **Requisitos cubiertos:** `RNF-002`.
+- **Archivos:** `CHANGELOG.md`.
+- **Estimación:** 15 min.
+- **Validación:** las entradas de `Unreleased` describen la configuración final: regla general `shell *` con efecto `ask`, allowlist exacta de `sdd` (incluidas `git add *` y `git commit *`) y `subagent *` con efecto `deny` en `planner` y `coder`.
+- [x] Completada.
+
 ## Evidencia
+
+- B-08, delegación real (segunda reapertura, 2026-11-13, UTC):
+  - `planner` ejecutado como subagente en la sesión `ses_e2a69fdefffe45VbPSPIvaSGKN`; produjo `spec.md`, `clarify.md`, `plan.md` y `tasks.md` de esta spec. Evidencia de CA-001 (`planner` disponible como subagente y produce `plan.md`).
+  - `coder` ejecutado como subagente en la sesión `ses_e2a65fccdffeub1UpD5YFQA9cC`; implementó T-006, T-007 y T-008 en `.opencode/agents/`. Evidencia de CA-002 (`coder` disponible como subagente).
 
 - `opencode api get '/api/agent?location[directory]=C:\Users\sebax\Documents\Workspaces\LLaMA'` devuelve `coder | all`, `planner | all`, `reviewer | subagent` y `sdd | primary`: OpenCode cargó la configuración y publica los agentes con el modo esperado.
 - `opencode api get '/api/agent/sdd?location[directory]=C:\Users\sebax\Documents\Workspaces\LLaMA'` devuelve los permisos efectivos: `edit *` deny, `subagent *` deny seguido de `allow` para `planner`, `coder`, `reviewer` y `explore`, y `shell` acotado a `python tools\sdd\validate.py *` (estado previo a T-006; tras T-006 el permiso se acota con `shell *` en `ask` más la lista blanca registrada en la evidencia de T-006).
@@ -104,3 +126,9 @@
 - T-008: `planner` conserva sus reglas `edit * deny` y `edit specs/** allow` previas; `coder` conserva `edit specs/** deny`, `edit docs/** deny` y `edit specs/*/tasks.md allow`. Ninguna regla `edit` se alteró y el cuerpo de ambos documentos quedó intacto.
 - T-008: la restricción es coherente con `docs\sdd\PROTOCOLO_OPERATIVO.md` §10, que atribuye la capacidad de lanzar subagentes solo a `sdd` («Solo lectura; puede lanzar subagentes»).
 - T-008: ambos archivos mantienen CRLF (39 CR y 39 LF cada uno) y salto de línea final (`planner.md` → `6F 2E 0D 0A`; `coder.md` → `61 2E 0D 0A`); `python tools\sdd\validate.py --all` devuelve `OK: sin hallazgos.` con código 0 y `git diff --check` no reporta hallazgos.
+- T-009: `.opencode/agents/sdd.md` (solo cuerpo; frontmatter intacto). Fila 6 de «Etapa, subagente y precondición» queda: `| 6 Implement | \`coder\` | G2 verificada (\`--gate G2\`) y spec en \`tasked\` | una tarea marcada \`[x]\` con evidencia |`. Regla 1 de «Reglas de orquestación» queda: «1. Verifica la compuerta previa con \`python tools\sdd\validate.py --spec SPEC-NNN --gate Gx\` y registra el código de salida. Si es distinto de \`0\`, detente y reporta el error de validación.». Las demás reglas, plantillas y filas no cambian.
+- T-009: `python tools\sdd\validate.py --all` devuelve `OK: sin hallazgos.` con código de salida 0; `git diff --check` sin hallazgos (código 0); el archivo conserva CRLF (112 CR y 112 LF) y termina en `73 2E 0D 0A`.
+- T-009 (ampliación, decisión del propietario: G2 se verifica, no se aprueba): la regla 2 de «Reglas de orquestación» queda: «2. No lances `coder` sin G2 verificada (`--gate G2`); no lances `reviewer` sin G3 completa.». Lectura de `.opencode/agents/sdd.md`: no queda ninguna ocurrencia de «G2 aprobada»; la regla 1 contiene «registra el código de salida».
+- T-010: `CHANGELOG.md`, solo la sección `## [Unreleased]`. Se sustituyó su contenido por la configuración final de SPEC-002: `Added` (delegación del ciclo SDD hacia `planner`, `coder`, `reviewer` y `explore`; sección de orquestación en `sdd.md`), `Changed` (`mode: all` en `planner` y `coder`; lista blanca de subagentes en `sdd`; shell acotado con regla general `ask` y lista blanca de validador, git de lectura, `git add` y `git commit`; `planner` y `coder` deniegan subagentes) y `Fixed` (alineación de la tabla de compuertas con PROTOCOLO §2 y adición de CA-007 a CA-010 con CB-001 alineado a G2). Las entradas de `Fixed` coinciden con el historial de `spec.md` (versiones 0.5.0 y 0.6.0).
+- T-010: verificación de alcance: `git diff -- CHANGELOG.md` muestra solo cambios dentro de `## [Unreleased]`; la sección `## [v0.2.0] - 2026-11-12` y todo lo anterior no cambian.
+- T-010: `python tools\sdd\validate.py --all` devuelve `OK: sin hallazgos.` con código de salida 0; `git diff --check` sin hallazgos (código 0); `CHANGELOG.md` conserva CRLF (107 CR y 107 LF) y termina en `6F 2E 0D 0A`.
