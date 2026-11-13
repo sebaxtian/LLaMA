@@ -5,6 +5,7 @@ import contextlib
 import io
 import re
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -19,6 +20,9 @@ VALID_DIR = FIXTURES / "valid" / "001-demo"
 INVALID_DIR = FIXTURES / "invalid" / "001-bad"
 G4_DIR = FIXTURES / "g4"
 COBERTURA_DIR = FIXTURES / "cobertura"
+G3_DIR = FIXTURES / "g3"
+MATRIZ_DIR = FIXTURES / "matriz"
+RAMA_DIR = FIXTURES / "rama"
 SPECS_ROOT = ROOT / "specs"
 
 
@@ -218,6 +222,96 @@ class TestCoberturaRF004(unittest.TestCase):
     def test_advertencia_de_cobertura_no_es_error(self):
         rep = run_main(COBERTURA_DIR / "faltante")
         self.assertFalse(rep.has_errors(), f"la cobertura solo advierte: {rep.findings}")
+
+
+class TestG3Tareas(unittest.TestCase):
+    """RF-001, RNF-003, CA-001: G3 exige que todas las tareas tengan la casilla [x]."""
+
+    def test_tarea_pendiente_con_g3_es_error(self):
+        rep = run_main(G3_DIR / "tarea-pendiente", gate="G3")
+        errores = [f for f in rep.findings if f.severity == "ERROR"]
+        self.assertTrue(rep.has_errors(), "una tarea sin [x] con G3 debe producir error")
+        self.assertTrue(
+            any("T-002" in f.message for f in errores),
+            f"el error debe nombrar la tarea pendiente T-002: {errores}",
+        )
+
+    def test_tareas_completas_con_g3_sin_errores(self):
+        rep = run_main(G3_DIR / "tareas-completas", gate="G3")
+        self.assertFalse(rep.has_errors(), f"errores inesperados: {rep.findings}")
+
+    def test_sin_tareas_con_g3_es_error(self):
+        rep = run_main(G3_DIR / "sin-tareas", gate="G3")
+        self.assertTrue(rep.has_errors(), "G3 sin tareas declaradas debe producir error")
+
+
+class TestMatrizEstados(unittest.TestCase):
+    """RF-002, CB-001, CA-002: solo cuenta como superada la celda PASADO con observación opcional."""
+
+    def test_pendiente_es_error(self):
+        rep = run_main(MATRIZ_DIR / "pendiente", gate="G4")
+        self.assertTrue(rep.has_errors(), "una fila PENDIENTE con G4 debe producir error")
+
+    def test_parcial_es_error(self):
+        rep = run_main(MATRIZ_DIR / "parcial", gate="G4")
+        self.assertTrue(rep.has_errors(), "una fila PARCIAL debe producir error")
+
+    def test_compuesta_no_pasado_con_parentesis_es_error(self):
+        rep = run_main(MATRIZ_DIR / "compuesta", gate="G4")
+        self.assertTrue(rep.has_errors(), "«NO PASADO (2 pruebas)» debe producir error")
+
+    def test_pasado_fallado_es_error(self):
+        rep = run_main(MATRIZ_DIR / "pasado-fallado", gate="G4")
+        self.assertTrue(rep.has_errors(), "«PASADO / FALLADO» debe producir error (CB-001)")
+
+    def test_sin_columna_estado_es_error(self):
+        rep = run_main(MATRIZ_DIR / "sin-columna-estado", gate="G4")
+        self.assertTrue(rep.has_errors(), "una tabla de trazabilidad sin columna de estado debe producir error")
+
+    def test_celda_vacia_es_error(self):
+        rep = run_main(MATRIZ_DIR / "celda-vacia", gate="G4")
+        self.assertTrue(rep.has_errors(), "una celda de estado vacía debe producir error")
+
+    def test_observacion_no_es_error(self):
+        rep = run_main(MATRIZ_DIR / "observacion", gate="G4")
+        self.assertFalse(rep.has_errors(), f"«PASADO (con observación O-16)» no debe producir error: {rep.findings}")
+
+    def test_tabla_ajena_no_es_error(self):
+        rep = run_main(MATRIZ_DIR / "tabla-ajena", gate="G4")
+        self.assertFalse(rep.has_errors(), f"una tabla «Brecha | Estado» no es de trazabilidad: {rep.findings}")
+
+
+def fake_git(current_branch: str):
+    """Sustituto de subprocess.run: simula la rama actual sin ejecutar Git real."""
+
+    def run(args, **kwargs):
+        out = ""
+        if args[:3] == ["git", "branch", "--show-current"]:
+            out = current_branch
+        elif args[:2] == ["git", "log"]:
+            out = "Spec: SPEC-001"
+        return types.SimpleNamespace(stdout=out)
+
+    return run
+
+
+def branch_errors_with_git(spec_dir: Path, current_branch: str) -> list[v.Finding]:
+    """Ejecuta --spec --git sobre spec_dir con una rama Git simulada y devuelve errores de rama."""
+    with mock.patch.object(v.subprocess, "run", side_effect=fake_git(current_branch)):
+        _, rep = invoke_main(["--spec", "SPEC-001", "--git"], spec_dir)
+    return [f for f in rep.findings if f.severity == "ERROR" and "rama" in f.message]
+
+
+class TestRamaEstado(unittest.TestCase):
+    """RF-003, CB-002, CA-003: released y superseded no comparan la rama declarada."""
+
+    def test_released_rama_eliminada_sin_error_de_rama(self):
+        errores = branch_errors_with_git(RAMA_DIR / "released-rama-eliminada", "feat/compuertas-completas")
+        self.assertEqual(errores, [], "una spec released no debe comparar su rama declarada")
+
+    def test_validated_rama_distinta_sigue_siendo_error(self):
+        errores = branch_errors_with_git(RAMA_DIR / "validated-rama-distinta", "feat/compuertas-completas")
+        self.assertTrue(errores, "una spec validated con rama distinta debe producir error de rama")
 
 
 class TestCodigosSalida(unittest.TestCase):

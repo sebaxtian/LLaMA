@@ -159,7 +159,7 @@ Códigos de salida: `0` válido, `1` error de validación, `2` error de uso.
 
 | Agente | Rol | Permisos |
 |---|---|---|
-| `sdd` | Orquestador, estado y diagnóstico | Solo lectura; puede lanzar subagentes |
+| `sdd` | Orquestador, estado y diagnóstico | Lectura de artefactos y código; puede lanzar subagentes y ejecutar bookkeeping Git (`git add`, `git commit`) de artefactos de control |
 | `planner` | Spec, clarify, plan, tasks | Escribe solo `specs/**` |
 | `coder` | TDD tarea por tarea | Escribe `src/**`, `tests/**`, `tools/**`, `tasks.md` |
 | `reviewer` | Auditoría independiente | Solo lectura de código; escribe solo `validation_report.md` |

@@ -10,6 +10,17 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- La compuerta G3 verifica que todas las tareas estén marcadas como completadas (`SPEC-005`).
+- La compuerta G4 evalúa el estado real de la matriz de trazabilidad, incluidas las celdas compuestas (`SPEC-005`).
+
+### Changed
+
+- La comprobación de rama con Git se omite en las specs publicadas, cuya rama ya se integró (`SPEC-005`).
+- SPEC-001 declara en sus criterios de aceptación la cobertura de los requisitos (`SPEC-005`).
+- El protocolo describe el bookkeeping Git de `sdd` limitado a artefactos de control (`SPEC-005`).
+
 ## [v0.4.0] - 2026-11-13
 
 ### Added

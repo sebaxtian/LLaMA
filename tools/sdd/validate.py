@@ -66,11 +66,19 @@ THREE_DIGIT_ID_RE = re.compile(rf"\b({'|'.join(ID_PREFIXES)})-([0-9]{{1,2}})\b")
 
 # Dictamen de validation_report.md (DEC-001): solo casillas de viñeta al inicio de línea.
 DICTAMEN_RE = re.compile(r"^\s*-\s*\[([ xX])\]\s*(NO CONVERGIDO|CONVERGIDO)\b", re.MULTILINE)
-# Celdas de tabla que indican una fila no superada (DEC-002).
-FAILING_CELLS = {"FALLADO", "NO PASADO"}
+# Columnas de estado de una tabla de trazabilidad (DEC-002). «Resultado» lo usan los fixtures de G4.
+STATUS_COLUMNS = {"estado", "resultado"}
+# Primera cabecera que identifica una tabla de trazabilidad (DEC-002).
+TRACE_FIRST_HEADERS = {"requisito", "criterio", "ca"}
+# Celda superada: PASADO con paréntesis de observación opcional (DEC-003, AMB-001).
+PASSED_CELL_RE = re.compile(r"^PASADO(\s*\([^()]*\))?$")
+# Casilla de tarea completada dentro del bloque «### T-NNN» (DEC-001 de SPEC-005).
+COMPLETED_RE = re.compile(r"^\s*-\s*\[[xX]\]\s*Completada\b", re.MULTILINE)
 # Compuertas y estados que exigen validation_report.md (DEC-003).
 GATES_REQUIRING_REPORT = {"G4", "G5", "G6"}
 STATES_REQUIRING_REPORT = {"validated", "released"}
+# Estados cuya rama declarada no se compara con Git (DEC-004, RF-003): ya integrados y su rama puede haberse eliminada.
+NO_BRANCH_CHECK_STATES = {"released", "superseded"}
 
 
 class Finding:
@@ -164,17 +172,61 @@ def parse_dictamen(text: str) -> dict[str, bool]:
     return result
 
 
-def failing_rows(text: str) -> list[str]:
-    """Líneas de tabla (que empiezan por «|») con una celda exactamente igual a FALLADO o NO PASADO."""
-    rows: list[str] = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped.startswith("|"):
+def _table_cells(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _normalize_cell(cell: str) -> str:
+    return re.sub(r"\s+", " ", cell).strip().upper()
+
+
+def not_passed_rows(text: str) -> list[str]:
+    """Entradas de error de las tablas de trazabilidad del reporte (DEC-002, DEC-003).
+
+    Solo se evalúan tablas cuya primera cabecera es Requisito, Criterio o CA. En ellas se usa la
+    columna Estado o Resultado y se revisan solo las filas de datos (no cabecera ni separador).
+    Devuelve una entrada por fila cuya celda de estado no es PASADO (con observación opcional),
+    y una entrada por tabla de trazabilidad sin columna de estado.
+    """
+    problems: list[str] = []
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        if not lines[i].strip().startswith("|"):
+            i += 1
             continue
-        cells = [c.strip() for c in stripped.strip("|").split("|")]
-        if any(c in FAILING_CELLS for c in cells):
-            rows.append(stripped)
-    return rows
+        block: list[str] = []
+        while i < len(lines) and lines[i].strip().startswith("|"):
+            block.append(lines[i].strip())
+            i += 1
+        if len(block) < 2:
+            continue
+        header = _table_cells(block[0])
+        if header[0].lower() not in TRACE_FIRST_HEADERS:
+            continue
+        status_idx = next((k for k, h in enumerate(header) if h.lower() in STATUS_COLUMNS), None)
+        if status_idx is None:
+            problems.append(f"tabla de trazabilidad sin columna de estado: {block[0]}")
+            continue
+        for row in block[2:]:
+            cells = _table_cells(row)
+            cell = cells[status_idx] if status_idx < len(cells) else ""
+            if not PASSED_CELL_RE.match(_normalize_cell(cell)):
+                problems.append(f"fila no superada en la matriz (estado distinto de PASADO o vacío): {row}")
+    return problems
+
+
+def incomplete_tasks(text: str) -> list[str]:
+    """Identificadores T-NNN de los bloques «### T-NNN» sin la casilla «Completada» marcada (DEC-001).
+
+    Función pura: la línea de progreso y cualquier casilla fuera de un bloque de tarea no cuentan.
+    """
+    pending: list[str] = []
+    for block in re.split(r"^(?=#{1,3}\s)", text, flags=re.MULTILINE):
+        m = re.match(r"#{2,3}\s+(T-\d{3})\b", block)
+        if m and not COMPLETED_RE.search(block):
+            pending.append(m.group(1))
+    return pending
 
 
 def _section(body: str, title: str) -> str:
@@ -314,7 +366,7 @@ def validate_plan(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
         rep.error(rel, "matriz de cobertura sin referencia a RF-NNN")
 
 
-def validate_tasks(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
+def validate_tasks(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | None = None) -> None:
     path = spec_dir / "tasks.md"
     rel = str(path.relative_to(ROOT))
     if not path.exists():
@@ -325,6 +377,12 @@ def validate_tasks(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     tasks = re.findall(r"#{2,3}\s+(T-\d{3})\b", text)
     if not tasks:
         rep.error(rel, "sin tareas (T-NNN)")
+
+    # G3 (RF-001): toda tarea debe tener su casilla «Completada» marcada.
+    # Solo se aplica cuando la compuerta solicitada es G3 (plan de SPEC-005).
+    if gate == "G3":
+        for tid in incomplete_tasks(text):
+            rep.error(rel, f"tarea {tid} no completada (casilla [x] ausente en «Completada») con G3")
 
     # Estimaciones 15-30
     for m in re.finditer(r"\*\*Estimación:\*\*\s*<?([0-9]+)", text):
@@ -400,8 +458,8 @@ def validate_report(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | Non
     elif not dictamen["CONVERGIDO"]:
         rep.error(rel, "dictamen CONVERGIDO no marcado (se requiere '- [x] CONVERGIDO')")
 
-    for row in failing_rows(text):
-        rep.error(rel, f"fila no superada en la matriz: {row}")
+    for problem in not_passed_rows(text):
+        rep.error(rel, problem)
 
 
 def validate_global(rep: Reporter) -> None:
@@ -500,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
             validate_clarify(target, spec_dirs[target], rep)
         if gate is None or int(gate[1]) >= 2:
             validate_plan(target, spec_dirs[target], rep)
-            validate_tasks(target, spec_dirs[target], rep)
+            validate_tasks(target, spec_dirs[target], rep, gate)
         if gate is None or int(gate[1]) >= 4:
             validate_report(target, spec_dirs[target], rep, gate)
         if args.git:
@@ -508,7 +566,7 @@ def main(argv: list[str] | None = None) -> int:
             spec_path = spec_dirs[target] / "spec.md"
             if spec_path.exists():
                 fm, _, _ = parse_frontmatter(read_text(spec_path))
-                if fm and fm.get("branch"):
+                if fm and fm.get("branch") and fm.get("status") not in NO_BRANCH_CHECK_STATES:
                     branch = fm["branch"]
             git_checks(target, rep, branch)
     else:
@@ -519,7 +577,7 @@ def main(argv: list[str] | None = None) -> int:
                 validate_clarify(spec_id, spec_dir, rep)
             if gate is None or int(gate[1]) >= 2:
                 validate_plan(spec_id, spec_dir, rep)
-                validate_tasks(spec_id, spec_dir, rep)
+                validate_tasks(spec_id, spec_dir, rep, gate)
             if gate is None or int(gate[1]) >= 4:
                 validate_report(spec_id, spec_dir, rep, gate)
 

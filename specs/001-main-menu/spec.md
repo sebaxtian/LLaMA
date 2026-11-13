@@ -72,18 +72,23 @@ SI el script seleccionado termina con un código de salida distinto de cero, ENT
 
 ### CA-001
 DADO al menos un archivo `.bat` en `src/`, CUANDO se inicia `main.bat`, ENTONCES se muestran las opciones numeradas en orden alfabético junto con la opción de salida.
+Cubre: `RF-001`, `RF-003`, `RNF-001`.
 
 ### CA-002
 DADO un menú mostrado, CUANDO el usuario introduce el número de un script válido, ENTONCES el script se ejecuta y se propaga su código de salida.
+Cubre: `RF-002`, `RNF-002`, `CB-002`.
 
 ### CA-003
 DADO un menú mostrado, CUANDO el usuario introduce una entrada no numérica o fuera de rango, ENTONCES se muestra un mensaje de error y se vuelve a solicitar la entrada.
+Cubre: `RF-004`.
 
 ### CA-004
 DADO `src/` sin archivos `.bat`, CUANDO se inicia `main.bat`, ENTONCES se muestra un mensaje informativo y solo la opción de salida.
+Cubre: `RF-005`, `CB-001`.
 
 ### CA-005
 DADO un menú mostrado y un script ejecutado, CUANDO el script termina, ENTONCES el menú se vuelve a mostrar salvo que se eligiera salir.
+Cubre: `RF-006`, `CB-003`.
 
 ## Aprobaciones
 
