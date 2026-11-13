@@ -9,7 +9,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-003 | Validación estricta de la compuerta G4 | released | feat/validacion-g4 | v0.3.1 | specs/003-validacion-g4/ |
 | SPEC-004 | Subagente documenter para correcciones normativas | released | feat/editor-documentacion | v0.4.0 | specs/004-editor-documentacion/ |
 | SPEC-005 | Compuertas completas y deuda residual | released | feat/compuertas-completas | v0.5.0 | specs/005-compuertas-completas/ |
-| SPEC-006 | Cierre de observaciones de documentación | validated | feat/observaciones-cierre |  | specs/006-observaciones-cierre/ |
+| SPEC-006 | Cierre de observaciones de documentación | released | feat/observaciones-cierre | v0.5.1 | specs/006-observaciones-cierre/ |
 
 ## Reglas
 
