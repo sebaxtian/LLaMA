@@ -114,7 +114,7 @@ Todo umbral debe tener número y unidad. Léxico ambiguo prohibido en `RF`/`RNF`
 ## 6. Aprobaciones
 
 - **G1**: el propietario aprueba `spec.md` y `clarify.md`.
-- **G4**: el propietario autoriza la implementación.
+- **G4**: el propietario aprueba la implementación validada (`validation_report.md` al 100 %).
 - **G6**: el propietario autoriza el release.
 - Línea de registro: `- Approved by: Agent Sebaxtian`.
 - Prohibida la autoaprobación por parte de agentes.
@@ -163,5 +163,6 @@ Códigos de salida: `0` válido, `1` error de validación, `2` error de uso.
 | `planner` | Spec, clarify, plan, tasks | Escribe solo `specs/**` |
 | `coder` | TDD tarea por tarea | Escribe `src/**`, `tests/**`, `tools/**`, `tasks.md` |
 | `reviewer` | Auditoría independiente | Solo lectura de código; escribe solo `validation_report.md` |
+| `documenter` | Correcciones editoriales y normativas | Escribe solo `docs/**` y `AGENTS.md`; sin terminal ni subagentes |
 
 Las skills (`sdd-lifecycle`, `ears-spec`, `sdd-plan-tasks`, `tdd-implement`, `llama-validation`) cargan el procedimiento detallado bajo demanda; `AGENTS.md` no las duplica.

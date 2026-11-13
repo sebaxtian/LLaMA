@@ -25,7 +25,7 @@ No se utilizarán ramas `release/*` en esta etapa.
 - No se permite crear commits directos de trabajo en `main`.
 - No se permite crear commits directos de trabajo en `dev`; los cambios deben llegar mediante `feat/*`, `fix/*` o `hotfix/*`.
 - Los únicos commits adicionales permitidos durante una integración son los commits de merge `--no-ff` y los commits de resolución de conflictos definidos en este documento.
-- El commit `chore: prepare release vX.Y.Z` está autorizado directamente en `dev` como excepción exclusiva para preparar un release; solo puede modificar `CHANGELOG.md`, debe realizarse después de las validaciones y debe integrarse posteriormente en `main` mediante `merge --no-ff`.
+- El commit `chore: prepare release vX.Y.Z` está autorizado directamente en `dev` como excepción exclusiva para preparar un release; solo puede modificar `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de la spec del release, debe realizarse después de las validaciones y debe integrarse posteriormente en `main` mediante `merge --no-ff`.
 - En un repositorio remoto, estas reglas deben implementarse mediante protección de ramas. En un repositorio local, deben cumplirse mediante este procedimiento operativo.
 
 ## Nombres de ramas
@@ -368,6 +368,7 @@ Reglas:
 - Un hotfix incrementa `PATCH`.
 - Un tag publicado no se mueve, elimina ni reutiliza.
 - El propietario autoriza el release y el incremento de versión.
+- Cuando un release combine correcciones con adiciones derivadas de ellas, el incremento se decide por la naturaleza dominante del cambio y lo autoriza el propietario.
 
 La autorización del propietario se registra en la sección del release de `CHANGELOG.md` mediante una entrada exacta:
 
@@ -394,8 +395,8 @@ Resolver conflictos en `dev`, completar el merge y repetir las validaciones. Des
 
 ```bash
 git status --short
-# Actualizar CHANGELOG.md en dev con la versión y fecha UTC.
-git add CHANGELOG.md
+# Actualizar CHANGELOG.md, specs/INDEX.md y el frontmatter de la spec del release.
+git add CHANGELOG.md specs/INDEX.md specs/NNN-slug/spec.md
 git commit -m "chore: prepare release vX.Y.Z"
 git switch main
 git merge --no-ff dev
