@@ -10,7 +10,7 @@
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
 - Base normativa vigente: v2, con constitución, `AGENTS.md`, protocolo operativo, flujo Git, plantillas e índice del corpus.
 - Repositorio Git inicializado. `main` y `dev` protegidas; todo cambio entra por Pull Request con `merge --no-ff`.
-- Estado de specs: `SPEC-001` a `SPEC-007` publicadas; `SPEC-008`, `SPEC-009` y `SPEC-010` validadas; `SPEC-011` en curso.
+- Estado de specs: `SPEC-001` a `SPEC-007` publicadas; `SPEC-008` a `SPEC-012` validadas; `SPEC-013` en curso con estado `tasked`.
 
 ## 2. Hardware objetivo
 
@@ -106,7 +106,7 @@ No asumir que el resultado de `llama-bench` representa el rendimiento de un serv
 
 ## 9. Git, MCP y secretos
 
-- Ramas de trabajo `feat/*`, `fix/*` y `hotfix/*`; empaquetado en `release/vX-Y-Z`.
+- Ramas de trabajo `feat/*`, `fix/*`, `hotfix/*` y `docs/*`; empaquetado en `release/vX-Y-Z`.
 - Integración exclusiva por Pull Request con `merge --no-ff`; rebase, squash y copia manual están prohibidos.
 - Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z` y commit objetivo verificado.
 - `main` y `dev` protegidas: sin commit ni push directos.

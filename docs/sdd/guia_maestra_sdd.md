@@ -1,6 +1,6 @@
 # Guía Maestra: Desarrollo Basado en Especificaciones (SDD)
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 Documentación visual completa sobre la arquitectura, metodología, ciclo de vida y orquestación agéntica del **Desarrollo Basado en Especificaciones (SDD)**.
 

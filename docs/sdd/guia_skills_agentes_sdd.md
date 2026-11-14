@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Gobernanza e Integración de Skills en Entornos Agénticos y SDD**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 Las **Skills** (Habilidades de Agente) representan un estándar abierto e interoperable de la industria adoptado por plataformas agénticas de vanguardia (tales como **OpenCode**, Claude Code, Cursor, GitHub Copilot y OpenAI Codex) para dotar a los modelos de lenguaje de **capacidades procedimentales, flujos de trabajo repetibles y conocimientos técnicos especializados bajo demanda**.
 
