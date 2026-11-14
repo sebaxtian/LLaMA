@@ -17,7 +17,7 @@
 - **Estimación:** <15 a 30> min.
 - **Validación:** `<comando o comprobación que debe pasar>`.
 - **Evidencia:** `<salida transcrita al cerrar la tarea>`.
-- [ ] **Completada.**
+- [ ] Completada.
 
 ### T-002
 
@@ -28,6 +28,6 @@
 - **Estimación:** <15 a 30> min.
 - **Validación:** `<comando o comprobación que debe pasar>`.
 - **Evidencia:** `<salida transcrita al cerrar la tarea>`.
-- [ ] **Completada.**
+- [ ] Completada.
 
 <!-- Prohibiciones de esta plantilla: tarea sin criterio de aceptación; tarea sin campo de evidencia; tarea que toque rutas fuera de su campo Archivos. -->

@@ -35,7 +35,7 @@ La autoridad se ordena en siete rangos y una categoría sin rango. El carácter 
 | 5 | `docs/sdd/plantillas/*.md` | Norma de forma de cada artefacto | `spec.md` prevalece sobre `clarify.md`, este sobre `plan.md`, este sobre `tasks.md`, este sobre `validation_report.md`, este sobre `informe_analitico.md` y este sobre `informe_auditoria.md` |
 | 6 | `specs/NNN-slug/*.md` | Contrato de la feature | `spec.md` prevalece sobre `clarify.md`, este sobre `plan.md`, este sobre `tasks.md` y este sobre `validation_report.md` |
 | 7 | `src/`, `tools/`, `tests/`, `.opencode/` | Implementación verificable | El código no prevalece sobre norma alguna; su divergencia se corrige en el código |
-| Sin rango | Guías de `docs/sdd/`, informes de análisis, informes de auditoría, `README.md`, `MEMORY.md`, `docs/sdd/README.md` y `CHANGELOG.md` | Referencia no normativa; el índice `docs/sdd/README.md` declara el desempate del rango y `CHANGELOG.md` registra G6 | Sin precedencia: no fija reglas |
+| Sin rango | Guías de `docs/sdd/`, informes de análisis, informes de auditoría, `README.md`, `MEMORY.md`, `docs/sdd/README.md` y `CHANGELOG.md`, y el documento maestro técnico de `docs/` | Referencia no normativa; el índice `docs/sdd/README.md` declara el desempate del rango y `CHANGELOG.md` registra G6 | Sin precedencia: no fija reglas |
 
 Reglas de resolución:
 
@@ -376,7 +376,7 @@ El reporte de validación es append-only después de G4: el registro de G5 y G6 
 | `docs/sdd/plantillas/validation_report.md` | 5 | Sustitución sin casilla de aprobación | Sustituido |
 | `docs/sdd/plantillas/informe_analitico.md` | 5 | Creación | Creado |
 | `docs/sdd/plantillas/informe_auditoria.md` | 5 | Creación | Creado |
-| `docs/sdd/README.md` | 5 como índice; referencia no normativa en su contenido | Sustitución | Sustituido con tabla de autoridad e inventario |
+| `docs/sdd/README.md` | Sin rango | Sustitución | Sustituido con tabla de autoridad e inventario |
 | `README.md` | Sin rango | Sustitución | Sustituido con el estado real del repositorio |
 | `MEMORY.md` | Sin rango | Sustitución | Sustituido sin hechos obsoletos |
 | `CHANGELOG.md` | Sin rango | Sustitución | Sustituido con las entradas de `Unreleased` |

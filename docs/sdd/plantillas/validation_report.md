@@ -27,3 +27,4 @@ El único valor que converge es `PASADO`; cualquier otro valor abre una brecha e
 ## Dictamen
 
 - [ ] `CONVERGIDO` (100 % de requisitos y casos borde con evidencia `PASADO`).
+- [ ] `NO CONVERGIDO`.

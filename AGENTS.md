@@ -42,7 +42,7 @@ Compuertas: G1 al cerrar Clarify, G2 al cerrar Tasks, G3 al cerrar Implement, G4
 Cada requisito se redacta en notación EARS y mantiene la cadena `RF/CB → CA → T → evidencia`.
 Un cambio de requisito posterior a Clarify devuelve la spec a `draft` y exige nueva clarificación.
 La numeración de identificadores usa tres dígitos y un identificador no se reutiliza.
-Rol de auditoría: lectura de la base completa, sin edición de requisitos y sin aprobación de compuertas; su implementación en `.opencode/` corresponde al bloque B3.
+Rol `auditor` (auditoría): lectura de la base completa, sin edición de requisitos y sin aprobación de compuertas; su implementación en `.opencode/` corresponde al bloque B3.
 
 ## Aprobaciones
 
