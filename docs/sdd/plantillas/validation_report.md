@@ -15,8 +15,8 @@
 
 | Requisito | CA | Prueba / comando | Evidencia | Estado |
 |---|---|---|---|---|
-| `RF-001` | `CA-001` | <comando> | <salida o extracto> | `PASADO` |
-| `CB-001` | `CA-001` | <comando> | <salida o extracto> | `PASADO` |
+| `RF-001` | `CA-001` | <comando> | <salida o extracto> | PASADO |
+| `CB-001` | `CA-001` | <comando> | <salida o extracto> | PASADO |
 
 El único valor que converge es `PASADO`; cualquier otro valor abre una brecha en la sección siguiente.
 
@@ -26,5 +26,5 @@ El único valor que converge es `PASADO`; cualquier otro valor abre una brecha e
 
 ## Dictamen
 
-- [ ] `CONVERGIDO` (100 % de requisitos y casos borde con evidencia `PASADO`).
-- [ ] `NO CONVERGIDO`.
+- [ ] CONVERGIDO (100 % de requisitos y casos borde con evidencia PASADO).
+- [ ] NO CONVERGIDO.
