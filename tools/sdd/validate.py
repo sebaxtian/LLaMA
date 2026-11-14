@@ -133,6 +133,8 @@ HISTORY_COLUMNS = ("fecha", "transici", "origen", "destino", "responsable", "evi
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 # Rama de integración de G5 (§13): el merge de la rama de trabajo se resuelve desde `dev`.
 INTEGRATION_BRANCH = "dev"
+# Mensaje de merge que declara la rama integrada; si nombra otra, la integración no corresponde.
+MERGE_MESSAGE_RE = re.compile(r"Merge (?:remote-tracking )?branch '([^']+)'")
 # C-11: comprobaciones que el validador no verifica (§14 del protocolo).
 UNVERIFIED_CHECKS = [
     "la veracidad de la evidencia transcrita en los artefactos",
@@ -828,7 +830,12 @@ def validate_release(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | No
 
 
 def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
-    """C-09: integración de dos padres, validación posterior y rama ausente (RF-013, CB-012)."""
+    """C-09: merge en `dev`, dos padres, validación posterior y rama ausente (RF-013, CB-012).
+
+    La rama de trabajo ya está eliminada cuando se verifica G5, de modo que no se resuelve
+    su referencia: la punta integrada es el segundo padre del merge de `dev`. El mensaje del
+    merge solo se contrasta cuando nombra una rama.
+    """
     fm, _ = load_spec(spec_dir)
     if fm is None:
         return
@@ -837,6 +844,9 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     report_rel = spec_relative(report_path)
     report = read_text(report_path) if report_path.exists() else ""
     branch = fm.get("branch", "").strip().strip('"')
+    if not branch:
+        emit(rep, spec_id, "C-09", rel_path,
+             "G5: la spec no declara la rama de trabajo que la compuerta debe verificar")
     # El merge se resuelve desde dev: la integración de T7 ocurre en esa rama (§13).
     result = run_git(["log", "--merges", "-1", "--format=%H", INTEGRATION_BRANCH])
     sha = (result.stdout or "").strip() if result is not None and result.returncode == 0 else ""
@@ -851,16 +861,23 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
         emit(rep, spec_id, "C-09", rel_path,
              f"G5: el commit {sha[:7]} no tiene dos padres")
         return
-    # El merge debe integrar la rama declarada por la spec: su punta es uno de los padres.
-    if branch:
-        tip = run_git(["rev-parse", branch])
-        tip_sha = (tip.stdout or "").strip() if tip is not None and tip.returncode == 0 else ""
-        if not re.fullmatch(r"[0-9a-f]{7,40}", tip_sha):
+    # El segundo padre del merge identifica la rama integrada y debe ser un commit válido.
+    integrated = parent_list[1]
+    if not re.fullmatch(r"[0-9a-f]{40}", integrated):
+        emit(rep, spec_id, "C-09", rel_path,
+             f"G5: el segundo padre del merge {sha[:7]} no es un commit válido: «{integrated}»")
+    else:
+        exists = run_git(["cat-file", "-e", f"{integrated}^{{commit}}"])
+        if exists is None or exists.returncode != 0:
             emit(rep, spec_id, "C-09", rel_path,
-                 f"G5: no se pudo resolver la punta de la rama declarada {branch}")
-        elif tip_sha not in parent_list:
-            emit(rep, spec_id, "C-09", rel_path,
-                 f"G5: el merge {sha[:7]} de dev no integra la rama declarada {branch}")
+                 f"G5: el segundo padre {integrated[:7]} del merge {sha[:7]} no es un commit válido")
+    # El mensaje del merge se usa solo cuando nombra una rama; su ausencia no es defecto.
+    message = run_git(["show", "-s", "--format=%B", sha])
+    text = (message.stdout or "") if message is not None and message.returncode == 0 else ""
+    declared = MERGE_MESSAGE_RE.search(text)
+    if declared and branch and declared.group(1) != branch:
+        emit(rep, spec_id, "C-09", rel_path,
+             f"G5: el merge integra la rama `{declared.group(1)}` y la spec declara `{branch}`")
     row = None
     for line in report.splitlines():
         if re.match(r"^\s*-\s*G5\s*:", line):

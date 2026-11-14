@@ -578,7 +578,8 @@ def git_stub(
     tag_message: str | None = None,
     target_sha: str = TARGET_SHA,
     dev_merge: str = MERGE_SHA,
-    branch_tip: str = PARENT_TWO,
+    merge_message: str | None = None,
+    second_parent_valid: bool = True,
 ) -> GitStub:
     """Función de Git inyectable con el texto preparado de cada consulta."""
     local = ["main", "dev"] + ([work_branch] if branch_present else [])
@@ -603,16 +604,19 @@ def git_stub(
     parents = f"{PARENT_ONE} {PARENT_TWO}"
     merge_line = f"{MERGE_SHA} {PARENT_ONE} {PARENT_TWO}"
     remote_answer = (0, TARGET_SHA, "") if remote_present else (1, "", "fatal: Needed a single revision")
+    commit_message = merge_message or f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n"
+    parent_object = (0, "", "") if second_parent_valid else (1, "", "fatal: Not a valid object name")
 
     rules = [
         (_git_rule("--show-current"), (0, current_branch, "")),
         (_git_rule("verify-commit"), verify),
         (_git_rule("ssh-keygen"), (0, authorized_list, "")),
+        (_git_rule("cat-file", "^{commit}"), parent_object),
         (_git_rule("cat-file"), (0, tag_type, "")),
         (_git_rule("--format=%P"), (0, parents, "")),
         (_git_rule("%P"), (0, parents, "")),
-        (_git_rule("--format=%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
-        (_git_rule("%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
+        (_git_rule("--format=%B"), (0, commit_message, "")),
+        (_git_rule("%B"), (0, commit_message, "")),
         (_git_rule("--merges"), (0, dev_merge, "")),
         (_git_rule("--parents"), (0, merge_line, "")),
         (_git_rule("-S"), (0, approval_sha, "")),
@@ -622,7 +626,6 @@ def git_stub(
         (_git_rule("for-each-ref", "refs/heads"), (0, heads, "")),
         (_git_rule("for-each-ref"), (0, tag_names, "")),
         (_git_rule("rev-parse", "refs/remotes"), remote_answer),
-        (_git_rule("rev-parse", work_branch), (0, branch_tip, "")),
         (_git_rule("rev-parse"), (0, target_sha, "")),
         (_git_rule("branch"), (0, branch_list, "")),
         (_git_rule("merge-base"), (0, "", "")),
@@ -1036,22 +1039,31 @@ class TestSucesion(unittest.TestCase):
 
 
 class TestG5Integracion(unittest.TestCase):
-    """RF-013, CB-012: G5 sin consulta de red."""
+    """RF-013, CB-012: G5 sin consulta de red sobre un estado de rama ya eliminada."""
 
-    def g5_run(self, fixture: str, stub: GitStub) -> RunResult:
+    def g5_run(self, fixture: str, stub: GitStub, *, mutate=None) -> RunResult:
         root = make_repo(self)
-        spec_dir = add_spec(root, "SPEC-010", read_fixture("g5", fixture, "spec.md"), slug=f"g5-{fixture}")
+        text = read_fixture("g5", fixture, "spec.md")
+        if mutate:
+            text = mutate(text)
+        spec_dir = add_spec(root, "SPEC-010", text, slug=f"g5-{fixture}")
         write_doc(spec_dir / "validation_report.md", read_fixture("g5", fixture, "validation_report.md"))
         return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G5"], stub)
 
     def test_g5_merge_dos_padres(self):
+        """RF-013, CA-012: merge con segundo padre y rama ya eliminada, sin resolver la rama."""
         stub = git_stub()
         result = self.g5_run("merge-dos-padres", stub)
         self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
-        self.assertTrue([call for call in stub.calls if "branch" in call or "refs/remotes" in call],
+        self.assertTrue([call for call in stub.calls if "refs/heads" in call or "refs/remotes" in call],
                         "G5 debe comprobar las ramas locales y las referencias remotas de seguimiento")
         self.assertFalse([call for call in stub.calls if "ls-remote" in call],
                          "G5 no debe consultar el remoto")
+        self.assertFalse(
+            [call for call in stub.calls
+             if "rev-parse" in call and WORK_BRANCH in call and "refs/remotes" not in call],
+            "G5 no debe resolver la referencia de la rama: debe estar eliminada",
+        )
         self.assertFalse([m for m in result.messages("ERROR") if "G5" in m])
 
     def test_g5_rama_presente_falla(self):
@@ -1071,9 +1083,31 @@ class TestG5Integracion(unittest.TestCase):
                       f"el hallazgo debe nombrar la rama dev: {result.reporter.findings}")
 
     def test_g5_merge_no_integra_la_rama_falla(self):
-        """RF-013: el merge debe integrar la rama de trabajo declarada por la spec."""
-        result = self.g5_run("merge-dos-padres", git_stub(branch_tip="d" * 40))
-        assert_error(self, result, WORK_BRANCH)
+        """RF-013: si el mensaje del merge nombra otra rama, la integración no corresponde."""
+        result = self.g5_run(
+            "merge-dos-padres",
+            git_stub(merge_message="Merge branch 'feat/otra-rama' into dev"),
+        )
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        combined = " ".join(f"{f.message} {f.path}" for f in result.errors)
+        self.assertIn("feat/otra-rama", combined,
+                      f"el hallazgo debe nombrar la rama integrada: {result.reporter.findings}")
+        self.assertIn(WORK_BRANCH, combined,
+                      f"el hallazgo debe nombrar la rama declarada: {result.reporter.findings}")
+
+    def test_g5_segundo_padre_invalido_falla(self):
+        """RF-013: el segundo padre del merge debe ser un commit válido."""
+        result = self.g5_run("merge-dos-padres", git_stub(second_parent_valid=False))
+        assert_error(self, result, "segundo padre")
+
+    def test_g5_sin_rama_declarada_falla(self):
+        """RF-013: una spec sin rama declarada no puede eludir G5."""
+        result = self.g5_run(
+            "merge-dos-padres",
+            git_stub(),
+            mutate=lambda text: set_frontmatter(text, branch='""'),
+        )
+        assert_error(self, result, "rama")
 
 
 def unverified_items(output: str) -> list[str]:
