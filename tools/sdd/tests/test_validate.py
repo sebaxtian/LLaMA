@@ -517,6 +517,21 @@ def move_approval_to_unreleased(changelog: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def add_g1_casilla_to_release(changelog: str) -> str:
+    """Escribe una casilla de G1 dentro de la entrada del release (RF-020)."""
+    return changelog.replace(
+        APPROVAL_LINE, f"{APPROVAL_LINE}\n- [x] G1: `{APPROVAL_LINE}` (2026-11-14)", 1
+    )
+
+
+def add_g6_casilla_to_spec(text: str) -> str:
+    """Escribe una línea de aprobación de G6 dentro de las aprobaciones de `spec.md` (RF-020)."""
+    marker = "## Aprobaciones\n"
+    return text.replace(
+        marker, f"{marker}\n- [x] G6: `{APPROVAL_LINE}` (2026-11-14)\n", 1
+    )
+
+
 class GitStub:
     """Sustituto de `subprocess.run` con respuestas preparadas por subcadena de comando.
 
@@ -562,6 +577,8 @@ def git_stub(
     tag_type: str = "tag",
     tag_message: str | None = None,
     target_sha: str = TARGET_SHA,
+    dev_merge: str = MERGE_SHA,
+    branch_tip: str = PARENT_TWO,
 ) -> GitStub:
     """Función de Git inyectable con el texto preparado de cada consulta."""
     local = ["main", "dev"] + ([work_branch] if branch_present else [])
@@ -596,7 +613,7 @@ def git_stub(
         (_git_rule("%P"), (0, parents, "")),
         (_git_rule("--format=%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
         (_git_rule("%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
-        (_git_rule("--merges"), (0, MERGE_SHA, "")),
+        (_git_rule("--merges"), (0, dev_merge, "")),
         (_git_rule("--parents"), (0, merge_line, "")),
         (_git_rule("-S"), (0, approval_sha, "")),
         (_git_rule(f"{approval_sha}:"), (0, approval_content, "")),
@@ -605,6 +622,7 @@ def git_stub(
         (_git_rule("for-each-ref", "refs/heads"), (0, heads, "")),
         (_git_rule("for-each-ref"), (0, tag_names, "")),
         (_git_rule("rev-parse", "refs/remotes"), remote_answer),
+        (_git_rule("rev-parse", work_branch), (0, branch_tip, "")),
         (_git_rule("rev-parse"), (0, target_sha, "")),
         (_git_rule("branch"), (0, branch_list, "")),
         (_git_rule("merge-base"), (0, "", "")),
@@ -737,6 +755,15 @@ class TestAprobacionCompuertas(unittest.TestCase):
         self.assertIn("aprobaci", combined,
                       f"el hallazgo debe nombrar la casilla de aprobación del reporte: {result.reporter.findings}")
 
+    def test_g6_en_spec_falla(self):
+        """RF-020: la línea de G6 solo se admite en la entrada del release de CHANGELOG.md."""
+        result = self.approval_run("marcada", mutate=add_g6_casilla_to_spec)
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        combined = " ".join(f"{f.path} {f.message}" for f in result.errors).lower()
+        self.assertIn("g6", combined,
+                      f"el hallazgo debe nombrar G6 fuera de su ubicación: {result.reporter.findings}")
+        self.assertIn("changelog", combined)
+
 
 class TestAutoridadAprobacion(unittest.TestCase):
     """RF-010, CB-001, CB-015: autoría por commit firmado con clave autorizada."""
@@ -832,6 +859,22 @@ class TestG6Release(unittest.TestCase):
     def test_released_sin_aprobacion_g6_falla(self):
         result = self.g6_run("anotado", gate=None, mutate_changelog=remove_approval)
         assert_error(self, result, "g6", "changelog", "aprobaci", any_of=True)
+
+    def test_casilla_g1_en_entrada_de_release_falla(self):
+        """RF-020: las casillas de G1 y G4 solo se admiten en la sección de aprobaciones de spec.md."""
+        result = self.g6_run("anotado", mutate_changelog=add_g1_casilla_to_release)
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        combined = " ".join(f"{f.path} {f.message}" for f in result.errors).lower()
+        self.assertIn("g1", combined,
+                      f"el hallazgo debe nombrar G1 fuera de su ubicación: {result.reporter.findings}")
+        self.assertIn("changelog", combined)
+
+    def test_ubicacion_unica_sin_hallazgo(self):
+        """RF-020: G1 y G4 en spec.md y G6 en CHANGELOG.md no producen hallazgo de ubicación."""
+        result = self.g6_run("anotado")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages() if "C-13" in m],
+                         f"no debe haber hallazgo de ubicación única: {result.reporter.findings}")
 
 
 class TestCoberturaG2(unittest.TestCase):
@@ -982,6 +1025,15 @@ class TestSucesion(unittest.TestCase):
         sin_estado = self.succession_run("sin-estado")
         assert_error(self, sin_estado, "superseded")
 
+    def test_sucesion_sin_destino_falla(self):
+        """RF-017 inverso: una spec en `superseded` debe declarar `superseded_by`."""
+        reciproca = self.succession_run("reciproca")
+        self.assertEqual(reciproca.code, 0, f"hallazgos: {reciproca.reporter.findings}")
+        sin_destino = self.succession_run("sin-destino")
+        self.assertEqual(sin_destino.code, 1,
+                         "una spec superseded sin superseded_by debe devolver código 1")
+        assert_error(self, sin_destino, "superseded", "superseded_by")
+
 
 class TestG5Integracion(unittest.TestCase):
     """RF-013, CB-012: G5 sin consulta de red."""
@@ -1009,6 +1061,19 @@ class TestG5Integracion(unittest.TestCase):
     def test_g5_rama_remota_seguimiento_falla(self):
         result = self.g5_run("rama-remota-seguimiento", git_stub(remote_present=True))
         assert_error(self, result, "remot", "origin/", any_of=True)
+
+    def test_g5_merge_fuera_de_dev_falla(self):
+        """RF-013, CB-004: el merge debe resolverse desde `dev`."""
+        result = self.g5_run("merge-dos-padres", git_stub(dev_merge=""))
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        combined = " ".join(f"{f.message} {f.path}" for f in result.errors).lower()
+        self.assertIn("dev", combined,
+                      f"el hallazgo debe nombrar la rama dev: {result.reporter.findings}")
+
+    def test_g5_merge_no_integra_la_rama_falla(self):
+        """RF-013: el merge debe integrar la rama de trabajo declarada por la spec."""
+        result = self.g5_run("merge-dos-padres", git_stub(branch_tip="d" * 40))
+        assert_error(self, result, WORK_BRANCH)
 
 
 def unverified_items(output: str) -> list[str]:
@@ -1049,10 +1114,17 @@ class TestAlcance(unittest.TestCase):
                       f"la ejecución debe imprimir las comprobaciones no verificadas: {result.output}")
 
     def test_alcance_sin_bloque_no_verificadas_no_es_conforme(self):
-        result = self.aggregated()
-        items = unverified_items(result.output)
-        self.assertTrue(items,
-                        "una salida sin la lista de comprobaciones no verificadas no se acepta como conforme")
+        """RF-019, C-11: una salida sin la lista de no verificadas no es conforme."""
+        conformant = getattr(v, "scope_is_conformant", None)
+        self.assertIsNotNone(conformant, "C-11 debe ofrecer el predicado de conformidad del alcance")
+        with mock.patch.object(
+            v, "print_scope", lambda executed, unverified: print("Comprobaciones ejecutadas:")
+        ):
+            result = self.aggregated()
+        self.assertNotIn("comprobaciones no verificadas", result.output.lower(),
+                         f"la salida inducida no debe declarar el bloque: {result.output}")
+        self.assertFalse(conformant(result.output),
+                         "una salida sin el bloque de comprobaciones no verificadas no es conforme")
 
     def test_hallazgo_con_severidad_ruta_y_comprobacion(self):
         root = make_repo(self)

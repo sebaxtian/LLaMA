@@ -131,6 +131,8 @@ HISTORY_HEADING = "### Historial de transiciones"
 HISTORY_COLUMNS = ("fecha", "transici", "origen", "destino", "responsable", "evidencia")
 # Entrada del release en el registro de cambios.
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+# Rama de integración de G5 (§13): el merge de la rama de trabajo se resuelve desde `dev`.
+INTEGRATION_BRANCH = "dev"
 # C-11: comprobaciones que el validador no verifica (§14 del protocolo).
 UNVERIFIED_CHECKS = [
     "la veracidad de la evidencia transcrita en los artefactos",
@@ -518,6 +520,20 @@ def validate_approvals(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | 
         if line is not None and gate == which:
             check_approval_commit(spec_id, rel_path, rep, which, line)
 
+    # C-13: en spec.md solo se admiten las casillas de G1 y G4; la línea de G6 carece de ubicación.
+    for line in _section(body, r"Aprobaciones").splitlines():
+        stripped = line.strip()
+        if APPROVAL_TEXT not in stripped or APPROVAL_CASILLA_RE.match(stripped):
+            continue
+        detail = (
+            "la línea de aprobación de G6 está en spec.md y su única ubicación es la "
+            "entrada del release de CHANGELOG.md"
+            if "G6" in stripped
+            else "la línea de aprobación no lleva el identificador de G1 o G4; "
+                 "su ubicación es la sección de aprobaciones con la compuerta"
+        )
+        emit(rep, spec_id, "C-13", rel_path, detail)
+
 
 # ----------------------------------------------------------- C-04, C-05
 
@@ -680,6 +696,9 @@ def validate_supersession(spec_id: str, spec_dir: Path, rep: Reporter,
                 emit(rep, spec_id, "C-08", rel_path,
                      f"`superseded_by: {superseded_by}` no es recíproco: {superseded_by} no declara "
                      f"`supersedes: {spec_id}`")
+    elif status == "superseded":
+        emit(rep, spec_id, "C-08", rel_path,
+             "la spec está en estado `superseded` y no declara `superseded_by`")
 
 
 # ----------------------------------------------------------- C-02 y C-10
@@ -740,6 +759,12 @@ def validate_release(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | No
         emit(rep, spec_id, "C-02", changelog_rel,
              f"CHANGELOG.md no contiene la entrada del release {release}")
         return
+    # C-13: las casillas de G1 y G4 no tienen ubicación en la entrada del release.
+    misplaced = sorted(set(re.findall(r"^\s*-\s*\[[xX]\]\s*(G1|G4)\s*:", entry, re.MULTILINE)))
+    for misplaced_gate in misplaced:
+        emit(rep, spec_id, "C-13", changelog_rel,
+             f"la casilla de {misplaced_gate} está en la entrada del release de CHANGELOG.md "
+             "y su única ubicación es la sección de aprobaciones de spec.md")
     if APPROVAL_TEXT not in entry:
         emit(rep, spec_id, "C-02", changelog_rel,
              f"la entrada {release} no contiene la viñeta «{APPROVAL_TEXT}» de G6")
@@ -811,11 +836,14 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     report_path = spec_dir / "validation_report.md"
     report_rel = spec_relative(report_path)
     report = read_text(report_path) if report_path.exists() else ""
-    result = run_git(["log", "--merges", "-1", "--format=%H"])
+    branch = fm.get("branch", "").strip().strip('"')
+    # El merge se resuelve desde dev: la integración de T7 ocurre en esa rama (§13).
+    result = run_git(["log", "--merges", "-1", "--format=%H", INTEGRATION_BRANCH])
     sha = (result.stdout or "").strip() if result is not None and result.returncode == 0 else ""
     if not re.fullmatch(r"[0-9a-f]{7,40}", sha):
         emit(rep, spec_id, "C-09", rel_path,
-             "G5: no hay una integración con merge en el historial local")
+             f"G5: no hay una integración con merge alcanzable desde `{INTEGRATION_BRANCH}` "
+             "en el historial local")
         return
     parents = run_git(["show", "-s", "--format=%P", sha])
     parent_list = (parents.stdout or "").split() if parents is not None and parents.returncode == 0 else []
@@ -823,6 +851,16 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
         emit(rep, spec_id, "C-09", rel_path,
              f"G5: el commit {sha[:7]} no tiene dos padres")
         return
+    # El merge debe integrar la rama declarada por la spec: su punta es uno de los padres.
+    if branch:
+        tip = run_git(["rev-parse", branch])
+        tip_sha = (tip.stdout or "").strip() if tip is not None and tip.returncode == 0 else ""
+        if not re.fullmatch(r"[0-9a-f]{7,40}", tip_sha):
+            emit(rep, spec_id, "C-09", rel_path,
+                 f"G5: no se pudo resolver la punta de la rama declarada {branch}")
+        elif tip_sha not in parent_list:
+            emit(rep, spec_id, "C-09", rel_path,
+                 f"G5: el merge {sha[:7]} de dev no integra la rama declarada {branch}")
     row = None
     for line in report.splitlines():
         if re.match(r"^\s*-\s*G5\s*:", line):
@@ -838,7 +876,6 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     if "sin hallazgos" not in row.lower():
         emit(rep, spec_id, "C-09", report_rel,
              "G5: la validación posterior a la integración no declara «sin hallazgos»")
-    branch = fm.get("branch", "").strip().strip('"')
     if not branch:
         return
     heads = run_git(["for-each-ref", "refs/heads", "--format=%(refname:short)"])
@@ -856,14 +893,50 @@ def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
 # ------------------------------------------------------------------- C-11
 
 
+def render_scope(executed: list[str], unverified: list[str]) -> str:
+    """Texto del alcance: lista de comprobaciones ejecutadas y de no verificadas (DEC-010)."""
+    lines = ["", "Comprobaciones ejecutadas:"]
+    lines += [f"  {item}" for item in executed]
+    lines += ["", "Comprobaciones no verificadas:"]
+    lines += [f"  {item}" for item in unverified]
+    return "\n".join(lines)
+
+
+def unverified_entries(output: str) -> list[str]:
+    """Entradas de la lista de comprobaciones no verificadas de una salida del validador."""
+    entries: list[str] = []
+    collecting = False
+    for line in output.splitlines():
+        if "comprobaciones no verificadas" in line.lower():
+            collecting = True
+            continue
+        if not collecting:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith("[") or stripped.startswith("Comprobaciones"):
+            if entries:
+                break
+            continue
+        entries.append(stripped)
+    return entries
+
+
+def scope_is_conformant(output: str) -> bool:
+    """C-11: la salida declara las comprobaciones ejecutadas y las no verificadas con contenido."""
+    lowered = output.lower()
+    if "comprobaciones ejecutadas" not in lowered:
+        return False
+    if "comprobaciones no verificadas" not in lowered:
+        return False
+    return bool(unverified_entries(output))
+
+
 def print_scope(executed: list[str], unverified: list[str]) -> None:
     """C-11: imprime el alcance exacto de la ejecución (RF-018, DEC-010)."""
-    print("\nComprobaciones ejecutadas:")
-    for item in executed:
-        print(f"  {item}")
-    print("\nComprobaciones no verificadas:")
-    for item in unverified:
-        print(f"  {item}")
+    text = render_scope(executed, unverified)
+    if not scope_is_conformant(text):
+        print("[ERROR] alcance: la declaración de comprobaciones está incompleta")
+    print(text)
 
 
 def executed_scope(gate: str | None, aggregate: bool, with_git: bool) -> list[str]:
@@ -888,7 +961,7 @@ def executed_scope(gate: str | None, aggregate: bool, with_git: bool) -> list[st
     if gate == "G6":
         checks.append("G6: tag anotado, mensaje, commit objetivo, INDEX y auditoría")
     if gate == "G5":
-        checks.append("G5: merge de dos padres, validación posterior y rama ausente")
+        checks.append("G5: merge de dos padres en dev, integración de la rama, validación posterior y rama ausente")
     if with_git:
         checks.append("rama de trabajo y cuerpo del commit de implementación")
     return checks
