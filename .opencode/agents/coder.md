@@ -1,18 +1,81 @@
 ---
-description: Implementa tareas aprobadas con TDD, una por invocación. Invocable por sdd como subagente o como agente primario. Edita código, tests y tasks.md.
+description: Implementa tareas aprobadas con TDD, una por invocacion. Edita codigo, tests y tasks.md.
 mode: all
 permissions:
   - action: edit
-    resource: "specs/**"
+    resource: '*'
+    effect: deny
+  - action: read
+    resource: '**'
+    effect: allow
+  - action: read
+    resource: '.env'
     effect: deny
   - action: edit
-    resource: "docs/**"
+    resource: 'docs/**'
     effect: deny
   - action: edit
-    resource: "specs/*/tasks.md"
+    resource: 'AGENTS.md'
+    effect: deny
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: deny
+  - action: edit
+    resource: 'opencode.jsonc'
+    effect: deny
+  - action: edit
+    resource: '.opencode/**'
+    effect: deny
+  - action: edit
+    resource: '.github/**'
+    effect: deny
+  - action: edit
+    resource: '.env'
+    effect: deny
+  - action: edit
+    resource: 'specs/**'
+    effect: deny
+  - action: edit
+    resource: 'src/**'
+    effect: allow
+  - action: edit
+    resource: 'tests/**'
+    effect: allow
+  - action: edit
+    resource: 'tools/**'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/tasks.md'
+    effect: allow
+  - action: shell
+    resource: '*'
+    effect: deny
+  - action: shell
+    resource: 'git status **'
+    effect: allow
+  - action: shell
+    resource: 'git log **'
+    effect: allow
+  - action: shell
+    resource: 'git diff **'
+    effect: allow
+  - action: shell
+    resource: 'git show **'
+    effect: allow
+  - action: shell
+    resource: 'git rev-parse **'
+    effect: allow
+  - action: shell
+    resource: 'git branch **'
+    effect: allow
+  - action: shell
+    resource: 'python tools\sdd\validate.py **'
+    effect: allow
+  - action: shell
+    resource: 'python -m unittest **'
     effect: allow
   - action: subagent
-    resource: "*"
+    resource: '*'
     effect: deny
 ---
 
@@ -37,3 +100,6 @@ Reglas:
 - Nunca modificas `llama.cpp/`, `bin/`, `models/` ni `.env`.
 - Los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo.
 - Cuando `sdd` te invoque como subagente, implementa solo la tarea indicada en la solicitud y devuelve la evidencia.
+## Precedencia de permisos
+
+La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. La ruta no declarada está denegada. Una concesión de escritura no autoriza a declarar compuertas.

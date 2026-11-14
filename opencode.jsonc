@@ -38,6 +38,12 @@
     ],
   },
 
+  // Precedencia de permisos:
+  // - La denegación explícita prevalece sobre cualquier concesión.
+  // - La ruta más específica prevalece sobre la más general.
+  // - La ruta no declarada está denegada.
+  // - Una concesión de escritura no autoriza a declarar compuertas.
+  //
   // The local llama.cpp checkout is reference-only and must not be edited.
   "permissions": [
     {

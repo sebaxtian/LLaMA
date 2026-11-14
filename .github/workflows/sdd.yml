@@ -1,0 +1,23 @@
+name: SDD
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Prepara Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validación agregada del corpus
+        run: python tools\sdd\validate.py --all
+      - name: Suite del mecanismo de control
+        timeout-minutes: 1
+        run: python -m unittest discover -s tools\sdd\tests -q

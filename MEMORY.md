@@ -10,7 +10,7 @@
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
 - Base normativa vigente: v2, con constitución, `AGENTS.md`, protocolo operativo, flujo Git, plantillas e índice del corpus.
 - Repositorio Git inicializado. `main` y `dev` protegidas; todo cambio entra por Pull Request con `merge --no-ff`.
-- Estado de specs: `SPEC-001` a `SPEC-008` integradas; `SPEC-009` en curso para la base normativa v2.
+- Estado de specs: `SPEC-001` a `SPEC-007` publicadas; `SPEC-008`, `SPEC-009` y `SPEC-010` validadas; `SPEC-011` en curso.
 
 ## 2. Hardware objetivo
 
@@ -36,7 +36,7 @@
 - `docs/sdd/firmantes_autorizados`: claves públicas que habilitan las aprobaciones firmadas.
 - `specs/`: registro `INDEX.md` y artefactos de cada spec en `NNN-slug/`.
 - `tools/sdd/`: validador determinista (`validate.py`, `validate.bat` y `tests/`).
-- `.opencode/`: cinco agentes (`sdd`, `planner`, `coder`, `reviewer`, `documenter`), comandos `sdd-*` y skills. El rol de auditoría está declarado en la base; su implementación corresponde a B3.
+- `.opencode/`: seis agentes (`sdd`, `planner`, `coder`, `reviewer`, `documenter`, `auditor`), comandos `sdd-*` y skills. La integración continua se ejecuta en `.github/workflows/sdd.yml`.
 - `main.bat`: menú principal implementado para seleccionar scripts de `src/`.
 - `CHANGELOG.md`, `README.md` y `MEMORY.md`: registro de cambios, descripción y contexto operativo.
 - `logs/`, `results/` y `tmp/`: resultados temporales y archivos locales excluidos.
