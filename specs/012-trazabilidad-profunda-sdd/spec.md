@@ -1,8 +1,8 @@
 ---
 id: SPEC-012
 title: Trazabilidad profunda SDD verificable
-status: implemented
-version: 0.6.0
+status: validated
+version: 0.7.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -326,6 +326,7 @@ Cubre: `RNF-005`.
 | 0.4.0 | 2026-11-14 | Tareas: dieciocho tareas atómicas con dependencias acíclicas, tres escritores declarados, veinte pruebas nuevas en cinco tareas de prueba y cobertura completa de requisitos y casos borde |
 | 0.5.0 | 2026-11-14 | Implementación de la trazabilidad profunda |
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
+| 0.7.0 | 2026-11-14 | Validación e integración de la trazabilidad profunda |
 
 ### Historial de transiciones
 
@@ -337,3 +338,4 @@ Cubre: `RNF-005`.
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con dieciocho tareas, ocho campos por tarea, dependencias acíclicas y cobertura de nueve requisitos, ocho no funcionales y dieciocho casos borde |
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | dieciocho tareas cerradas con criterio de aceptación y evidencia, ventana de legado limitada a `SPEC-008` a `SPEC-011` y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `a3a2794` con dieciocho tareas cerradas, 131 pruebas en verde y `--all` con código 0 |
+| 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `6fade8e`, dictamen `CONVERGIDO` de 35 de 35 filas e integración `b87e32c` con dos padres y rama eliminada |
