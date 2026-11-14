@@ -1,15 +1,78 @@
 ---
-description: Redacta los artefactos SDD (spec, clarify, plan, tasks). Invocable por sdd como subagente o como agente primario. Solo edita specs/. No toca código.
+description: Redacta los artefactos SDD (spec, clarify, plan, tasks). Solo edita specs/. No toca codigo.
 mode: all
 permissions:
   - action: edit
-    resource: "*"
+    resource: '*'
+    effect: deny
+  - action: read
+    resource: '**'
+    effect: allow
+  - action: read
+    resource: '.env'
     effect: deny
   - action: edit
-    resource: "specs/**"
+    resource: 'specs/**'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/validation_report.md'
+    effect: deny
+  - action: edit
+    resource: 'src/**'
+    effect: deny
+  - action: edit
+    resource: 'tests/**'
+    effect: deny
+  - action: edit
+    resource: 'tools/**'
+    effect: deny
+  - action: edit
+    resource: 'docs/**'
+    effect: deny
+  - action: edit
+    resource: 'AGENTS.md'
+    effect: deny
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: deny
+  - action: edit
+    resource: 'opencode.jsonc'
+    effect: deny
+  - action: edit
+    resource: '.opencode/**'
+    effect: deny
+  - action: edit
+    resource: '.github/**'
+    effect: deny
+  - action: edit
+    resource: '.env'
+    effect: deny
+  - action: shell
+    resource: '*'
+    effect: deny
+  - action: shell
+    resource: 'git status **'
+    effect: allow
+  - action: shell
+    resource: 'git log **'
+    effect: allow
+  - action: shell
+    resource: 'git diff **'
+    effect: allow
+  - action: shell
+    resource: 'git show **'
+    effect: allow
+  - action: shell
+    resource: 'git rev-parse **'
+    effect: allow
+  - action: shell
+    resource: 'git branch **'
+    effect: allow
+  - action: shell
+    resource: 'python tools\sdd\validate.py **'
     effect: allow
   - action: subagent
-    resource: "*"
+    resource: '*'
     effect: deny
 ---
 
@@ -37,3 +100,6 @@ Reglas:
 - No editas código, `src/`, `tools/` ni `tests/`.
 - No apruebas tu propia spec; la aprobación G1 es del propietario.
 - Cuando `sdd` te invoque como subagente, la solicitud debe indicar la spec y la etapa; si falta ese contexto, detente y solicítalo.
+## Precedencia de permisos
+
+La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. La ruta no declarada está denegada. Una concesión de escritura no autoriza a declarar compuertas.

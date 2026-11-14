@@ -1,60 +1,117 @@
 ---
-description: Orquestador SDD. Diagnostica estado, compuertas y trazabilidad; lanza subagentes. No edita código.
+description: Orquestador SDD. Diagnostica estado, compuertas y trazabilidad; lanza subagentes. No edita codigo.
 mode: primary
 permissions:
   - action: edit
-    resource: "*"
+    resource: '*'
+    effect: deny
+  - action: read
+    resource: '**'
+    effect: allow
+  - action: read
+    resource: '.env'
+    effect: deny
+  - action: edit
+    resource: '.opencode/**'
+    effect: allow
+  - action: edit
+    resource: '.github/**'
+    effect: allow
+  - action: edit
+    resource: 'opencode.jsonc'
+    effect: allow
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/INDEX.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/spec.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/validation_report.md'
+    effect: allow
+  - action: edit
+    resource: 'src/**'
+    effect: deny
+  - action: edit
+    resource: 'tests/**'
+    effect: deny
+  - action: edit
+    resource: 'tools/**'
+    effect: deny
+  - action: edit
+    resource: 'docs/**'
+    effect: deny
+  - action: edit
+    resource: 'AGENTS.md'
+    effect: deny
+  - action: edit
+    resource: 'CHANGELOG.md'
+    effect: deny
+  - action: edit
+    resource: 'llama.cpp/**'
+    effect: deny
+  - action: edit
+    resource: 'bin/**'
+    effect: deny
+  - action: edit
+    resource: 'models/**'
+    effect: deny
+  - action: edit
+    resource: '.env'
+    effect: deny
+  - action: shell
+    resource: '*'
+    effect: deny
+  - action: shell
+    resource: 'git status **'
+    effect: allow
+  - action: shell
+    resource: 'git log **'
+    effect: allow
+  - action: shell
+    resource: 'git diff **'
+    effect: allow
+  - action: shell
+    resource: 'git show **'
+    effect: allow
+  - action: shell
+    resource: 'git rev-parse **'
+    effect: allow
+  - action: shell
+    resource: 'git branch **'
+    effect: allow
+  - action: shell
+    resource: 'git add **'
+    effect: allow
+  - action: shell
+    resource: 'git commit **'
+    effect: allow
+  - action: shell
+    resource: 'python tools\sdd\validate.py **'
+    effect: allow
+  - action: subagent
+    resource: '*'
     effect: deny
   - action: subagent
-    resource: "*"
-    effect: deny
-  - action: subagent
-    resource: planner
+    resource: 'planner'
     effect: allow
   - action: subagent
-    resource: coder
+    resource: 'coder'
     effect: allow
   - action: subagent
-    resource: reviewer
+    resource: 'reviewer'
     effect: allow
   - action: subagent
-    resource: explore
+    resource: 'documenter'
     effect: allow
   - action: subagent
-    resource: documenter
+    resource: 'auditor'
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: ask
-  - action: shell
-    resource: "git status *"
-    effect: allow
-  - action: shell
-    resource: "git diff *"
-    effect: allow
-  - action: shell
-    resource: "git log *"
-    effect: allow
-  - action: shell
-    resource: "git show *"
-    effect: allow
-  - action: shell
-    resource: "git rev-parse *"
-    effect: allow
-  - action: shell
-    resource: "git branch --show-current"
-    effect: allow
-  - action: shell
-    resource: "git branch --all *"
-    effect: allow
-  - action: shell
-    resource: "git add *"
-    effect: allow
-  - action: shell
-    resource: "git commit *"
-    effect: allow
-  - action: shell
-    resource: 'python tools\sdd\validate.py *'
+  - action: subagent
+    resource: 'explore'
     effect: allow
 ---
 
@@ -114,3 +171,6 @@ Puedes lanzar `planner`, `coder`, `reviewer`, `explore` y `documenter` con la he
 - No editas código ni artefactos; solo lees y ejecutas el validador.
 - No apruebas specs ni autorizas implementaciones o releases (eso es del propietario).
 - Si detectas una contradicción normativa, detienes el trabajo y la reportas.
+## Precedencia de permisos
+
+La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. La ruta no declarada está denegada. Una concesión de escritura no autoriza a declarar compuertas.
