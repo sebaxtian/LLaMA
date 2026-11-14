@@ -1,68 +1,69 @@
-# Corpus SDD — Índice y estado
+# Corpus SDD — índice del proyecto LLaMA
 
-Esta carpeta contiene la documentación de referencia y la norma ejecutable del Desarrollo Basado en Especificaciones (SDD) del proyecto `LLaMA`.
+Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la navegación del corpus y la declaración del orden de precedencia dentro de cada rango; su contenido descriptivo es referencia no normativa.
 
-## Estado normativo
+## Carácter del índice
 
-- **Norma ejecutable:** `PROTOCOLO_OPERATIVO.md` (rango 3 en la jerarquía).
-- **Norma suprema:** `../constitution.md` (rango 1).
-- **Operativo para agentes:** `../../AGENTS.md` (rango 2).
-- El resto de documentos de esta carpeta son **corpus de referencia**: material explicativo y de fundamentos, no normativo. Ante contradicción, prevalece el `PROTOCOLO_OPERATIVO.md`.
+- **Navegación.** Enumera cada archivo del corpus con su ruta, su carácter y su orden de lectura.
+- **Precedencia entre rangos.** Prevalece el rango de número menor, conforme a la tabla de autoridad.
+- **Precedencia dentro de un rango.** Prevalece el documento que este índice sitúa antes en la columna `Orden de lectura`.
+- **Desempate.** Una contradicción entre dos documentos del mismo rango se resuelve a favor del que este índice declara antes. Si el rango no tiene orden declarado, el trabajo se detiene y el caso se registra como defecto de la base.
+- **Alcance.** El índice no fija reglas de proceso. Las reglas vigentes residen en la constitución, en `AGENTS.md`, en `PROTOCOLO_OPERATIVO.md` y en el flujo Git.
 
-## Orden de lectura recomendado
+## Tabla de autoridad
 
-1. `PROTOCOLO_OPERATIVO.md` — la norma ejecutable que rige el trabajo.
-2. `compendio_sdd.md` — fundamentos y taxonomía (Spec-First / Spec-Anchored / Spec-as-Source).
-3. `referencia_7_etapas_sdd.md` — el ciclo de vida de 7 etapas.
-4. `guia_constitution_md.md` — fundamentos de la constitución.
-5. `guia_agents_md.md` — directrices para `AGENTS.md`.
-6. `guia_metodo_ears_sdd.md` — notación EARS.
-7. `guia_spec_md.md` — contrato de `spec.md`.
-8. `guia_clarify_md.md` — contrato de `clarify.md`.
-9. `guia_plan_md.md` — contrato de `plan.md`.
-10. `guia_tasks_md.md` — contrato de `tasks.md`.
-11. `guia_fase_implement_tdd.md` — protocolo TDD de implementación.
-12. `guia_subagentes_opencode_sdd.md` — agentes `planner`/`coder`/`reviewer`.
-13. `guia_skills_agentes_sdd.md` — skills y divulgación progresiva.
-14. `guia_servidores_mcp.md` — servidores MCP.
-15. `evolucion_sdlc_a_sdd.md` — evolución SDLC → SDD.
+| Rango | Documento | Carácter | Precedencia dentro del rango |
+|---|---|---|---|
+| 1 | `docs/constitution.md` | Norma suprema | Documento único del rango |
+| 2 | `AGENTS.md` | Norma operativa para agentes | Documento único del rango |
+| 3 | `docs/sdd/PROTOCOLO_OPERATIVO.md` | Norma ejecutable del proceso | Documento único del rango |
+| 4 | `docs/Flujo_de_Trabajo_Git.md` | Norma de integración y release | Documento único del rango |
+| 5 | `docs/sdd/plantillas/*.md` | Norma de forma de cada artefacto | `spec.md` prevalece sobre `clarify.md`, este sobre `plan.md`, este sobre `tasks.md`, este sobre `validation_report.md`, este sobre `informe_analitico.md` y este sobre `informe_auditoria.md` |
+| 6 | `specs/NNN-slug/*.md` | Contrato de la feature | `spec.md` prevalece sobre `clarify.md`, este sobre `plan.md`, este sobre `tasks.md` y este sobre `validation_report.md` |
+| 7 | `src/`, `tools/`, `tests/`, `.opencode/` | Implementación verificable | El código no prevalece sobre norma alguna; su divergencia se corrige en el código |
+| Sin rango | Guías de `docs/sdd/`, informes de análisis, informes de auditoría, `README.md`, `MEMORY.md`, este índice y `CHANGELOG.md` | Referencia no normativa; este índice declara el desempate del rango y `CHANGELOG.md` registra G6 | Sin precedencia: no fija reglas |
 
-## Diagramas
+## Tabla de inventario
 
-- `mapa_mental_sdd.md` — mapa mental (Mermaid).
-- `diagrama_flujo_ciclo_vida_sdd.md` — flujo del ciclo de vida.
-- `diagrama_secuencia_subagentes_sdd.md` — secuencia de subagentes.
-- `referencia_ciclo_vida_sdd_puro.md` — referencia extendida del ciclo.
+| Archivo | Ruta | Carácter | Orden de lectura | Rango |
+|---|---|---|---|---|
+| `README.md` | `docs/sdd/README.md` | Índice del corpus; declara la precedencia de cada rango | 1 | Sin rango |
+| `PROTOCOLO_OPERATIVO.md` | `docs/sdd/PROTOCOLO_OPERATIVO.md` | Norma ejecutable del proceso | 2 | 3 |
+| `spec.md` | `docs/sdd/plantillas/spec.md` | Norma de forma del contrato de la feature | 3 | 5 |
+| `clarify.md` | `docs/sdd/plantillas/clarify.md` | Norma de forma de la clarificación | 4 | 5 |
+| `plan.md` | `docs/sdd/plantillas/plan.md` | Norma de forma del plan técnico | 5 | 5 |
+| `tasks.md` | `docs/sdd/plantillas/tasks.md` | Norma de forma de las tareas | 6 | 5 |
+| `validation_report.md` | `docs/sdd/plantillas/validation_report.md` | Norma de forma del reporte de validación | 7 | 5 |
+| `informe_analitico.md` | `docs/sdd/plantillas/informe_analitico.md` | Norma de forma del informe analítico | 8 | 5 |
+| `informe_auditoria.md` | `docs/sdd/plantillas/informe_auditoria.md` | Norma de forma del informe de auditoría | 9 | 5 |
+| `guia_maestra_sdd.md` | `docs/sdd/guia_maestra_sdd.md` | Guía de referencia | 10 | Sin rango |
+| `compendio_sdd.md` | `docs/sdd/compendio_sdd.md` | Referencia de fundamentos y taxonomía | 11 | Sin rango |
+| `referencia_7_etapas_sdd.md` | `docs/sdd/referencia_7_etapas_sdd.md` | Referencia del ciclo de vida | 12 | Sin rango |
+| `referencia_ciclo_vida_sdd_puro.md` | `docs/sdd/referencia_ciclo_vida_sdd_puro.md` | Referencia extendida del ciclo de vida | 13 | Sin rango |
+| `evolucion_sdlc_a_sdd.md` | `docs/sdd/evolucion_sdlc_a_sdd.md` | Referencia de evolución metodológica | 14 | Sin rango |
+| `guia_constitution_md.md` | `docs/sdd/guia_constitution_md.md` | Guía de referencia | 15 | Sin rango |
+| `guia_agents_md.md` | `docs/sdd/guia_agents_md.md` | Guía de referencia | 16 | Sin rango |
+| `guia_metodo_ears_sdd.md` | `docs/sdd/guia_metodo_ears_sdd.md` | Guía de referencia de notación EARS | 17 | Sin rango |
+| `guia_spec_md.md` | `docs/sdd/guia_spec_md.md` | Guía de referencia del contrato de la feature | 18 | Sin rango |
+| `guia_clarify_md.md` | `docs/sdd/guia_clarify_md.md` | Guía de referencia de la clarificación | 19 | Sin rango |
+| `guia_plan_md.md` | `docs/sdd/guia_plan_md.md` | Guía de referencia del plan técnico | 20 | Sin rango |
+| `guia_tasks_md.md` | `docs/sdd/guia_tasks_md.md` | Guía de referencia de las tareas | 21 | Sin rango |
+| `guia_fase_implement_tdd.md` | `docs/sdd/guia_fase_implement_tdd.md` | Guía de referencia de la implementación | 22 | Sin rango |
+| `guia_subagentes_opencode_sdd.md` | `docs/sdd/guia_subagentes_opencode_sdd.md` | Guía de referencia de subagentes | 23 | Sin rango |
+| `guia_skills_agentes_sdd.md` | `docs/sdd/guia_skills_agentes_sdd.md` | Guía de referencia de skills | 24 | Sin rango |
+| `guia_servidores_mcp.md` | `docs/sdd/guia_servidores_mcp.md` | Guía de referencia de servidores MCP | 25 | Sin rango |
+| `mapa_mental_sdd.md` | `docs/sdd/mapa_mental_sdd.md` | Referencia gráfica | 26 | Sin rango |
+| `diagrama_flujo_ciclo_vida_sdd.md` | `docs/sdd/diagrama_flujo_ciclo_vida_sdd.md` | Referencia gráfica del ciclo de vida | 27 | Sin rango |
+| `diagrama_secuencia_subagentes_sdd.md` | `docs/sdd/diagrama_secuencia_subagentes_sdd.md` | Referencia gráfica de subagentes | 28 | Sin rango |
+| `comparacion_operativa_sdd_actual_vs_objetivo.md` | `docs/sdd/comparacion_operativa_sdd_actual_vs_objetivo.md` | Informe de análisis | 29 | Sin rango |
+| `plan_cierre_brechas_sdd.md` | `docs/sdd/plan_cierre_brechas_sdd.md` | Informe de análisis | 30 | Sin rango |
+| `auditoria_cumplimiento_sdd.md` | `docs/sdd/auditoria_cumplimiento_sdd.md` | Informe de auditoría | 31 | Sin rango |
+| `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 32 | Sin rango |
 
-## Análisis y planificación
+## Regla de inventario
 
-Documentos de trabajo, no normativos, que describen el estado del proceso y su hoja de ruta. No definen requisitos ni sustituyen al protocolo.
-
-- `comparacion_operativa_sdd_actual_vs_objetivo.md` — contraste entre el SDD aplicado hoy y el objetivo previsto, con brechas, compuertas y trazabilidad.
-- `plan_cierre_brechas_sdd.md` — plan de cierre de brechas (Fase −1, SPEC-008 y SPEC-009). No aprueba compuertas ni autoriza cambios por sí mismo.
-
-## Plantillas
-
-Las plantillas normativas de artefactos viven en `plantillas/`:
-
-```text
-plantillas/
-├── spec.md
-├── clarify.md
-├── plan.md
-├── tasks.md
-└── validation_report.md
-```
-
-Los artefactos reales de cada feature viven en `specs/NNN-slug/`.
-
-## Correcciones aplicadas al corpus
-
-Este corpus se normalizó para alinearse con el protocolo:
-
-- `-mpc` → `-mcp` (convención de nombres MCP del proyecto).
-- IDs de 2 dígitos (`AMB-01`, `CB-01`) → 3 dígitos (`AMB-001`, `CB-001`).
-- `specs/feature/` y `specs/001-feature/` → `specs/NNN-slug/`.
-- Nombre único del reporte: `validation_report.md`.
-- Reviewer: solo lectura sobre código; escribe únicamente `validation_report.md`.
-- Los ejemplos de código de la documentación son ilustrativos, no normativos.
+- El recuento de archivos del corpus se obtiene contando las filas de datos de la tabla de inventario y nunca se escribe como cifra fija.
+- Un archivo nuevo de `docs/sdd/` o de `docs/sdd/plantillas/` exige su fila en la tabla antes de aprobar la compuerta en curso.
+- Una fila sin archivo o un archivo sin fila es defecto de conformidad y se corrige en este índice.
+- La columna `Orden de lectura` es única por archivo y fija el desempate dentro de su rango.
+- La columna `Rango` usa un número de 1 a 7 o el valor `Sin rango` de la tabla de autoridad.

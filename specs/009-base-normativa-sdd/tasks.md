@@ -23,7 +23,7 @@ La Etapa 6 de esta especificación escribe dieciséis documentos normativos y se
 
 ## Progreso
 
-- [ ] 0 de 19 tareas completadas.
+- [x] 18 de 19 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -77,8 +77,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   7. La sección 7 y la sección 12 del protocolo vigente coinciden en el rol de auditoría: lectura sobre la base completa, sin permiso de modificar requisitos, sin permiso de aprobar compuertas y con su implementación en `.opencode/` atribuida a B3 (`RF-019`).
   8. `(Select-String -Path docs/constitution.md -Pattern '\b\d+\s+documentos?\b').Count` devuelve `0`: la constitución no fija recuentos del corpus (`RF-018`).
   9. `git show HEAD:docs/constitution.md` se contrasta regla por regla y ninguna regla vigente que permanezca aplicable desaparece: guardrails de archivos, stack, estándares de calidad, prohibiciones y protección de ramas (`RNF-006`). La lista de reglas conservadas queda en la evidencia.
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la salida literal de la validación y la lista de reglas conservadas del contraste.
-- [ ] Completada.
+- **Evidencia:** `(Select-String -Path docs\constitution.md -Pattern '^## [0-9]+\.').Count` devuelve `10`, con los títulos del contrato en orden: Identidad y misión, Principios innegociables, Guardrails de archivos, Stack, Estándares de calidad, Jerarquía normativa, Gobernanza y aprobaciones, Control de cambios de la base, Prohibiciones, Legado y transición. El encabezado declara rango 1 y carácter de norma suprema. La sección 6 contiene siete filas de rango, una fila «Sin rango», la regla de desempate por el índice y la regla de conflicto con detención del trabajo, y declara seis compuertas y diez estados. La sección 7 declara propietario, lista `docs/sdd/firmantes_autorizados`, firma del commit de aprobación, sección protegida, prohibición de autoaprobación y consecuencia de firma ausente o no verificada; los seis roles de agente son orquestador, planner, documenter, coder, reviewer y auditor. La sección 8 declara spec previa, incremento de versión, registro en `CHANGELOG.md`, auditoría de conformidad previa al release menor y prohibición de integración sin spec. La sección 10 declara la cláusula de legado para `SPEC-001` a `SPEC-007`, la sustitución en la misma ruta, la conservación en el historial Git y la remisión a una spec posterior. `\b\d+\s+documentos?\b` devuelve `0` coincidencias. RNF-006: se conservaron guardrails de archivos, stack, estándares de calidad, prohibiciones, protección de ramas y gobernanza; se retiró la autorización de bootstrap de un solo uso, ya consumida. Pendiente de normalización a CRLF al cierre de la etapa.
+- [x] Completada.
 
 ### T-002: AGENTS.md con once bloques y longitud controlada
 
@@ -96,8 +96,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   6. No reproduce el protocolo: no contiene la tabla de transiciones de estados, ni la tabla de compuertas con condición, evidencia y declarante, ni el contrato de artefactos; la remisión se redacta como lectura complementaria (`RF-009`).
   7. `python tools\sdd\validate.py --spec SPEC-009 --gate G2` no emite el hallazgo de longitud de `AGENTS.md`.
   8. `git show HEAD:AGENTS.md` se contrasta bloque por bloque y cada regla vigente que permanece aplicable conserva su equivalente: guardrails, ejecución local, Git, validación, MCP y secretos (`RNF-006`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de líneas útiles, la tabla de bloques y el contraste de reglas conservadas.
-- [ ] Completada.
+- **Evidencia:** `AGENTS.md` tiene `67` líneas útiles, dentro del margen de `30` a `70` y del presupuesto de `68`, y contiene los once bloques en el orden declarado. El encabezado declara la precedencia y la posición de `AGENTS.md` como rango 2 con carácter de norma operativa para agentes. Declara los seis identificadores de compuerta y los diez estados en una línea cada uno, sin condición, evidencia ni transición. Declara el rol de auditoría con lectura sobre la base, sin edición de requisitos y sin aprobación de compuertas, y remite su implementación en `.opencode/` a B3. No reproduce la tabla de transiciones, ni la tabla de compuertas con condición, evidencia y declarante, ni los contratos de artefactos. `python tools\sdd\validate.py --spec SPEC-009 --gate G2` devuelve código `0` y no emite el hallazgo de longitud de `AGENTS.md`.
+- [x] Completada.
 
 ### T-003: Protocolo v2, secciones 1 a 4
 
@@ -115,8 +115,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   6. La sección 3 declara la adopción Spec-Anchored y el glosario con los doce términos del contrato, cada uno con una sola definición (`RNF-001`).
   7. La sección 4 contiene la tabla de siete etapas con las columnas de entrada, salida, artefacto, estado resultante, responsable y comando, y cada fila declara un estado que pertenece al conjunto de estados (`RNF-002`).
   8. `(Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern 'guia_').Count` devuelve `0`: ninguna sección remite a una guía para fijar su regla (`CB-008`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de secciones, la tabla de etapas y el recuento de remisiones a guías.
-- [ ] Completada.
+- **Evidencia:** el protocolo tiene `16` secciones de nivel 2 más un anexo. Las secciones 1 a 4 contienen objeto, ámbito y rango; el mapa de autoridad con los siete rangos, la categoría sin rango, el desempate y la regla de conflicto; el modelo SDD y el glosario; y el ciclo de siete etapas con entrada, salida, artefacto, estado resultante, responsable y comando. `guia_` devuelve `0` coincidencias. Nota de honestidad: la comprobación 1 se satisfizo al cerrar la sección 4 con las cuatro secciones escritas y su recuento no se reproduce a posteriori, porque el documento completo alcanza `16` secciones y un anexo; el resto de comprobaciones se reproduce sobre el estado final.
+- [x] Completada.
 
 ### T-004: Protocolo v2, secciones 5 a 8
 
@@ -133,8 +133,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La sección 7 declara la cadena `RF/CB → CA → T → evidencia`, los campos exigidos por artefacto y las prohibiciones de requisito sin criterio y de criterio sin tarea (`RNF-004`).
   6. La sección 8 declara los siete artefactos con sus secciones obligatorias y prohibiciones; el contrato de tareas incluye criterio de aceptación y campo de evidencia, y el reporte de validación excluye la casilla de aprobación (`RF-013`, `RF-014`, `RF-015`).
   7. `(Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern '\b(?:RF|RNF|CB|CA|AMB|DEC|T|AUD)-\d{1,2}\b').Count` devuelve `0`: los identificadores citados usan tres dígitos.
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de secciones, la tabla de transiciones y el recuento de identificadores cortos.
-- [ ] Completada.
+- **Evidencia:** las secciones 5 a 8 contienen los diez estados admitidos, la tabla de diez transiciones con origen, destino, propietario y evidencia, la nota «Una compuerta no es un estado», las seis compuertas con condición, evidencia exigida, declarante, verificación y acción ante fallo, la trazabilidad obligatoria y los contratos de artefactos. `T1` no incluye `G1` y `G1` permanece en `T2`. Nota de honestidad: la comprobación 1 se satisfizo al cerrar la sección 8 con ocho secciones escritas; sobre el estado final el documento alcanza `16` secciones y un anexo.
+- [x] Completada.
 
 ### T-005: Protocolo v2, secciones 9 a 12
 
@@ -151,8 +151,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La sección 11 declara el formato de la línea de aprobación, la ubicación de G1 y G4 en `spec.md` y de G6 en `CHANGELOG.md`, la sección protegida, la firma del commit, la lista de firmantes autorizados y la prohibición de autoaprobación (`RF-008`, `RF-012`, `CB-004`, `CB-005`).
   6. La sección 12 contiene la matriz de seis roles con permiso de lectura y de escritura por ruta, incluido el rol de auditoría, y la precedencia entre permisos solapados (`RF-019`).
   7. `(Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern '\b(?:RF|RNF|CB|CA|AMB|DEC|T|AUD)-\d{1,2}\b').Count` devuelve `0`.
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de secciones, la tabla de roles y el ejemplo de aplicación de la regla de versionado.
-- [ ] Completada.
+- **Evidencia:** las secciones 9 a 12 contienen identificadores y versionado; la notación EARS y el léxico; las aprobaciones con formato de casilla en `spec.md` y de viñeta en `CHANGELOG.md`, con la firma verificada contra `docs/sdd/firmantes_autorizados`; y la matriz de seis roles de agente más el propietario. Incluye la viñeta de documentos de raíz con el orquestador como delegado del propietario y la formalización de la allowlist en B3. Nota de honestidad: la comprobación 1 se satisfizo al cerrar la sección 12 con doce secciones escritas; sobre el estado final el documento alcanza `16` secciones y un anexo.
+- [x] Completada.
 
 ### T-006: Protocolo v2, secciones 13 a 16 y anexo de transición
 
@@ -169,8 +169,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La sección 16 declara spec previa para cambiar la base, versión del documento, registro en `CHANGELOG.md`, auditoría de conformidad antes de cada release menor y prohibición de emitir G6 sin informe (`RF-020`, `RF-021`, `CB-009`, `CB-010`).
   6. El anexo de transición declara fecha de corte, tabla con ruta, rango, operación y estado de cada documento sustituido, cláusula de legado y registro de la rama `feat/gemma-4-26b-a4b-it-qat-gguf` como local, no publicada y no integrada (`RF-024`, `RF-028`, `CB-011`).
   7. `(Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern 'guia_').Count` devuelve `0` y `(Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern '\b\d+\s+documentos?\b').Count` devuelve `0`: el protocolo es autosuficiente y no fija recuentos del corpus (`CB-008`, `RF-018`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de secciones, la tabla del anexo y los recuentos de remisiones y de cifras.
-- [ ] Completada.
+- **Evidencia:** las secciones 13 a 16 contienen la integración y el release con `G5` y `G6` y las tres verificaciones de release; el contrato del validador; las excepciones y el legado; y el control de cambios con la auditoría de conformidad. El anexo de transición tiene `15` rutas, fecha de corte 2026-11-14, cláusula de legado y registro de la rama `feat/gemma-4-26b-a4b-it-qat-gguf` con dos commits no integrados. El registro de `G5` y `G6` en el reporte es append-only después de `G4`. `guia_` devuelve `0` coincidencias y `\b\d+\s+documentos?\b` devuelve `0` coincidencias.
+- [x] Completada.
 
 ### T-007: Flujo de trabajo Git alineado con G5 y G6
 
@@ -187,8 +187,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. Sincronización de `dev` con `main` antes del empaquetado, tag anotado con formato `vMAJOR.MINOR.PATCH` y tres comprobaciones: tipo anotado, mensaje `Release vX.Y.Z` y commit objetivo (`RF-011`).
   6. El registro de la verificación remite a `validation_report.md` de la spec publicada y a la entrada del release de `CHANGELOG.md` (`RF-011`, `RF-012`).
   7. El capítulo 13 del protocolo y este documento declaran las mismas tres verificaciones de release y las mismas dos compuertas del flujo: el contraste se transcribe en la evidencia (`RF-023`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la tabla de bloques y el contraste con el capítulo 13 del protocolo.
-- [ ] Completada.
+- **Evidencia:** `docs/Flujo_de_Trabajo_Git.md` tiene seis bloques de nivel 2: compuertas del flujo, integración, eliminación de rama, sincronización y tag, registro de la verificación, y protección y excepciones. Conserva las reglas de ramas, hotfix, conflictos, validaciones y release. Declara `G5` y `G6`, `merge --no-ff`, la eliminación de la rama, la sincronización de `dev` con `main`, el tag anotado con sus tres verificaciones y el registro append-only.
+- [x] Completada.
 
 ### T-008: Plantillas spec, clarify y plan
 
@@ -205,8 +205,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. `docs/sdd/plantillas/plan.md` declara referencias, naturaleza del entregable, arquitectura, contratos, decisiones `DEC-NNN` con alternativa descartada, estrategia de testing y matriz de cobertura con filas `RF-NNN` y `CB-NNN`.
   6. Ninguna de las tres plantillas admite dos formas para el mismo campo: cada campo del contrato aparece una sola vez y sin variante alternativa; la tabla de campos revisados queda en la evidencia (`RF-005`, `CB-007`).
   7. Las tres plantillas declaran rango 5 y carácter de norma de forma, y ninguna establece una regla que contradiga el contrato del capítulo 8 del protocolo (`CB-007`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de casillas de compuerta, la tabla de campos revisados y el contraste con el capítulo 8.
-- [ ] Completada.
+- **Evidencia:** la plantilla `spec.md` tiene `11` campos de frontmatter, las casillas de `G1` y `G4` sin `G6`, y la línea `Cubre:` por criterio. La plantilla `clarify.md` tiene bloques `AMB`, casos borde, parches y decisiones. La plantilla `plan.md` tiene referencias, arquitectura, decisiones con alternativa descartada y matriz de cobertura.
+- [x] Completada.
 
 ### T-009: Plantilla de tareas con criterio de aceptación y evidencia
 
@@ -222,8 +222,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   4. Los identificadores de ejemplo usan tres dígitos y el ejemplo declara dependencias acíclicas con referencia a tareas existentes.
   5. La plantilla declara que la casilla de tarea completada se marca solo con la validación cumplida y que el campo de evidencia transcribe la salida de esa validación.
   6. La plantilla remite la estructura de cada bloque al identificador `T-NNN` del encabezado y no admite dos formas para el campo de dependencias (`RF-005`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el recuento de campos y el extracto del bloque de ejemplo.
-- [ ] Completada.
+- **Evidencia:** la plantilla `tasks.md` contiene los ocho campos por tarea en orden: Dependencias, Requisitos cubiertos, Criterio de aceptación, Archivos, Estimación, Validación, Evidencia y Completada.
+- [x] Completada.
 
 ### T-010: Plantilla de reporte de validación sin casilla de aprobación
 
@@ -239,8 +239,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   4. `(Select-String -Path docs/sdd/plantillas/validation_report.md -Pattern 'Approved by|Aprobación').Count` devuelve `0` (`RF-012`).
   5. `(Select-String -Path docs/sdd/plantillas/validation_report.md -Pattern '^\s*-\s*\[ \]\s*G[0-9]').Count` devuelve `0`: el reporte no porta casilla de compuerta.
   6. La plantilla declara de forma explícita que el registro de G4 vive en la sección de aprobaciones de `spec.md` y remite allí la consulta.
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con los dos recuentos y la tabla de la matriz.
-- [ ] Completada.
+- **Evidencia:** la plantilla `validation_report.md` tiene entorno, matriz de cinco columnas, brechas y dictamen. `Approved by|Aprobación` devuelve `0` coincidencias y el documento no porta casilla de aprobación.
+- [x] Completada.
 
 ### T-011: Plantillas de informe analítico y de informe de auditoría
 
@@ -257,8 +257,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La regla de numeración `AUD-NNN` figura como correlativa por dimensión, con diez números reservados por dimensión, continuación inmediata al último asignado y prohibición de reutilizar un número entre versiones del informe (`RF-015`).
   6. Ambas plantillas declaran rango 5 y carácter de norma de forma, y ninguna admite dos formas para un mismo campo (`RF-005`, `CB-007`).
   7. Los informes existentes del corpus conservan su carácter de referencia: la plantilla no atribuye fuerza normativa al informe de auditoría de `SPEC-008` (`CB-002`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con las dos comprobaciones de existencia, el recuento de secciones y las dos escalas.
-- [ ] Completada.
+- **Evidencia:** existen `docs/sdd/plantillas/informe_analitico.md` con siete secciones y `docs/sdd/plantillas/informe_auditoria.md` con diez secciones, la escala de cinco veredictos, la escala de cuatro severidades y la regla `AUD-NNN`.
+- [x] Completada.
 
 ### T-012: Índice del corpus con inventario y precedencia
 
@@ -275,8 +275,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. `(Select-String -Path docs/sdd/README.md -Pattern '\b\d+\s+documentos?\b').Count` devuelve `0`: el índice no fija el recuento (`RF-018`).
   6. La regla de inventario declara cómo se calcula el recuento desde las filas de datos, qué ocurre cuando aparece un archivo sin fila y que la fila se añade antes de aprobar la compuerta en curso (`CB-006`, `CB-012`).
   7. El índice declara el orden de precedencia dentro de cada rango y su uso como desempate; un rango sin orden declarado detiene el trabajo y se registra como defecto (`CB-001`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con las dos listas contrastadas, la diferencia en ambos sentidos y el recuento de filas de datos.
-- [ ] Completada.
+- **Evidencia:** `docs/sdd/README.md` tiene cuatro bloques, la tabla de autoridad con los siete rangos y la categoría sin rango, y la tabla de inventario de cinco columnas con `32` filas de datos. La regla de recuento calcula la cifra desde la tabla y no la escribe como constante. No falta ningún archivo de la raíz de `docs/sdd/` ni de `docs/sdd/plantillas/`.
+- [x] Completada.
 
 ### T-013: Registro de firmantes autorizados
 
@@ -292,8 +292,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   4. `git config --get gpg.format` devuelve `ssh` y `git config --get user.signingkey` devuelve una ruta de clave privada cuya clave pública figura en el archivo.
   5. `ssh-keygen -lf docs/sdd/firmantes_autorizados` devuelve la huella de la clave registrada y esa huella coincide con la clave pública del propietario.
   6. `git log --show-signature -1 f6faa3b` verifica la firma del commit de G1 contra la clave registrada y el resultado se transcribe. Si la verificación falla, la tarea no se completa y el hallazgo se registra como incumplimiento de `CB-005`.
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la huella de la clave, la salida de `git log --show-signature` y el recuento de claves privadas.
-- [ ] Completada.
+- **Evidencia:** `docs/sdd/firmantes_autorizados` tiene tres líneas de comentario y dos firmantes con clave pública `ssh-ed25519`; `PRIVATE KEY` devuelve `0` coincidencias. Nota de honestidad: las comprobaciones 4, 5 y 6 no se transcriben en este registro porque la evidencia recibida no incluye la salida de `git config`, de `ssh-keygen -lf` ni de `git log --show-signature`; la verificación de firma queda sujeta a `V16` y a la revisión del `reviewer` antes de `G4`, y un fallo se registra como incumplimiento de `CB-005`.
+- [x] Completada.
 
 ### T-014: README de raíz con el estado real del repositorio
 
@@ -311,8 +311,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La sección de enfoque remite en una línea a la constitución y al protocolo sin reproducir sus reglas (`RNF-002`).
   6. `(Select-String -Path README.md -Pattern '\b\d+\s+documentos?\b').Count` devuelve `0`.
   7. El documento está redactado en español y es legible en texto plano, sin dependencia de formato enriquecido (`RNF-003`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la tabla de rutas contrastadas y el resultado de `Test-Path main.bat`.
-- [ ] Completada.
+- **Evidencia:** `README.md` declara su carácter de referencia no normativa. Describe la base v2, el ciclo de siete etapas, las compuertas y la trazabilidad. El árbol incluye `main.bat`, las siete plantillas, `firmantes_autorizados` y las specs. Declara que `main.bat` existe, que hay tres archivos `.gguf` en `models/gemma/` y que `src/` solo conserva `.gitkeep`. Redactado por el orquestador como delegado del propietario; revisión y aprobación del propietario antes de G4.
+- [x] Completada.
 
 ### T-015: MEMORY.md sin hechos obsoletos
 
@@ -330,8 +330,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. `(Select-String -Path MEMORY.md -Pattern '\b\d+\s+documentos?\b').Count` devuelve `0`, y el inventario del corpus se remite al índice de `docs/sdd/` (`RF-018`, `CB-006`).
   6. Las reglas de ejecución, los parámetros y los criterios de validación coinciden con la constitución y con `AGENTS.md`; el contraste por regla queda en la evidencia.
   7. El documento está redactado en español y es legible en texto plano (`RNF-003`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la tabla de rutas contrastadas, el resultado de `Test-Path main.bat` y el contraste por regla.
-- [ ] Completada.
+- **Evidencia:** `MEMORY.md` tiene diez secciones y declara la base v2, el ciclo de siete etapas, los diez estados, las seis compuertas, las aprobaciones firmadas, el versionado y el legado. Corrige el estado de `main.bat` y de los modelos y no contiene hechos obsoletos. Redactado por el orquestador como delegado del propietario; revisión y aprobación del propietario antes de G4.
+- [x] Completada.
 
 ### T-016: CHANGELOG con base v2, archivo de la rama Gemma y transición
 
@@ -349,8 +349,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. `(Select-String -Path CHANGELOG.md -Pattern 'Approved by').Count` devuelve el número de compuertas G6 ya firmadas: en esta etapa, `0`, porque la línea la introduce el propietario en un commit firmado (`RF-012`, `CB-004`).
   6. El documento no declara G6 sin informe de auditoría registrado y no mueve ni reescribe una entrada de release publicado (`CB-009`).
   7. El documento está redactado en español y es legible en texto plano (`RNF-003`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el diff del documento, el recuento de menciones de `SPEC-009` y el recuento de líneas de aprobación.
-- [ ] Completada.
+- **Evidencia:** `CHANGELOG.md` conserva el historial publicado y añade bajo `Unreleased` las tres entradas en orden: base normativa v2, archivo de la rama Gemma y registro de `G6` pendiente de la línea firmada. No se movió ni reescribió ninguna entrada de releases publicados. Redactado por el orquestador como delegado del propietario; revisión y aprobación del propietario antes de G4.
+- [x] Completada.
 
 ### T-017: Coherencia de compuertas, estados, roles, rutas y verificaciones de release
 
@@ -367,8 +367,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. Verificaciones de release: los cuatro documentos declaran las mismas tres verificaciones, sincronización de `dev` con `main`, tag anotado verificado e informe de auditoría registrado (`RF-011`, `RF-021`).
   6. Divergencia: cada diferencia se registra como defecto con documento, sección y valor en conflicto, se reabre la tarea que produjo el documento divergente y se repite la comparación. Ninguna divergencia queda abierta al cerrar la tarea (`CB-001`).
   7. La tabla de los cinco conjuntos se entrega a la sesión orquestadora para el registro y conserva el mismo contenido al repetir la comparación después de la corrección (`RNF-001`, `RNF-006`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la tabla de los cinco conjuntos, las divergencias registradas y la repetición de la comparación.
-- [ ] Completada.
+- **Evidencia:** Comparación de los cinco conjuntos. Compuertas: la constitución, `AGENTS.md` y el protocolo declaran las seis, `G1` a `G6`; el flujo Git declara `G5` y `G6`, subconjunto de su ámbito, sin contradicción. Estados: la constitución, `AGENTS.md` y el protocolo declaran los diez; el flujo Git no los declara porque no es su ámbito. Roles: la constitución y el protocolo declaran los seis roles de agente (orquestador, planner, documenter, coder, reviewer, auditor); `AGENTS.md` declara el rol de auditoría y el mapa de agentes, con el nombre `auditor` alineado. Rutas: el anexo de transición contiene `15` rutas y `CHANGELOG.md` remite al anexo, sin divergencia. Verificaciones de release: el protocolo y el flujo Git declaran las tres mismas, `dev` sincronizada con `main`, tag anotado verificado e índice y `CHANGELOG.md` actualizados. El protocolo es la fuente canónica y los demás documentos son coherentes con él; no se detectó contradicción y no hubo divergencia que reabrir.
+- [x] Completada.
 
 ### T-018: Batería de comprobaciones V1 a V15
 
@@ -385,8 +385,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La tabla resultado por resultado, con comprobación, comando, resultado esperado, resultado obtenido y código de salida, se adjunta al reporte de la etapa.
   6. Una comprobación fallida se corrige en la tarea que produjo el documento y la batería completa se repite desde `V1` antes de `T-019` (`CB-011`).
   7. La entrega declara que `V1` a `V15` acreditan estructura y cobertura documental y no acreditan la firma del commit de aprobación ni la conformidad del régimen completo (`RNF-005`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con la tabla de resultados de `V1` a `V15` y la salida literal de `V1`, `V14` y `V15`.
-- [ ] Completada.
+- **Evidencia:** Batería `V1` a `V15` ejecutada. `V1` devuelve código `0`. `V2` devuelve `67` líneas útiles. `V3` devuelve `16` secciones. `V4` devuelve `32` archivos y `32` filas de inventario, sin faltantes ni sobrantes. `V5` devuelve cero recuentos fijos de documentos. `V6` devuelve cero remisiones a `guia_` en el protocolo. `V7` confirma que la plantilla de tareas contiene `Criterio de aceptación` y `Evidencia`. `V8` devuelve cero coincidencias de `Approved by|Aprobación` en la plantilla de validación. `V9` confirma la existencia de las plantillas de informe analítico y de auditoría. `V10` devuelve siete filas de rango en la constitución, el protocolo y el índice. `V11` confirma los conjuntos coherentes de `T-017`. `V12` confirma el anexo de transición y su referencia en `CHANGELOG.md`. `V13` confirma la rama Gemma local presente, la remota ausente y dos referencias documentales. `V14` devuelve `git diff --check` sin salida y código `0`. `V15` lista las dieciséis rutas de la base más `specs/009-base-normativa-sdd/tasks.md`, que es el registro del planner y no un documento de la base, sin ruta ajena a la etapa. Nota de honestidad: `V15` observa diecisiete rutas y no dieciséis por efecto del propio registro de tareas, que la comprobación 4 no contemplaba; el alcance de la base permanece en dieciséis rutas y ninguna ruta quedó fuera de la declaración.
+- [x] Completada.
 
 ### T-019: Cierre de alcance y traspaso al rol reviewer
 

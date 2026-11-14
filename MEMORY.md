@@ -1,14 +1,18 @@
 # Memoria operativa del proyecto LLaMA
 
-## Identidad y estado
+> Documento descriptivo de referencia no normativa. La norma suprema es `docs/constitution.md`; las reglas operativas están en `AGENTS.md` y la norma ejecutable en `docs/sdd/PROTOCOLO_OPERATIVO.md`. Este archivo resume el contexto operativo y no fija reglas.
+
+## 1. Identidad y estado
 
 - Proyecto: `LLaMA`.
 - Objetivo: ejecutar, probar y comparar modelos LLM localmente mediante llama.cpp.
 - Plataforma: Windows 11.
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
-- El repositorio Git raíz está inicializado. `main` y `dev` existen; las ramas de trabajo, tags y releases se documentan según el estado actual de `docs/Flujo_de_Trabajo_Git.md`.
+- Base normativa vigente: v2, con constitución, `AGENTS.md`, protocolo operativo, flujo Git, plantillas e índice del corpus.
+- Repositorio Git inicializado. `main` y `dev` protegidas; todo cambio entra por Pull Request con `merge --no-ff`.
+- Estado de specs: `SPEC-001` a `SPEC-008` integradas; `SPEC-009` en curso para la base normativa v2.
 
-## Hardware objetivo
+## 2. Hardware objetivo
 
 - Equipo: GEEKOM Mini IT13.
 - CPU: Intel Core i9 de 13.ª generación.
@@ -18,43 +22,41 @@
 - Conexión: eGPU mediante USB4.
 - Backend: CUDA 13.5.
 
-## Mapa operativo
+## 3. Mapa operativo
 
-- `src/`: scripts `.bat` de ejecución por modelo; estos scripts sí deben versionarse.
-- `models/`: modelos descargados; actualmente contiene solo `.gitkeep` y los modelos no se versionan.
-- `bin/deps/`: dependencias locales excluidas de Git.
-- `bin/llama-*`: versiones precompiladas o compiladas de llama.cpp, excluidas de Git.
-- `docs/`: documento maestro de benchmarks y flujo de trabajo Git.
-- `docs/constitution.md`: norma suprema del proyecto.
-- `docs/sdd/`: corpus de referencia y protocolo operativo SDD.
-- `specs/`: registro (`INDEX.md`) y artefactos de cada feature (`NNN-slug/`).
-- `tools/sdd/`: validador determinista (`validate.py`, `validate.bat`, `tests/`).
-- `.opencode/`: agentes (`sdd`, `planner`, `coder`, `reviewer` y `documenter`), comandos `sdd-*` y skills. `explore` es un subagente integrado de OpenCode.
-- Consulta de agentes: `opencode debug agents` desde la raíz del repositorio; `opencode api get '/api/agent?location[directory]=<raíz>'` devuelve la configuración cargada del proyecto. Sin ese parámetro el endpoint responde con los agentes del directorio por defecto.
-- `llama.cpp/`: repositorio oficial para consulta y compilación local; nunca modificarlo.
-- `AGENTS.md`: reglas obligatorias para agentes.
-- `README.md`: guía general del proyecto.
-- `CHANGELOG.md`: historial de cambios y releases.
-- `opencode.jsonc`: configuración de OpenCode, permisos y servidores MCP.
-- `example.env`: plantilla versionable para variables de entorno sin credenciales reales.
-- `.env`: variables locales ignoradas y protegidas contra lectura y edición por OpenCode.
-- `.vscode/`: configuración local del editor, excluida del repositorio.
-- `.gitkeep`: conserva `bin/`, `models/` y `src/` en clones limpios.
-- `main.bat`: pendiente de implementación; será el menú principal (piloto `SPEC-001`).
+- `src/`: scripts `.bat` de ejecución por modelo; se versionan. Actualmente solo conserva `.gitkeep`.
+- `models/`: modelos descargados; contiene tres archivos `.gguf` bajo `models/gemma/` y no se versiona.
+- `bin/`: dependencias y versiones precompiladas o compiladas de llama.cpp, excluidas de Git.
+- `llama.cpp/`: repositorio oficial para consulta y compilación local; nunca se modifica.
+- `docs/`: documento maestro, flujo Git y corpus SDD.
+- `docs/constitution.md`: norma suprema de rango 1.
+- `docs/sdd/PROTOCOLO_OPERATIVO.md`: norma ejecutable de rango 3.
+- `docs/sdd/plantillas/`: contratos de artefactos de rango 5, incluidas las plantillas de informe analítico y de auditoría.
+- `docs/sdd/README.md`: índice del corpus y orden de precedencia.
+- `docs/sdd/firmantes_autorizados`: claves públicas que habilitan las aprobaciones firmadas.
+- `specs/`: registro `INDEX.md` y artefactos de cada spec en `NNN-slug/`.
+- `tools/sdd/`: validador determinista (`validate.py`, `validate.bat` y `tests/`).
+- `.opencode/`: cinco agentes (`sdd`, `planner`, `coder`, `reviewer`, `documenter`), comandos `sdd-*` y skills. El rol de auditoría está declarado en la base; su implementación corresponde a B3.
+- `main.bat`: menú principal implementado para seleccionar scripts de `src/`.
+- `CHANGELOG.md`, `README.md` y `MEMORY.md`: registro de cambios, descripción y contexto operativo.
 - `logs/`, `results/` y `tmp/`: resultados temporales y archivos locales excluidos.
 
-## Metodología SDD
+## 4. Enfoque SDD
 
-- Desarrollo estricto con **Desarrollo Basado en Especificaciones (SDD)**, variante Spec-Anchored.
-- Ciclo de 7 etapas: Specify → Clarify → Plan → Tasks → Implement (TDD) → Validate.
-- Identificadores: `SPEC-001`, `RF-001`, `RNF-001`, `CB-001`, `AMB-001`, `CA-001`, `T-001`, `DEC-001`.
-- Requisitos en notación EARS. Trazabilidad `RF/CB → CA → T → evidencia`.
-- Compuertas G1 (spec), G4 (implementación) y G6 (release) requieren aprobación del propietario (`- Approved by: Agent Sebaxtian`).
-- Validador: `python tools\sdd\validate.py --all` (códigos `0/1/2`).
-- Norma: `docs/constitution.md` (suprema) y `docs/sdd/PROTOCOLO_OPERATIVO.md` (ejecutable).
-- Excepción sin spec: solo cambios exclusivamente editoriales (commit `docs:` o `chore:`).
+- Modelo: **Spec-Anchored**. La especificación y el código conviven y se validan mutuamente.
+- Ciclo de siete etapas: Specify, Clarify, Plan, Tasks, Implement, Validate y Release.
+- Estados: `draft`, `clarified`, `planned`, `tasked`, `implementing`, `implemented`, `validated`, `released`, `cancelled` y `superseded`.
+- Compuertas: G1 cierra Clarify, G2 cierra Tasks, G3 cierra Implement, G4 cierra Validate, G5 autoriza la integración y G6 autoriza el release.
+- Aprobaciones humanas: G1 y G4 se registran en `spec.md`; G6 en la entrada del release de `CHANGELOG.md`. Solo valen dentro de un commit firmado por una clave de `docs/sdd/firmantes_autorizados`.
+- Verificaciones: G2, G3 y G5 las verifica y registra el orquestador; no constituyen aprobación humana.
+- Identificadores: `SPEC-001`, `RF-001`, `RNF-001`, `CB-001`, `AMB-001`, `CA-001`, `T-001`, `DEC-001`, con tres dígitos y sin reutilización.
+- Trazabilidad obligatoria: `RF/CB → CA → T → evidencia`.
+- Requisitos en notación EARS, con umbral numérico y unidad cuando corresponda.
+- Versionado de specs: 0.1.0 inicial, MINOR por etapa de contrato, PATCH editorial, reapertura con motivo y versión, y prohibición de renumerar una spec publicada.
+- Legado: `SPEC-001` a `SPEC-007` se conservan y su regularización corresponde a una spec posterior.
+- Excepción sin spec: solo el cambio exclusivamente editorial, con commit `docs:` o `chore:`.
 
-## Regla crítica sobre `llama.cpp/`
+## 5. Regla crítica sobre `llama.cpp/`
 
 Nunca crear, modificar, eliminar, mover, renombrar o sobrescribir archivos o carpetas dentro de `llama.cpp/`.
 
@@ -67,17 +69,17 @@ Antes de compilar localmente, el repositorio oficial debe estar clonado en `llam
 
 Para ejecutar versiones precompiladas no es necesario clonar ni compilar `llama.cpp/`.
 
-## Reglas de ejecución
+## 6. Reglas de ejecución
 
-- Los `.bat` deben resolver la raíz mediante `%~dp0`.
-- No depender del directorio actual ni del `PATH` del sistema.
+- Los `.bat` resuelven la raíz mediante `%~dp0`.
+- No dependen del directorio actual ni del `PATH` del sistema.
 - Seleccionar explícitamente el ejecutable y el archivo `.gguf`.
 - Verificar que existan el ejecutable y el modelo antes de iniciar.
 - No colocar modelos dentro de `bin/`.
 - No colocar binarios dentro de `models/`.
 - No eliminar ni modificar `.gitkeep` mientras las carpetas correspondientes deban permanecer inicializadas.
 
-## Parámetros iniciales
+## 7. Parámetros iniciales
 
 - GPU offload: `-ngl 99`.
 - Carga del modelo: `-lm none`.
@@ -88,7 +90,7 @@ Para ejecutar versiones precompiladas no es necesario clonar ni compilar `llama.
 - Arquitecturas tipo Gemma: comenzar con `-fa off`.
 - Modelos de 30B-35B: usar cuantización Q3, `-c 4096` y `-np 1`.
 
-## Criterios de validación
+## 8. Criterios de validación
 
 Antes de considerar funcional u optimizado un script, comprobar:
 
@@ -102,29 +104,23 @@ Antes de considerar funcional u optimizado un script, comprobar:
 
 No asumir que el resultado de `llama-bench` representa el rendimiento de un servidor con contexto largo.
 
-## Preparación Git y flujo de trabajo
+## 9. Git, MCP y secretos
 
-Antes del primer commit:
+- Ramas de trabajo `feat/*`, `fix/*` y `hotfix/*`; empaquetado en `release/vX-Y-Z`.
+- Integración exclusiva por Pull Request con `merge --no-ff`; rebase, squash y copia manual están prohibidos.
+- Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z` y commit objetivo verificado.
+- `main` y `dev` protegidas: sin commit ni push directos.
+- La rama de trabajo se elimina tras confirmar la integración y `dev` se sincroniza con `main` antes del empaquetado.
+- Antes de cada release menor se ejecuta una auditoría de conformidad y su informe se registra en la entrada del release.
+- Servidores MCP con sufijo `-mcp`; las herramientas se referencian con el nombre completo del servidor.
+- Sin tokens ni credenciales en archivos versionables; `example.env` es la plantilla y `.env` permanece protegido.
 
-1. Revisar `.gitignore`.
-2. Confirmar que `bin/`, `models/` y `llama.cpp/` están excluidos.
-3. Confirmar que `bin/.gitkeep`, `models/.gitkeep` y `src/.gitkeep` se conservan.
-4. Confirmar que los futuros scripts de `src/` son versionables.
+## 10. Referencias
 
-El flujo de ramas, releases y tags está definido en `docs/Flujo_de_Trabajo_Git.md`.
-
-La política vigente es determinista: merge `--no-ff`, con desactivación de squash y rebase en favor exclusivo de merge `--no-ff`; ramas de trabajo `feat/*`, `fix/*`, `hotfix/*` y ramas de empaquetado `release/vX-Y-Z` usando minúsculas, números y guiones; tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z`; primera versión funcional `v0.1.0`.
-
-Las ramas `main` y `dev` cuentan con protección de ramas formal (política local y reglas remotas de GitHub): queda prohibido el push o commit directo a `dev` y `main`, requiriendo Pull Request obligatorio para cualquier cambio e integración exclusiva con `merge --no-ff`. Los conflictos de features y fixes se resuelven en sus ramas de trabajo; los conflictos de sincronización de un hotfix se resuelven en `hotfix/*` o `dev` según el merge definido en `docs/Flujo_de_Trabajo_Git.md`.
-
-## Convención de nombres MCP
-
-Los servidores MCP configurados en OpenCode deben utilizar nombres con el sufijo `-mcp`, por ejemplo `github-mcp`. Esta convención también debe utilizarse al definir permisos o referencias a sus herramientas.
-
-## Referencias principales
-
-- `docs/constitution.md`
-- `docs/sdd/PROTOCOLO_OPERATIVO.md`
-- `docs/sdd/README.md`
-- `docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md`
-- `docs/Flujo_de_Trabajo_Git.md`
+- `docs/constitution.md`: norma suprema.
+- `AGENTS.md`: reglas operativas de agentes.
+- `docs/sdd/PROTOCOLO_OPERATIVO.md`: norma ejecutable del proceso.
+- `docs/sdd/README.md`: índice del corpus y precedencia.
+- `docs/Flujo_de_Trabajo_Git.md`: procedimiento Git.
+- `docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md`: arquitectura y benchmarks.
+- `specs/INDEX.md`: registro de especificaciones.

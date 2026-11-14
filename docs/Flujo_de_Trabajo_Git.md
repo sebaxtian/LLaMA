@@ -1,15 +1,32 @@
 # Flujo de trabajo Git del proyecto LLaMA
 
-Este documento define de forma determinista la estrategia de ramas, integración, conflictos, releases y versionado del proyecto `LLaMA`.
+Este documento es la **norma de integración y release** del repositorio. Su rango es **4** y su carácter es **normativo**: desarrolla el procedimiento Git que `docs/sdd/PROTOCOLO_OPERATIVO.md` fija en el rango 3 y prevalece sobre las plantillas, las specs y el código. Ante contradicción con la constitución o con `AGENTS.md` prevalece el documento de rango menor y este flujo se corrige.
 
-## Ramas
+## Compuertas del flujo
+
+El flujo tiene dos compuertas: **G5** autoriza la integración de una rama de trabajo en `dev` y **G6** autoriza la publicación de un release. G5 la verifica el orquestador y G6 la aprueba el propietario mediante un commit firmado. Ningún agente declara una compuerta.
+
+| Compuerta | Autoriza | Condición | Evidencia exigida |
+|---|---|---|---|
+| G5 | La integración de la rama de trabajo en `dev` | G4 aprobada, spec en `validated`, Pull Request con `merge --no-ff` y validación posterior sin hallazgos | merge con dos padres, validador posterior sin hallazgos y listado de ramas sin la rama integrada |
+| G6 | La publicación del release | G5 cumplida, autorización firmada del propietario, auditoría de conformidad registrada, tag anotado verificado e `specs/INDEX.md` y `CHANGELOG.md` actualizados | línea de aprobación firmada en la entrada del release, informe de auditoría registrado, `git cat-file -t`, `git tag -n` y `git rev-parse` del tag |
+
+Sin G5 no se integra y sin G6 no se publica. Una integración intentada sin la compuerta cumplida se revierte en la rama de trabajo y no se registra.
+
+## Integración
+
+`merge --no-ff` es la única forma admitida de integración. El merge con `--no-ff` conserva la relación entre la rama de trabajo y la rama destino. Quedan prohibidos `rebase`, `squash merge` y la copia manual de archivos como mecanismo de integración.
+
+Cada rama de trabajo se vincula a una spec: el campo `branch` del frontmatter coincide con la rama real, los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo y no se integra una rama cuya spec esté por debajo del estado `validated`.
+
+### Ramas
 
 - `main`: estado estable y listo para producción. No se trabaja directamente sobre ella.
-- `dev`: integración del desarrollo. Debe mantenerse en un estado verificable.
+- `dev`: integración del desarrollo. Se mantiene en un estado verificable.
 - `feat/<nombre>`: nueva funcionalidad, creada desde `dev`.
 - `fix/<nombre>`: corrección detectada en `dev`, creada desde `dev`.
 - `hotfix/<nombre>`: corrección detectada en `main`, creada desde `main`.
-- `release/vX-Y-Z`: rama auxiliar para empaquetado y publicación de versiones, creada desde `dev`.
+- `release/vX-Y-Z`: rama de empaquetado y publicación de versiones, creada desde `dev`.
 
 Flujos:
 
@@ -20,41 +37,9 @@ dev  -> release/vX-Y-Z   -> dev & main
 main -> hotfix/<nombre>  -> main -> dev
 ```
 
-`main` y `dev` son ramas protegidas por política del proyecto y por reglas de protección remota en GitHub:
+`main` y `dev` rechazan commit y push directos. Los únicos commits adicionales admitidos durante una integración son el commit de merge `--no-ff` y los commits de resolución de conflictos. La protección remota y las excepciones se declaran en «Protección y excepciones».
 
-- No se permite crear commits directos de trabajo en `main`.
-- No se permite crear commits directos de trabajo ni push directo en `dev`; todos los cambios deben integrarse a través de Pull Requests desde ramas `feat/*`, `fix/*`, `hotfix/*` o `release/vX-Y-Z`.
-- Los únicos commits adicionales permitidos durante una integración son los commits de merge `--no-ff` y los commits de resolución de conflictos definidos en este documento.
-- Se elimina cualquier excepción de push o commit directo en `dev`: todo release se empaqueta en una rama auxiliar `release/vX-Y-Z` (con guiones en la versión, ej. `release/v0-1-0`) que solo modifica `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de las specs involucradas, integrándose posteriormente en `dev` y en `main` mediante Pull Requests con `merge --no-ff`.
-- En el repositorio remoto en GitHub, estas restricciones se aplican deterministamente mediante reglas de protección de ramas clásicas y ajustes del repositorio. En el repositorio local, se respetan mediante este procedimiento operativo.
-
-### Mapeo de protección remota en GitHub
-
-Para garantizar la integridad del historial y la gobernanza del proyecto, GitHub aplica las siguientes reglas de protección y ajustes de repositorio para `main` y `dev`:
-
-| Parámetro GitHub API | main | dev | Justificación normativa |
-|---|---|---|---|
-| `enforce_admins` | `true` | `true` | Aplica reglas sin excepción a todos los roles; bypass reservado al propietario en contingencias críticas (RF-008). |
-| `required_pull_request_reviews` | Activo (`count: 0`) | Activo (`count: 0`) | Exige Pull Request para toda integración; 0 aprobaciones obligatorias en etapa unipersonal (RF-002, RF-009). |
-| `dismiss_stale_reviews` | `true` | `true` | Invalida aprobaciones previas si se envían nuevos commits a la rama origen de un Pull Request. |
-| `restrictions` | `users: [], teams: [], apps: []` | `users: [], teams: [], apps: []` | Bloqueo absoluto de push directo a cualquier usuario, equipo o aplicación (RF-002, CB-005). |
-| `allow_force_pushes` | `false` | `false` | Prohibición irrevocable de envíos forzados (`--force`, `--force-with-lease`) (RF-003, CB-001). |
-| `allow_deletions` | `false` | `false` | Prohibición absoluta de borrado accidental o deliberado de las ramas base (RF-004, CB-006). |
-| `required_linear_history` | `false` | `false` | Permite commits explícitos de fusión `merge --no-ff` requeridos por la constitución (RF-005). |
-| `require_signed_commits` | `false` | `false` | No exige firma criptográfica en la etapa operativa actual (RF-010). |
-| `required_status_checks` | `null` | `null` | Diferido hasta el aprovisionamiento de flujos CI remotos (RF-006). |
-
-Ajustes a nivel de repositorio (`PATCH /repos/{owner}/{repo}`):
-
-| Opción de repositorio | Valor | Justificación normativa |
-|---|---|---|
-| `allow_merge_commit` | `true` | Habilita fusiones explícitas con commit de merge sin avance rápido (`--no-ff`) (RF-005). |
-| `allow_squash_merge` | `false` | Prohibición absoluta de fusiones squash en el servidor remoto (RF-005, CB-004). |
-| `allow_rebase_merge` | `false` | Prohibición absoluta de fusiones rebase en el servidor remoto (RF-005, CB-004). |
-| `delete_branch_on_merge` | `false` | Conserva el control determinista sobre el borrado de ramas tras validación de integración. |
-| `allow_auto_merge` | `false` | Desactiva fusiones automáticas desatendidas. |
-
-## Nombres de ramas
+### Nombres de ramas
 
 El nombre completo debe cumplir esta gramática de caracteres:
 
@@ -84,21 +69,9 @@ hotfix/server-startup
 release/v0-1-0
 ```
 
-## Estrategia de integración
-
-La única estrategia permitida es `merge --no-ff`.
-
-No se utilizarán:
-
-- `rebase` para integrar ramas compartidas.
-- `squash merge`.
-- Copia manual de archivos como mecanismo de integración.
-
-El merge con `--no-ff` conserva la relación entre la rama de trabajo y la rama destino.
-
 ### Features y fixes
 
-Antes de integrar una rama, actualizarla con la rama destino:
+Antes de integrar una rama, se actualiza con la rama destino:
 
 ```bash
 git switch feat/<nombre>
@@ -162,9 +135,9 @@ git merge --no-ff main
 
 Esto garantiza que el hotfix no desaparezca en el siguiente release.
 
-## Conflictos
+### Conflictos
 
-Los conflictos se resuelven únicamente en la rama definida para cada caso. Nunca se deben resolver mediante cambios manuales directos sobre `main`.
+Los conflictos se resuelven únicamente en la rama definida para cada caso. Nunca se resuelven mediante cambios manuales directos sobre `main`.
 
 Procedimiento obligatorio:
 
@@ -173,7 +146,7 @@ Procedimiento obligatorio:
 3. Resolver los archivos en la rama definida para ese caso.
 4. Marcar los archivos resueltos con `git add <archivo>`.
 5. Completar el merge con `git commit`.
-6. Repetir todas las validaciones.
+6. Repetir las validaciones.
 7. Continuar con el merge hacia la rama destino solo si las validaciones pasan.
 
 Para cancelar un merge sin completarlo:
@@ -193,9 +166,9 @@ La resolución en `dev` durante la sincronización de un hotfix es la única exc
 
 Si una validación falla, no se completa el merge.
 
-## Validaciones obligatorias
+### Validaciones previas a la integración
 
-Antes de cada integración:
+Antes de cada integración se comprueba, en este orden:
 
 1. Confirmar que los archivos modificados corresponden al alcance de la rama.
 2. Ejecutar `git status --short` y confirmar que no hay cambios inesperados.
@@ -207,7 +180,7 @@ Antes de cada integración:
 
 La validación se clasifica por tipo de cambio:
 
-### Cambios documentales
+#### Cambios documentales
 
 Un cambio exclusivamente documental pasa la validación cuando:
 
@@ -218,7 +191,7 @@ Un cambio exclusivamente documental pasa la validación cuando:
 
 No requiere ejecutar un modelo.
 
-### Cambios en scripts `.bat`
+#### Cambios en scripts `.bat`
 
 Un cambio de script pasa la validación únicamente cuando:
 
@@ -231,7 +204,7 @@ Un cambio de script pasa la validación únicamente cuando:
 
 Si falta el binario o el modelo requerido, la validación queda **BLOQUEADA** y la rama no se integra. No se considera suficiente documentar que la dependencia existe.
 
-### Cambios de configuración de modelo
+#### Cambios de configuración de modelo
 
 Además de las validaciones de script, se debe comprobar que:
 
@@ -242,128 +215,51 @@ Además de las validaciones de script, se debe comprobar que:
 
 Un resultado de `llama-bench` no sustituye la validación de un servidor con contexto largo.
 
-### Cambios de release
+#### Cambios de release
 
 Un release pasa la validación únicamente cuando:
 
-- `dev` contiene todos los cambios aprobados.
+- `dev` contiene los cambios aprobados.
 - `CHANGELOG.md` tiene entradas en `Unreleased`.
-- El incremento SemVer cumple las reglas de este documento.
+- El incremento de versión cumple las reglas de «Sincronización y tag».
 - El propietario ha autorizado el release.
 - La validación estructural y las validaciones funcionales aplicables han pasado.
 
-No existe actualmente una suite automatizada de tests para el proyecto raíz. La ausencia de una suite no elimina las validaciones obligatorias anteriores.
+No existe una suite automatizada de pruebas para la raíz del repositorio. Su ausencia no elimina las validaciones anteriores.
 
-## Integración con el desarrollo basado en especificaciones (SDD)
+### Condición de cierre de la rama
 
-El flujo Git está subordinado al protocolo SDD definido en `docs/sdd/PROTOCOLO_OPERATIVO.md` y a la norma suprema `docs/constitution.md`.
+Una rama de trabajo se cierra cuando se cumplen tres condiciones: el merge en `dev` figura con dos padres, el validador posterior no reporta hallazgos y las validaciones aplicables pasaron. Mientras falte una, la integración no está cerrada y G5 no se registra.
 
-Reglas de vínculo spec ↔ Git:
+## Eliminación de rama
 
-- Toda rama `feat/*`, `fix/*` o `hotfix/*` requiere una spec aprobada, salvo las excepciones de la Etapa 1, del cambio editorial y de las ramas de empaquetado `release/vX-Y-Z`.
-- Una spec por rama y una rama por spec. La spec declara `branch` en su frontmatter y debe coincidir con la rama real.
-- No se integra una rama con una spec por debajo del estado `validated`.
-- Los commits de implementación incluyen `Spec: SPEC-NNN` en el cuerpo del mensaje.
-- El validador comprueba la correspondencia: `python tools\sdd\validate.py --spec SPEC-NNN --gate G5 --git`.
-
-Compuertas Git del SDD:
-
-- **G5 (integración):** `merge --no-ff`, validación posterior, rama eliminada.
-- **G6 (release):** autorización del propietario, tag anotado, `specs/INDEX.md` y `CHANGELOG.md` actualizados.
-
-### Excepción de la Etapa 1 (Constitución / Setup)
-
-La rama que crea la constitución y el protocolo SDD puede existir sin spec previa, porque la metodología aún no existe. Es la única excepción de bootstrap, autorizada una sola vez por el propietario y registrada en `CHANGELOG.md`.
-
-### Excepción editorial
-
-Solo un cambio exclusivamente editorial (erratas, formato, enlaces) puede integrarse sin spec, siempre que no altere comportamiento, configuración, requisitos ni scripts. Debe ir en un commit `docs:` o `chore:`.
-
-### Excepción de ramas de release
-
-Las ramas auxiliares `release/vX-Y-Z` son exclusivamente operativas para empaquetado y publicación de versión (`CHANGELOG.md`, `specs/INDEX.md`, frontmatter de specs publicadas). No introducen código funcional ni modificaciones de especificación, por lo que están exentas de requerir una spec SDD previa.
-
-## Bootstrap determinista
-
-El bootstrap inicial de este repositorio ya fue ejecutado correctamente. La siguiente secuencia documenta el procedimiento utilizado y debe emplearse como referencia; no debe repetirse mientras exista la carpeta `.git`.
-
-Git 2.28 o superior es requisito para utilizar `git init -b main`.
-
-Ejecutar desde la raíz del proyecto:
+La rama de trabajo se elimina después de confirmar la integración, nunca antes:
 
 ```bash
-git --version
-git init -b main
-git branch --show-current
+git switch dev
+git branch -d feat/<nombre>
 ```
 
-La última salida debe ser exactamente `main`. Si no lo es, detener el procedimiento y corregir antes de crear commits:
+La eliminación se verifica sobre el listado de ramas; las dos comprobaciones deben devolver una salida vacía:
 
 ```bash
-git branch -M main
-git branch --show-current
+git branch --list feat/<nombre>
+git branch -r --list origin/feat/<nombre>
 ```
 
-Si `git init -b main` no está disponible, el procedimiento debe detenerse. No se utilizará un comportamiento implícito de la configuración global de Git.
+Si el listado local o remoto conserva la rama, la eliminación no está confirmada y G5 no se registra. La misma regla se aplica a `fix/*`, `hotfix/*` y `release/vX-Y-Z`.
 
-Antes del primer commit, verificar:
+## Sincronización y tag
+
+**Sincronización previa.** Antes del empaquetado, `dev` se sincroniza con `main` y la comprobación debe devolver dos ceros:
 
 ```bash
-git status --short
-git ls-files --others --exclude-standard
+git rev-list --left-right --count dev...main
 ```
 
-La lista esperada contiene exactamente:
+Una salida distinta de `0 0` detiene el release: se sincroniza, se resuelven los conflictos en `dev` y se repiten las validaciones. La sincronización se registra como primera verificación de release.
 
-```text
-.gitignore
-AGENTS.md
-CHANGELOG.md
-LICENSE
-MEMORY.md
-README.md
-bin/.gitkeep
-docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md
-docs/Flujo_de_Trabajo_Git.md
-models/.gitkeep
-src/.gitkeep
-```
-
-Crear el primer commit con mensaje exacto:
-
-```bash
-git add .gitignore AGENTS.md CHANGELOG.md LICENSE MEMORY.md README.md
-git add bin/.gitkeep models/.gitkeep src/.gitkeep
-git add docs/Documento_Maestro_Consolidado_Arquitectura_de_IA_Local_y_Benchmarking_de_eGPU_16GB_VRAM.md
-git add docs/Flujo_de_Trabajo_Git.md
-git commit -m "chore: initialize project structure"
-```
-
-Verificar el commit:
-
-```bash
-git rev-parse --verify HEAD
-git status --short
-```
-
-El estado debe estar limpio. Crear `dev` desde el primer commit de `main`:
-
-```bash
-git switch -c dev main
-git rev-parse main
-git rev-parse dev
-```
-
-Ambos hashes deben ser iguales. Volver a `main`:
-
-```bash
-git switch main
-git branch --show-current
-```
-
-## Semantic Versioning y tags
-
-Solo se permiten tags que cumplan esta expresión exacta:
+**Tag anotado.** Solo se admiten tags anotados que cumplan esta expresión exacta:
 
 ```text
 ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$
@@ -482,7 +378,11 @@ git rev-parse main
 
 Las dos últimas salidas deben ser iguales, `git cat-file -t vX.Y.Z` debe devolver `tag` y el asunto debe ser exactamente `Release vX.Y.Z`.
 
-## CHANGELOG.md
+**Tres verificaciones de release.** Se ejecutan en este orden y las tres deben pasar: `dev` sincronizada con `main`; tag anotado `vX.Y.Z` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la autorización de G6. Una verificación fallida detiene el release y la entrada permanece en `Unreleased`.
+
+## Registro de la verificación
+
+El resultado de G5 y de G6 se registra en dos soportes: en `validation_report.md` de la spec publicada y en la entrada del release de `CHANGELOG.md`. El reporte de validación es append-only después de G4: el registro de G5 y de G6 se añade sin alterar la matriz ni el dictamen.
 
 `CHANGELOG.md` mantiene `## [Unreleased]` al inicio. Las fechas utilizan ISO 8601 en UTC:
 
@@ -505,7 +405,52 @@ Al publicar una versión:
 
 No crear versiones ni tags si `Unreleased` está vacío.
 
-## Resultados locales y artefactos externos
+### Consulta del estado Git
+
+Este documento no mantiene un registro histórico de commits, merges ni ramas temporales. El estado real del repositorio se consulta con Git:
+
+```bash
+git status --short --branch
+git branch --all --verbose --no-abbrev
+git log --oneline --decorate --graph --all
+git tag --list
+```
+
+Los cambios históricos se conservan en el historial Git y los cambios relevantes se resumen en `CHANGELOG.md` bajo `Unreleased` hasta que se publique un release.
+
+## Protección y excepciones
+
+**Protección remota.** En el repositorio remoto, `main` y `dev` aplican las reglas siguientes:
+
+| Parámetro GitHub API | main | dev | Función |
+|---|---|---|---|
+| `enforce_admins` | `true` | `true` | Aplica las reglas a cada rol; el bypass queda reservado al propietario en contingencias críticas. |
+| `required_pull_request_reviews` | Activo (`count: 0`) | Activo (`count: 0`) | Exige Pull Request para cada integración, sin aprobaciones obligatorias en etapa unipersonal. |
+| `dismiss_stale_reviews` | `true` | `true` | Invalida las revisiones previas cuando se envían commits nuevos a la rama origen. |
+| `restrictions` | `users: [], teams: [], apps: []` | `users: [], teams: [], apps: []` | Bloquea el push directo a cualquier usuario, equipo o aplicación. |
+| `allow_force_pushes` | `false` | `false` | Prohíbe los envíos forzados, incluidos `--force` y `--force-with-lease`. |
+| `allow_deletions` | `false` | `false` | Impide el borrado de las ramas base. |
+| `required_linear_history` | `false` | `false` | Admite el commit de merge `--no-ff`. |
+| `require_signed_commits` | `false` | `false` | No exige firma en cada commit; la firma se exige en el commit que introduce la línea de aprobación. |
+| `required_status_checks` | `null` | `null` | Diferido hasta el aprovisionamiento de flujos de integración remotos. |
+
+Ajustes a nivel de repositorio:
+
+| Opción de repositorio | Valor | Función |
+|---|---|---|
+| `allow_merge_commit` | `true` | Habilita el merge con commit explícito y sin avance rápido. |
+| `allow_squash_merge` | `false` | Prohíbe el squash en el servidor remoto. |
+| `allow_rebase_merge` | `false` | Prohíbe el rebase en el servidor remoto. |
+| `delete_branch_on_merge` | `false` | Conserva el control manual de la eliminación de ramas después de verificar la integración. |
+| `allow_auto_merge` | `false` | Desactiva las fusiones automáticas desatendidas. |
+
+En el repositorio local, las mismas restricciones se respetan mediante el procedimiento de este documento.
+
+**Excepción editorial.** Un cambio exclusivamente editorial —erratas, formato y enlaces— se integra sin spec, siempre que no altere reglas, requisitos, comportamiento, configuración ni scripts, y se registra en un commit `docs:` o `chore:`.
+
+**Excepción de ramas de release.** `release/vX-Y-Z` se dedica al empaquetado de `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de las specs publicadas; no introduce código funcional ni cambios de requisito y se integra por Pull Request con `merge --no-ff`.
+
+### Contenido excluido del repositorio
 
 Los resultados permanentes de benchmark revisados y documentados pueden versionarse dentro de `docs/`. Los resultados temporales deben guardarse en `logs/`, `results/` o `tmp/`, que están excluidos por `.gitignore`.
 
@@ -520,18 +465,3 @@ El repositorio no distribuye junto con el proyecto completo:
 Estos componentes deben obtenerse desde sus fuentes oficiales y tienen licencias independientes de la licencia MIT del material propio del proyecto.
 
 La titularidad de `LICENSE` está confirmada por el propietario: `Agent Sebaxtian` es la identidad legal definitiva, `agent@sebaxtian.dev` es el correo que se desea publicar y el titular posee los derechos del material propio incluido. La licencia MIT no autoriza redistribuir componentes externos cuyas licencias sean diferentes.
-
-## Consulta del estado Git
-
-Este documento es la línea base normativa del flujo Git y no mantiene un registro histórico de commits, merges, ramas temporales ni estados puntuales del working tree.
-
-El estado real del repositorio debe consultarse directamente con Git mediante, como mínimo:
-
-```bash
-git status --short --branch
-git branch --all --verbose --no-abbrev
-git log --oneline --decorate --graph --all
-git tag --list
-```
-
-Los cambios históricos se conservan en el historial Git y los cambios relevantes del proyecto se resumen en `CHANGELOG.md` bajo `Unreleased` hasta que se publique un release.
