@@ -47,6 +47,12 @@ permissions:
   - action: edit
     resource: 'AGENTS.md'
     effect: allow
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: allow
+  - action: edit
+    resource: 'CHANGELOG.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny

@@ -45,6 +45,9 @@ permissions:
     resource: 'tools/**'
     effect: allow
   - action: edit
+    resource: '.github/**'
+    effect: allow
+  - action: edit
     resource: 'specs/*/tasks.md'
     effect: allow
   - action: shell
