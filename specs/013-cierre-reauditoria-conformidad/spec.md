@@ -1,8 +1,8 @@
 ---
 id: SPEC-013
 title: Cierre de la reauditoría de conformidad
-status: implementing
-version: 0.5.0
+status: implemented
+version: 0.6.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -370,6 +370,7 @@ Cubre: `RNF-007`, `RNF-008`.
 | 0.3.0 | 2026-11-14 | Plan: arquitectura de doce componentes, contratos del flujo, de las reglas de protección, de la sincronización, de la gramática, de las comprobaciones C-09, C-13, C-16 y C-17, de las dos ventanas de legado y de las correcciones documentales, once decisiones técnicas y matriz de cobertura de dieciséis requisitos, ocho no funcionales y dieciséis casos borde |
 | 0.4.0 | 2026-11-14 | Tasks: descomposición en cuarenta y cuatro tareas atómicas con cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas, estimaciones entre 15 y 30 minutos y una tarea reservada al propietario por la sección protegida |
 | 0.5.0 | 2026-11-14 | Implementación del cierre de la reauditoría |
+| 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
 
 ### Historial de transiciones
 
@@ -380,3 +381,4 @@ Cubre: `RNF-007`, `RNF-008`.
 | 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `c61432d` y `plan.md` escrito con once decisiones y la matriz de cobertura de dieciséis requisitos, ocho no funcionales y dieciséis casos borde |
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` escrito con cuarenta y cuatro tareas atómicas, cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas y estimaciones entre 15 y 30 minutos |
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | verificación de G2 registrada por el orquestador, cuarenta y tres tareas cerradas con evidencia y `--all` con código 0 |
+| 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `80e589b` con cuarenta y cuatro tareas cerradas, 156 pruebas en verde y `--all` con código 0 |
