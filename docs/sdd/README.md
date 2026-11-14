@@ -34,6 +34,13 @@ Esta carpeta contiene la documentación de referencia y la norma ejecutable del 
 - `diagrama_secuencia_subagentes_sdd.md` — secuencia de subagentes.
 - `referencia_ciclo_vida_sdd_puro.md` — referencia extendida del ciclo.
 
+## Análisis y planificación
+
+Documentos de trabajo, no normativos, que describen el estado del proceso y su hoja de ruta. No definen requisitos ni sustituyen al protocolo.
+
+- `comparacion_operativa_sdd_actual_vs_objetivo.md` — contraste entre el SDD aplicado hoy y el objetivo previsto, con brechas, compuertas y trazabilidad.
+- `plan_cierre_brechas_sdd.md` — plan de cierre de brechas (Fase −1, SPEC-008 y SPEC-009). No aprueba compuertas ni autoriza cambios por sí mismo.
+
 ## Plantillas
 
 Las plantillas normativas de artefactos viven en `plantillas/`:

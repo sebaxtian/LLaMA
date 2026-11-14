@@ -2,7 +2,7 @@
 
 Este documento es la **norma ejecutable** del Desarrollo Basado en Especificaciones (SDD) del proyecto. Es de rango 3 en la jerarquía normativa: prevalece sobre el flujo Git y sobre los documentos de referencia de `docs/sdd/`, y cede ante `docs/constitution.md` y `AGENTS.md`.
 
-El corpus de `docs/sdd/` (19 documentos) es material de referencia, no normativo. Ante contradicción con este protocolo, manda este protocolo.
+El corpus de `docs/sdd/` (21 documentos) es material de referencia, no normativo. Ante contradicción con este protocolo, manda este protocolo.
 
 ## 1. Modelo de adopción
 
