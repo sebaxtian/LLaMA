@@ -7,7 +7,7 @@ created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/trazabilidad-profunda-sdd
-release: "v1.1.1"
+release: ""
 supersedes: ""
 superseded_by: ""
 ---
