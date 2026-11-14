@@ -1243,5 +1243,262 @@ def normalized_transitions(value) -> dict[str, tuple[frozenset[str], str]]:
     return result
 
 
+# ==========================================================================
+# SPEC-012 · trazabilidad profunda
+#
+# Pruebas de las comprobaciones C-14 a C-18 escritas antes de su implementación
+# (fase roja). Cada comprobación tiene un caso positivo y un caso negativo.
+# ==========================================================================
+
+TRACE_BRANCH = "feat/trazabilidad-profunda-sdd"
+TRAZABILIDAD = FIXTURES / "trazabilidad"
+MERGE_ABREVIADO = "753c3e5"
+
+
+def changelog_con_release(release: str) -> str:
+    """Registro de cambios con la entrada del release y la viñeta de G6."""
+    return (
+        "# Changelog\n\n## [Unreleased]\n\n"
+        f"## [{release}] - 2026-11-14\n\n### Added\n\n"
+        f"- Trazabilidad profunda (`SPEC-012`).\n\n{APPROVAL_LINE}\n"
+    )
+
+
+def trazabilidad_run(case: unittest.TestCase, fixture: str, *, all_specs: bool = False,
+                     spec_id: str = "SPEC-012", status: str | None = None,
+                     mutate_spec=None, mutate_tasks=None, mutate_report=None,
+                     release: str = "", with_sibling: bool = False,
+                     git=None) -> RunResult:
+    """Ejecuta el validador sobre un caso de `fixtures/trazabilidad/`."""
+    root = make_repo(case)
+    base = TRAZABILIDAD / fixture
+    text = (base / "spec.md").read_text(encoding="utf-8")
+    if status:
+        text = with_status(text, status)
+    if mutate_spec:
+        text = mutate_spec(text)
+    spec_dir = add_spec(root, spec_id, text, slug=fixture.replace("/", "-"))
+    for name in ("tasks.md", "validation_report.md"):
+        source = base / name
+        if not source.exists():
+            continue
+        content = source.read_text(encoding="utf-8")
+        if name == "tasks.md" and mutate_tasks:
+            content = mutate_tasks(content)
+        if name == "validation_report.md" and mutate_report:
+            content = mutate_report(content)
+        write_doc(spec_dir / name, content)
+    index_source = base / "INDEX.md"
+    if index_source.exists():
+        write_doc(root / "specs" / "INDEX.md", index_source.read_text(encoding="utf-8"))
+    if release:
+        write_doc(root / "CHANGELOG.md", changelog_con_release(release))
+    specs = [(spec_id, spec_dir)]
+    if with_sibling:
+        sibling = (base / "otra-spec" / "spec.md").read_text(encoding="utf-8")
+        specs.append(("SPEC-011", add_spec(root, "SPEC-011", sibling, slug="vecina")))
+    argv = ["--all"] if all_specs else ["--spec", spec_id]
+    return run_in(root, specs, argv, git if git is not None else git_stub())
+
+
+def stub_de_commits(commits, *, point: str = "9" * 40, branch: str = TRACE_BRANCH) -> GitStub:
+    """Función Git con la lista de (sha, cuerpo) que la comprobación de historial enumera."""
+    rules = [
+        (_git_rule("--show-current"), (0, branch, "")),
+        (_git_rule("merge-base"), (0, point, "")),
+        (_git_rule("--merges"), (0, "", "")),
+    ]
+    for sha, body in commits:
+        rules.append((_git_rule("--format=%B", sha), (0, body, "")))
+        rules.append((_git_rule(sha), (0, sha, "")))
+    lista = "\n".join(sha for sha, _ in commits)
+    rules.append((_git_rule("--format=%H"), (0, lista, "")))
+    rules.append((_git_rule("log"), (0, lista, "")))
+    return GitStub(rules)
+
+
+class TestEnlaceCriterioTarea(unittest.TestCase):
+    """RF-001, RF-002, RF-003, CB-001, CB-002, CB-003, CB-015: enlace `CA → T` (C-14)."""
+
+    def test_enlace_ca_tarea(self):
+        result = trazabilidad_run(self, "enlace/valido")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "T-001" in m],
+                         f"el enlace válido no debe producir error: {result.reporter.findings}")
+        # Control: el mismo enlace sin cubrir un criterio sí produce error.
+        control = trazabilidad_run(self, "enlace/ca-sin-tarea")
+        self.assertEqual(control.code, 1,
+                         "el criterio sin tarea debe producir error y la comprobación no lo detecta")
+
+    def test_ca_inexistente_en_tarea(self):
+        result = trazabilidad_run(self, "enlace/ca-inexistente")
+        assert_error(self, result, "T-001", "CA-099")
+
+    def test_ca_sin_tarea(self):
+        result = trazabilidad_run(self, "enlace/ca-sin-tarea")
+        assert_error(self, result, "CA-003")
+
+    def test_ca_de_otra_spec(self):
+        result = trazabilidad_run(self, "enlace/ca-de-otra-spec", with_sibling=True)
+        assert_error(self, result, "T-001", "SPEC-011")
+
+    def test_formato_de_varios_ca(self):
+        result = trazabilidad_run(self, "enlace/varios-sin-coma")
+        assert_error(self, result, "T-001", "coma")
+
+
+class TestEvidenciaDeTarea(unittest.TestCase):
+    """RF-004, RNF-008, CB-004: campo de evidencia de la tarea cerrada (C-15)."""
+
+    def test_evidencia_valida(self):
+        result = trazabilidad_run(self, "evidencia/valida")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "T-001" in m],
+                         f"la evidencia válida no debe producir error: {result.reporter.findings}")
+        # Control: una evidencia por debajo del umbral sí produce error.
+        control = trazabilidad_run(self, "evidencia/corta")
+        self.assertEqual(control.code, 1,
+                         "la evidencia corta debe producir error y la comprobación no lo detecta")
+
+    def test_evidencia_corta(self):
+        result = trazabilidad_run(self, "evidencia/corta")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([m for m in result.messages("ERROR") if "T-001" in m],
+                        f"el error debe nombrar la tarea T-001: {result.reporter.findings}")
+
+    def test_evidencia_con_marcador(self):
+        result = trazabilidad_run(self, "evidencia/marcador")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([m for m in result.messages("ERROR") if "T-001" in m],
+                        f"el error debe nombrar la tarea T-001: {result.reporter.findings}")
+
+    def test_tarea_abierta_sin_evidencia(self):
+        result = trazabilidad_run(self, "evidencia/abierta")
+        self.assertEqual(result.code, 0,
+                         f"una tarea abierta puede no declarar evidencia: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "T-001" in m])
+        # Control: la misma tarea cerrada y sin evidencia sí produce error.
+        control = trazabilidad_run(
+            self, "evidencia/abierta",
+            mutate_tasks=lambda text: text.replace("- [ ] Completada.", "- [x] Completada."),
+        )
+        self.assertEqual(control.code, 1,
+                         "la tarea cerrada sin evidencia debe producir error y no se detecta")
+
+
+class TestReferenciaDeCommit(unittest.TestCase):
+    """RF-005, CB-005, CB-006, CB-018: cadena `Spec:` en los commits de implementación (C-16)."""
+
+    def test_commit_con_spec(self):
+        stub = stub_de_commits([("a" * 40, "Spec: SPEC-012\n\nImplementa T-001")])
+        result = trazabilidad_run(self, "commits/valido", all_specs=True, git=stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "Spec:" in m or "commit" in m.lower()],
+                         f"el commit con la cadena no debe producir error: {result.reporter.findings}")
+        # Control: el mismo historial sin la cadena sí produce error.
+        control = trazabilidad_run(
+            self, "commits/valido", all_specs=True,
+            git=stub_de_commits([("d" * 40, "Implementa T-001 sin referencia")]),
+        )
+        self.assertEqual(control.code, 1,
+                         "el commit sin la cadena debe producir error y la comprobación no lo detecta")
+
+    def test_commit_sin_spec(self):
+        stub = stub_de_commits([("b" * 40, "Implementa T-001 sin la referencia de la spec")])
+        result = trazabilidad_run(self, "commits/valido", all_specs=True, git=stub)
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([m for m in result.messages("ERROR") if "b" * 7 in m],
+                        f"el error debe nombrar el commit abreviado: {result.reporter.findings}")
+
+    def test_alcance_de_commits(self):
+        stub = stub_de_commits([("c" * 40, "Spec: SPEC-012\n\nCierra la tarea")])
+        result = trazabilidad_run(self, "commits/valido", all_specs=True, git=stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue(any("merge-base" in call or ".." in call for call in stub.calls),
+                        f"la comprobación debe acotar el historial al punto de integración: {stub.calls}")
+        self.assertFalse([m for m in result.messages("ERROR") if "c" * 7 in m])
+
+    def test_sin_commit_de_implementacion(self):
+        stub = stub_de_commits([])
+        result = trazabilidad_run(self, "commits/valido", all_specs=True, git=stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertIn("no aplicable", result.output.lower(),
+                      f"la enumeración vacía debe informarse como no aplicable: {result.output}")
+
+
+class TestCierreDeIntegracion(unittest.TestCase):
+    """RF-006, CB-007, CB-008, CB-009, CB-016: cierre de integración del reporte (C-17)."""
+
+    def test_cierre_completo(self):
+        result = trazabilidad_run(self, "cierre/completo", all_specs=True, status="validated",
+                                  release="v1.1.1")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "cierre" in m.lower()])
+        # Control: el mismo reporte sin la sección de cierre sí produce error.
+        control = trazabilidad_run(self, "cierre/ausente", all_specs=True, status="validated",
+                                   release="v1.1.1")
+        self.assertEqual(control.code, 1,
+                         "el cierre de integración ausente debe producir error y no se detecta")
+
+    def test_cierre_ausente(self):
+        result = trazabilidad_run(self, "cierre/ausente", all_specs=True, status="validated",
+                                  release="v1.1.1")
+        assert_error(self, result, "SPEC-012", "cierre")
+
+    def test_cierre_sin_release(self):
+        result = trazabilidad_run(self, "cierre/sin-release", all_specs=True, status="released",
+                                  release="v1.1.1")
+        assert_error(self, result, "SPEC-012", "release")
+
+    def test_tag_divergente(self):
+        result = trazabilidad_run(self, "cierre/tag-divergente", all_specs=True, status="released",
+                                  release="v1.1.1")
+        assert_error(self, result, "v1.1.1", "v1.2.0")
+
+
+class TestVersionadoDeLaRegularizacion(unittest.TestCase):
+    """RNF-006, CB-017: incremento PATCH, fila de motivo y ventana de legado (C-18)."""
+
+    def test_regularizacion_patch(self):
+        result = trazabilidad_run(self, "versionado/patch", spec_id="SPEC-001")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([f for f in result.errors if "version" in f.message.lower()])
+        # Control: la misma spec sin el incremento PATCH sí produce error de versionado.
+        control = trazabilidad_run(self, "versionado/sin-patch", spec_id="SPEC-001")
+        self.assertEqual(control.code, 1,
+                         "la falta de incremento PATCH debe producir error y no se detecta")
+
+    def test_regularizacion_sin_patch(self):
+        sin_patch = trazabilidad_run(self, "versionado/sin-patch", spec_id="SPEC-001")
+        self.assertEqual(sin_patch.code, 1, f"hallazgos: {sin_patch.reporter.findings}")
+        self.assertTrue([f for f in sin_patch.errors if "SPEC-001" in f.message],
+                        f"el error debe nombrar la spec: {sin_patch.reporter.findings}")
+        self.assertTrue([f for f in sin_patch.errors if "version" in f.message.lower()],
+                        f"el error debe nombrar el versionado: {sin_patch.reporter.findings}")
+        sin_fila = trazabilidad_run(
+            self, "versionado/patch", spec_id="SPEC-001",
+            mutate_spec=lambda text: text.replace(
+                "Regularización: criterio de aceptación y evidencia de las tareas publicadas",
+                "Cierre de alcance",
+            ),
+        )
+        self.assertEqual(sin_fila.code, 1, f"hallazgos: {sin_fila.reporter.findings}")
+        self.assertTrue([f for f in sin_fila.errors if "SPEC-001" in f.message])
+
+    def test_legado_de_008_a_011(self):
+        legado = trazabilidad_run(self, "versionado/legado", spec_id="SPEC-010")
+        self.assertEqual(legado.code, 0,
+                         f"la ventana de legado no devuelve error: {legado.reporter.findings}")
+        self.assertTrue([f for f in legado.warnings if "T-001" in f.message],
+                        f"se esperaba una advertencia por la falta de trazabilidad: {legado.reporter.findings}")
+        nueva = trazabilidad_run(
+            self, "versionado/legado", spec_id="SPEC-012",
+            mutate_spec=lambda text: set_frontmatter(text, id="SPEC-012"),
+        )
+        self.assertEqual(nueva.code, 1,
+                         f"la misma falta en SPEC-012 debe ser error: {nueva.reporter.findings}")
+        self.assertTrue([f for f in nueva.errors if "T-001" in f.message])
+
+
 if __name__ == "__main__":
     unittest.main()
