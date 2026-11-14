@@ -1,8 +1,8 @@
 ---
 id: SPEC-010
 title: Mecanismo de control SDD verificable
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -376,6 +376,8 @@ Cubre: `CB-014`, `RNF-006`.
 |---|---|---|
 | 0.1.0 | 2026-11-14 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-14 | Clarificación: ocho ambigüedades resueltas, historial de transiciones como subsección de `Historial de cambios`, separación entre `reviewer` y orquestador, localización del commit por firma, alcance local de G5, detección del release menor, ventana de legado hasta `SPEC-009` y formato exacto de aprobación |
+| 0.3.0 | 2026-11-14 | Plan: arquitectura del validador y de los comandos, trece comprobaciones nuevas, once decisiones técnicas, estrategia TDD y matriz de cobertura de veintiún requisitos, seis no funcionales y quince casos borde |
+| 0.4.0 | 2026-11-14 | Tareas: quince tareas atómicas con dependencias acíclicas, treinta y nueve pruebas nuevas, dos escritores declarados por allowlist y traspaso al `reviewer` |
 
 ### Historial de transiciones
 
@@ -383,3 +385,5 @@ Cubre: `CB-014`, `RNF-006`.
 |---|---|---|---|---|---|
 | 2026-11-14 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` |
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con `AMB-001` a `AMB-008` resueltos y los parches marcados |
+| 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `f38eb6a` y `plan.md` escrito con sus decisiones |
+| 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con los ocho campos, dependencias acíclicas y cobertura completa de requisitos y casos borde |
