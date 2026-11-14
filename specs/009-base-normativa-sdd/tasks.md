@@ -23,7 +23,7 @@ La Etapa 6 de esta especificación escribe dieciséis documentos normativos y se
 
 ## Progreso
 
-- [x] 18 de 19 tareas completadas.
+- [x] 19 de 19 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -403,8 +403,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   5. La entrega declara las divergencias de `T-017` y su corrección, o la ausencia de divergencias abiertas.
   6. La entrega declara que `V16`, la revisión independiente, corresponde al rol `reviewer` y que la compuerta G2 la declara el propietario en un commit firmado; ningún agente declara la compuerta (`CB-004`).
   7. La entrega declara que la Etapa 6 no modificó `tools/`, `tests/`, `src/`, `.opencode/` ni `llama.cpp/`, con la salida de `V15` como respaldo (`CB-010`).
-- **Evidencia:** pendiente de registro al completar la tarea; se rellena con el hash del commit de corte, la tabla de comprobaciones y la declaración de traspaso.
-- [ ] Completada.
+- **Evidencia:** Commit de corte `1e70ad969219a277ad3dccdc654bc1a758966253` en la rama `feat/base-normativa-sdd-v2`, con el árbol de trabajo limpio tras el commit de la base v2. Paquete de traspaso al rol `reviewer`: `spec.md`, `clarify.md`, `plan.md` y `tasks.md` de `SPEC-009`; las dieciséis rutas de la base v2; el anexo de transición del protocolo; la batería `V1` a `V15` con sus resultados y la comprobación `V16` pendiente de la revisión independiente. Resultados de la batería: `V1` `0`; `V2` `67` líneas; `V3` `16` secciones; `V4` `32` archivos y `32` filas sin faltantes; `V5` `0`; `V6` `0`; `V7` con criterio y evidencia; `V8` `0`; `V9` plantillas presentes; `V10` `7` filas por documento; `V11` conjuntos coherentes; `V12` anexo y referencia; `V13` rama Gemma local, remota ausente y dos referencias; `V14` código `0`; `V15` dieciséis rutas de la base más el registro `tasks.md`. La revisión independiente debe verificar además la firma del commit de `G1` `f6faa3b`, la coherencia de los cinco conjuntos y la conformidad de las dieciséis rutas. La compuerta `G2` la declara el propietario en un commit firmado; ningún agente la declara.
+- [x] Completada.
 
 ## Cobertura de requisitos
 
