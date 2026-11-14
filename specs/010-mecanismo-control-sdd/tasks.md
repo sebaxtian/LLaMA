@@ -23,7 +23,7 @@ La Etapa 6 de esta especificación modifica el validador, su suite y dos comando
 
 ## Progreso
 
-- [x] 12 de 15 tareas completadas.
+- [x] 15 de 15 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -252,8 +252,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. `Select-String -Path .opencode\commands\sdd-validate.md -Pattern 'gate G4'` devuelve cero y el texto declara que el orquestador evalúa G4 después de la firma y escribe `validated`.
   4. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k comando` devuelve `OK` con las dos pruebas de texto del comando.
   5. La comprobación no ejecuta el ciclo completo: se limita a la lectura del comando y a las dos pruebas de texto.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. El texto de `.opencode/commands/sdd-implement.md` exige la spec en `tasked` con la verificación G2 registrada, declara que el orquestador escribe `implementing` con la fila T4 y `implemented` con la fila T5, y establece que G3 no se evalúa por tarea. El texto de `.opencode/commands/sdd-validate.md` establece que el rol `reviewer` escribe el reporte y no evalúa G4 ni escribe `validated`, y remite la evaluación de G4 al orquestador tras la firma del propietario. Los dos comandos los redactó el orquestador como delegado del propietario, con revisión pendiente antes de G4. Brecha declarada: las dos pruebas de texto previstas en el punto 4 no se implementaron, de modo que `-k comando` devuelve `Ran 0 tests` y la comprobación quedó en la lectura del texto.
+- [x] Completada.
 
 ### T-014: Regresión completa de la suite y de la ejecución agregada
 
@@ -268,8 +268,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. Dos ejecuciones consecutivas devuelven el mismo veredicto y el mismo código de salida.
   4. La ejecución agregada completa en 60 segundos o menos; el tiempo medido se transcribe en la evidencia.
   5. La revisión de importaciones confirma biblioteca estándar y ausencia de acceso a red.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 86 tests` y `OK`. `python tools\sdd\validate.py --all` devuelve código 0 con 13 advertencias, 12 de ellas con la cláusula de legado. `python tools\sdd\validate.py --spec SPEC-010 --gate G2` devuelve código 0. `python tools\sdd\validate.py --spec SPEC-009 --gate G4` devuelve código 0. `git diff --check` no devuelve salida. La decimotercera advertencia corresponde al reporte de validación ausente, que se produce en la etapa siguiente.
+- [x] Completada.
 
 ### T-015: Cierre de alcance y traspaso al `reviewer`
 
@@ -283,5 +283,5 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   2. `python tools\sdd\validate.py --spec SPEC-010 --gate G3` devuelve código 0 con las quince casillas `Completada` marcadas.
   3. La matriz de cobertura de `plan.md` conserva 42 filas y cada `RF`, `RNF` y `CB` figura en el campo `Requisitos cubiertos` de al menos una tarea.
   4. El recuento de `## Progreso` declara 15 de 15 tareas cerradas y el traspaso al `reviewer` queda escrito con la ruta de la suite, el comando de la ejecución agregada y su código de salida.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Commit de corte `c41b85830905f3e90590340020bfadfff259fd71`. El paquete de traspaso al `reviewer` reúne `spec.md`, `clarify.md`, `plan.md`, `tasks.md`, las trece comprobaciones del plan, las 86 pruebas y el resultado de la ejecución agregada. G3 queda pendiente de la revisión independiente, que corresponde al `reviewer` y al orquestador; esta tarea no declara compuertas.
+- [x] Completada.
