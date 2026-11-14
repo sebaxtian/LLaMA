@@ -12,27 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: '.opencode/**'
-    effect: allow
-  - action: edit
-    resource: '.github/**'
-    effect: allow
-  - action: edit
-    resource: 'opencode.jsonc'
-    effect: allow
-  - action: edit
-    resource: 'MEMORY.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/INDEX.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/spec.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/validation_report.md'
-    effect: allow
-  - action: edit
     resource: 'src/**'
     effect: deny
   - action: edit
@@ -62,6 +41,27 @@ permissions:
   - action: edit
     resource: '.env'
     effect: deny
+  - action: edit
+    resource: '.opencode/**'
+    effect: allow
+  - action: edit
+    resource: '.github/**'
+    effect: allow
+  - action: edit
+    resource: 'opencode.jsonc'
+    effect: allow
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/INDEX.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/spec.md'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/validation_report.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny
@@ -91,6 +91,15 @@ permissions:
     effect: allow
   - action: shell
     resource: 'python tools\sdd\validate.py **'
+    effect: allow
+  - action: shell
+    resource: 'git merge-base **'
+    effect: allow
+  - action: shell
+    resource: 'git ls-remote **'
+    effect: allow
+  - action: shell
+    resource: 'git verify-commit **'
     effect: allow
   - action: subagent
     resource: '*'

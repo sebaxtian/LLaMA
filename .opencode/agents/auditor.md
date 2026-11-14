@@ -12,9 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: 'docs/sdd/auditoria_*.md'
-    effect: allow
-  - action: edit
     resource: 'docs/**'
     effect: deny
   - action: edit
@@ -50,6 +47,9 @@ permissions:
   - action: edit
     resource: '.env'
     effect: deny
+  - action: edit
+    resource: 'docs/sdd/auditoria_*.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny
@@ -73,6 +73,18 @@ permissions:
     effect: allow
   - action: shell
     resource: 'python tools\sdd\validate.py **'
+    effect: allow
+  - action: shell
+    resource: 'python -m unittest **'
+    effect: allow
+  - action: shell
+    resource: 'git merge-base **'
+    effect: allow
+  - action: shell
+    resource: 'git ls-remote **'
+    effect: allow
+  - action: shell
+    resource: 'git verify-commit **'
     effect: allow
   - action: subagent
     resource: '*'

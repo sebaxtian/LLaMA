@@ -12,12 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: 'specs/*/validation_report.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/**'
-    effect: deny
-  - action: edit
     resource: 'src/**'
     effect: deny
   - action: edit
@@ -47,6 +41,12 @@ permissions:
   - action: edit
     resource: '.env'
     effect: deny
+  - action: edit
+    resource: 'specs/**'
+    effect: deny
+  - action: edit
+    resource: 'specs/*/validation_report.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny
@@ -70,6 +70,18 @@ permissions:
     effect: allow
   - action: shell
     resource: 'python tools\sdd\validate.py **'
+    effect: allow
+  - action: shell
+    resource: 'python -m unittest **'
+    effect: allow
+  - action: shell
+    resource: 'git merge-base **'
+    effect: allow
+  - action: shell
+    resource: 'git ls-remote **'
+    effect: allow
+  - action: shell
+    resource: 'git verify-commit **'
     effect: allow
   - action: subagent
     resource: '*'

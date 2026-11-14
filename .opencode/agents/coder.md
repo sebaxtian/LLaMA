@@ -12,21 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: 'src/**'
-    effect: allow
-  - action: edit
-    resource: 'tests/**'
-    effect: allow
-  - action: edit
-    resource: 'tools/**'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/tasks.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/**'
-    effect: deny
-  - action: edit
     resource: 'docs/**'
     effect: deny
   - action: edit
@@ -47,6 +32,21 @@ permissions:
   - action: edit
     resource: '.env'
     effect: deny
+  - action: edit
+    resource: 'specs/**'
+    effect: deny
+  - action: edit
+    resource: 'src/**'
+    effect: allow
+  - action: edit
+    resource: 'tests/**'
+    effect: allow
+  - action: edit
+    resource: 'tools/**'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/tasks.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny

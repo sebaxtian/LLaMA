@@ -12,12 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: 'docs/**'
-    effect: allow
-  - action: edit
-    resource: 'AGENTS.md'
-    effect: allow
-  - action: edit
     resource: 'specs/**'
     effect: deny
   - action: edit
@@ -47,6 +41,12 @@ permissions:
   - action: edit
     resource: '.env'
     effect: deny
+  - action: edit
+    resource: 'docs/**'
+    effect: allow
+  - action: edit
+    resource: 'AGENTS.md'
+    effect: allow
   - action: shell
     resource: '*'
     effect: deny

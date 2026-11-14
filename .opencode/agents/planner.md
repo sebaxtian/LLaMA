@@ -12,12 +12,6 @@ permissions:
     resource: '.env'
     effect: deny
   - action: edit
-    resource: 'specs/**'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/validation_report.md'
-    effect: deny
-  - action: edit
     resource: 'src/**'
     effect: deny
   - action: edit
@@ -46,6 +40,12 @@ permissions:
     effect: deny
   - action: edit
     resource: '.env'
+    effect: deny
+  - action: edit
+    resource: 'specs/**'
+    effect: allow
+  - action: edit
+    resource: 'specs/*/validation_report.md'
     effect: deny
   - action: shell
     resource: '*'
