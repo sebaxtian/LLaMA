@@ -27,7 +27,7 @@ La etapa modifica el validador determinista, su suite de pruebas y siete specs p
 
 ## Progreso
 
-- [ ] 16 de 18 tareas completadas.
+- [x] 18 de 18 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -143,7 +143,7 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** las tres pruebas de `T-005` en verde; `python tools\sdd\validate.py --spec SPEC-010` informa la falta como advertencia y `python tools\sdd\validate.py --spec SPEC-012` la informa como error.
-- **Evidencia:** `python tools\sdd\validate.py --all` devuelve código 0 con 44 hallazgos `C-14` y 4 `C-17`, todos en `SPEC-008` a `SPEC-011`, y `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 131 tests` y `OK`. La ventana se endureció por decisión del propietario: `TRACE_LEGACY_WINDOW = set(TRACE_LEGACY_SPECS)` limita la degradación a `SPEC-008` a `SPEC-011` y la fixture `g3/tareas-completas` recibe criterio y evidencia. Desviación declarada: el disparador de `C-18` es declarativo y no produce hallazgo en `--spec SPEC-010` ni en `--spec SPEC-012`; la rama de error se acredita con `test_regularizacion_sin_patch` sobre la fixture de `SPEC-001` y la de advertencia con `test_legado_de_008_a_011`.
+- **Evidencia:** `python tools\sdd\validate.py --all` devuelve código 0 con 44 hallazgos `C-14` y 4 `C-17`, concentrados en `SPEC-008` a `SPEC-011`, y `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 131 tests` y `OK`. La ventana se endureció por decisión del propietario: `TRACE_LEGACY_WINDOW = set(TRACE_LEGACY_SPECS)` limita la degradación a `SPEC-008` a `SPEC-011` y la fixture `g3/tareas-completas` recibe criterio y evidencia. Desviación declarada: el disparador de `C-18` es declarativo y no produce hallazgo en `--spec SPEC-010` ni en `--spec SPEC-012`; la rama de error se acredita con `test_regularizacion_sin_patch` sobre la fixture de `SPEC-001` y la de advertencia con `test_legado_de_008_a_011`.
 - [x] Completada.
 
 ### T-009: Regularización de las tareas de SPEC-001
@@ -242,8 +242,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/012-trazabilidad-profunda-sdd/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -q` devuelve 131 pruebas en verde, 111 vigentes y 20 nuevas, con una pareja positiva y negativa por comprobación; `python tools\sdd\validate.py --all` devuelve código de salida 0 dentro de 300 segundos; dos ejecuciones consecutivas sobre el mismo commit presentan 0 diferencias en el conjunto de hallazgos; `--all` ejecuta las comprobaciones de historial y `SPEC-008` a `SPEC-011` informan solo advertencia.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 131 tests` y `OK` (111 vigentes y 20 nuevas); `python tools\sdd\validate.py --all` devuelve código 0 en 0,74 s, con 61 advertencias y ninguna entrada `[ERROR]`; dos ejecuciones consecutivas sobre el mismo commit presentan 0 diferencias; el bloque de alcance declara las comprobaciones de historial, enlace `CA → T` y cierre de integración, y las 51 advertencias de `SPEC-008` a `SPEC-011` se emiten como cláusula de legado.
+- [x] Completada.
 
 ### T-018: Cierre de alcance y traspaso al reviewer
 
@@ -253,5 +253,5 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/012-trazabilidad-profunda-sdd/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** las dieciocho tareas figuran cerradas con su evidencia transcrita; `python tools\sdd\validate.py --spec SPEC-012 --gate G3` devuelve código de salida 0; el paquete de traspaso reúne los cinco artefactos de la spec, las cinco comprobaciones, las veinte pruebas y la salida de la ejecución agregada, y no declara compuerta alguna.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** Las dieciocho tareas figuran cerradas con su evidencia transcrita y el paquete de traspaso reúne los artefactos `spec.md`, `clarify.md`, `plan.md` y `tasks.md`, las cinco comprobaciones `C-14` a `C-18`, las veinte pruebas de `TestEnlaceCriterioTarea` a `TestVersionadoDeLaRegularizacion` y la salida agregada con código 0. La verificación de G3 queda a cargo de la sesión orquestadora, que no delega la compuerta: `python tools\sdd\validate.py --spec SPEC-012 --gate G3` devuelve código 0 con `OK: sin hallazgos`.
+- [x] Completada.
