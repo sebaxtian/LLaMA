@@ -1,8 +1,8 @@
 ---
 id: SPEC-012
 title: Trazabilidad profunda SDD verificable
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -322,6 +322,8 @@ Cubre: `RNF-005`.
 |---|---|---|
 | 0.1.0 | 2026-11-14 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-14 | Clarificación: ocho ambigüedades resueltas; umbral y marcas de pendiente de la evidencia; ventana de legado de cuatro specs; versionado PATCH de la regularización; fuente histórica de merge y tag; sección de cierre de integración; alcance de la comprobación de commits; separación por coma de varios criterios; regularización sin reescritura; cuatro casos borde nuevos |
+| 0.3.0 | 2026-11-14 | Plan: arquitectura de seis capas, procedimientos de las cinco comprobaciones nuevas, contratos de tarea, evidencia, cierre de integración y regularización con la tabla de siete pares, diez decisiones técnicas y matriz de cobertura de nueve requisitos, ocho no funcionales y dieciocho casos borde |
+| 0.4.0 | 2026-11-14 | Tareas: dieciocho tareas atómicas con dependencias acíclicas, tres escritores declarados, veinte pruebas nuevas en cinco tareas de prueba y cobertura completa de requisitos y casos borde |
 
 ### Historial de transiciones
 
@@ -329,3 +331,5 @@ Cubre: `RNF-005`.
 |---|---|---|---|---|---|
 | 2026-11-14 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` con nueve requisitos funcionales, ocho no funcionales, catorce casos borde y diecisiete criterios de aceptación |
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con `AMB-001` a `AMB-008` resueltos, cuatro casos borde nuevos y once parches marcados en `spec.md` |
+| 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `cfb576b` y `plan.md` escrito con diez decisiones y la matriz de cobertura de treinta y cinco filas |
+| 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con dieciocho tareas, ocho campos por tarea, dependencias acíclicas y cobertura de nueve requisitos, ocho no funcionales y dieciocho casos borde |
