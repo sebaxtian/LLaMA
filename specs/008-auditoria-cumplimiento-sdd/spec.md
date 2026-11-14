@@ -1,8 +1,8 @@
 ---
 id: SPEC-008
 title: Auditoría de cumplimiento SDD
-status: tasked
-version: 0.4.0
+status: validated
+version: 0.5.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -376,6 +376,7 @@ Cubre: `CB-009`.
 <!-- Solo el propietario puede rellenar esta sección. -->
 
 - [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-14)
+- [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-14)
 
 ## Historial de cambios
 
@@ -385,3 +386,4 @@ Cubre: `CB-009`.
 | 0.2.0 | 2026-11-14 | Clarificación: base normativa por regla de inclusión con recuento delegado al informe (AMB-001), exclusión de rango normativo registrada y no resuelta (AMB-002, AMB-006), commit de corte fijado antes del informe (AMB-003), nuevo caso borde CB-012 y cobertura ampliada en CA-001 y CA-007 |
 | 0.3.0 | 2026-11-14 | Plan técnico: arquitectura del informe en doce secciones, modelo de evidencia, esquemas de tablas, regla de agregación y estrategia de verificación documental (DEC-001 a DEC-010); estado `planned` |
 | 0.4.0 | 2026-11-14 | Tareas: descomposición en 26 tareas atómicas con dependencias acíclicas, archivos, estimación y validación; regla de ejecución con `documenter` como implementador y `planner` como registrador de casillas y evidencia; estado `tasked` |
+| 0.5.0 | 2026-11-14 | Implementación validada: informe de auditoría en doce secciones con 41 hallazgos y veredicto global `NO CONFORME`, dictamen `CONVERGIDO` 38/38 y aprobación G4 del propietario; estado `validated` |
