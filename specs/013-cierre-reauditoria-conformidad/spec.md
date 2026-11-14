@@ -1,8 +1,8 @@
 ---
 id: SPEC-013
 title: Cierre de la reauditoría de conformidad
-status: implemented
-version: 0.6.0
+status: validated
+version: 0.7.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -371,6 +371,7 @@ Cubre: `RNF-007`, `RNF-008`.
 | 0.4.0 | 2026-11-14 | Tasks: descomposición en cuarenta y cuatro tareas atómicas con cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas, estimaciones entre 15 y 30 minutos y una tarea reservada al propietario por la sección protegida |
 | 0.5.0 | 2026-11-14 | Implementación del cierre de la reauditoría |
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
+| 0.7.0 | 2026-11-14 | Validación e integración del cierre de la reauditoría |
 
 ### Historial de transiciones
 
@@ -382,3 +383,4 @@ Cubre: `RNF-007`, `RNF-008`.
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` escrito con cuarenta y cuatro tareas atómicas, cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas y estimaciones entre 15 y 30 minutos |
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | verificación de G2 registrada por el orquestador, cuarenta y tres tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `80e589b` con cuarenta y cuatro tareas cerradas, 156 pruebas en verde y `--all` con código 0 |
+| 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `b8ea2d9`, dictamen `CONVERGIDO` de 40 de 40 filas e integración `e55fca1` con dos padres y rama eliminada |
