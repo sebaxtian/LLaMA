@@ -144,6 +144,30 @@ UNVERIFIED_CHECKS = [
     "la conformidad del régimen completo",
 ]
 
+# ---------------------------------------------------------- SPEC-012 (C-14 a C-18)
+# Ventana de legado de esta spec (DEC-007): las cuatro specs validadas sin release.
+TRACE_LEGACY_SPECS = {f"SPEC-{n:03d}" for n in range(8, 12)}
+# Ventana efectiva de C-14, C-15 y C-17: añade la degradación heredada de SPEC-010 (001 a 009).
+TRACE_LEGACY_WINDOW = TRACE_LEGACY_SPECS | {f"SPEC-{n:03d}" for n in range(1, 10)}
+# Las siete specs publicadas cuya regularización verifica C-18 (RF-007).
+REGULARIZED_SPECS = {f"SPEC-{n:03d}" for n in range(1, 8)}
+# C-15: umbral y marcas del campo `Evidencia` (RNF-008, DEC-002).
+EVIDENCE_MIN_LENGTH = 20
+EVIDENCE_MARKERS = {"pendiente", "n/a", "na", "sin evidencia"}
+EVIDENCE_RE = re.compile(r"^\s*-\s*\*\*Evidencia:\*\*\s*(.*)$", re.MULTILINE)
+# C-14: campo `Criterio de aceptación` y forma de su lista.
+CRITERIA_FIELD_RE = re.compile(r"\*\*Criterio de aceptación:\*\*\s*(.*)")
+CRITERIA_ID_RE = re.compile(r"^`(CA-\d{3})`$")
+# C-16: cadena de la spec en el cuerpo del commit.
+SPEC_CHAIN_RE = re.compile(r"Spec:\s*(SPEC-\d{3})")
+# C-17: sección de cierre y sus dos líneas.
+CLOSE_SECTION_RE = re.compile(r"^##\s+Cierre de integración\s*$", re.MULTILINE)
+MERGE_LINE_RE = re.compile(r"^Merge:\s*([0-9a-f]{7,40})\s*$", re.MULTILINE)
+RELEASE_LINE_RE = re.compile(r"^Release:\s*(\S*)\s*$", re.MULTILINE)
+# C-18: filas del historial de cambios con versión y motivo.
+CHANGE_ROW_RE = re.compile(r"^\|\s*(\d+\.\d+\.\d+)\s*\|[^|]*\|\s*([^|]*)\|", re.MULTILINE)
+
+
 
 class Finding:
     def __init__(self, severity: str, path: str, message: str):
@@ -981,7 +1005,201 @@ def executed_scope(gate: str | None, aggregate: bool, with_git: bool) -> list[st
         checks.append("G5: merge de dos padres en dev, integración de la rama, validación posterior y rama ausente")
     if with_git:
         checks.append("rama de trabajo y cuerpo del commit de implementación")
+    if aggregate:
+        checks.append("historial de commits y cadena «Spec: SPEC-NNN»")
+    checks.append("enlace CA → T y evidencia de las tareas")
+    checks.append("cierre de integración y versionado de la regularización")
     return checks
+
+
+# ------------------------------------------------------------- C-14 a C-18
+
+
+def emit_trace(rep: Reporter, spec_id: str, check: str, path: str, message: str,
+               legacy: set[str] | None = None) -> None:
+    """C-14 a C-18: advertencia en la ventana de legado y error desde SPEC-012 (DEC-007)."""
+    window = TRACE_LEGACY_WINDOW if legacy is None else legacy
+    text = f"{check}: {message}"
+    if spec_id in window:
+        rep.warn(path, f"{text} (cláusula de legado)")
+    else:
+        rep.error(path, text)
+
+
+def spec_criteria(body: str) -> list[str]:
+    """Identificadores `CA-NNN` declarados como encabezado en los criterios de aceptación."""
+    section = _section(body, r"Criterios de aceptaci")
+    return re.findall(r"^###\s+(CA-\d{3})\b", section, re.MULTILINE)
+
+
+def task_blocks(text: str) -> list[tuple[str, str]]:
+    """Bloques `### T-NNN` del artefacto de tareas."""
+    blocks = []
+    for block in re.split(r"\n(?=#{2,3}\s+T-\d{3})", text):
+        match = re.match(r"#{2,3}\s+(T-\d{3})", block)
+        if match:
+            blocks.append((match.group(1), block))
+    return blocks
+
+
+def declared_criteria(block: str) -> tuple[list[str], bool]:
+    """Identificadores del campo de criterio y si la lista respeta la forma con coma."""
+    match = CRITERIA_FIELD_RE.search(block)
+    if not match or not match.group(1).strip():
+        return [], False
+    raw = match.group(1).strip().rstrip(".")
+    tokens = [token.strip() for token in raw.split(",")]
+    return re.findall(r"CA-\d{3}", raw), all(CRITERIA_ID_RE.match(token) for token in tokens)
+
+
+def check_ca_links(spec_id: str, body: str, tasks_text: str, rel_tasks: str, rel_spec: str,
+                   rep: Reporter, criteria_owner: dict[str, str] | None = None) -> None:
+    """C-14: enlace recíproco `CA → T` (RF-001, RF-002, RF-003, CB-015)."""
+    declared_in_spec = spec_criteria(body)
+    spec_set = set(declared_in_spec)
+    owner = criteria_owner or {}
+    covered: set[str] = set()
+    for tid, block in task_blocks(tasks_text):
+        match = CRITERIA_FIELD_RE.search(block)
+        if not match or not match.group(1).strip():
+            emit_trace(rep, spec_id, "C-14", rel_tasks,
+                       f"la tarea {tid} no declara el campo «Criterio de aceptación»")
+            continue
+        ids, well_formed = declared_criteria(block)
+        if not well_formed:
+            emit_trace(rep, spec_id, "C-14", rel_tasks,
+                       f"la tarea {tid} enumera varios criterios sin separarlos por coma")
+        for criterio in ids:
+            if criterio in spec_set:
+                covered.add(criterio)
+                continue
+            destino = owner.get(criterio)
+            if destino and destino != spec_id:
+                emit_trace(rep, spec_id, "C-14", rel_tasks,
+                           f"la tarea {tid} declara el criterio {criterio}, que pertenece a {destino}")
+            else:
+                emit_trace(rep, spec_id, "C-14", rel_tasks,
+                           f"la tarea {tid} declara el criterio {criterio}, que no existe en {spec_id}")
+    for criterio in declared_in_spec:
+        if criterio not in covered:
+            emit_trace(rep, spec_id, "C-14", rel_spec,
+                       f"el criterio {criterio} no figura en el criterio de aceptación de ninguna tarea")
+
+
+def check_evidence(spec_id: str, tasks_text: str, rel_tasks: str, rep: Reporter) -> None:
+    """C-15: campo `Evidencia` de cada tarea cerrada (RF-004, RNF-008, CB-004)."""
+    for tid, block in task_blocks(tasks_text):
+        if not COMPLETED_RE.search(block):
+            continue
+        match = EVIDENCE_RE.search(block)
+        if not match:
+            emit_trace(rep, spec_id, "C-15", rel_tasks,
+                       f"la tarea {tid} está completada y no declara el campo «Evidencia»")
+            continue
+        text = match.group(1).strip()
+        normalized = "".join(text.split())
+        if not normalized:
+            emit_trace(rep, spec_id, "C-15", rel_tasks,
+                       f"la tarea {tid} declara el campo «Evidencia» vacío")
+            continue
+        if len(normalized) < EVIDENCE_MIN_LENGTH:
+            emit_trace(rep, spec_id, "C-15", rel_tasks,
+                       f"la tarea {tid} declara una evidencia de {len(normalized)} caracteres y el "
+                       f"mínimo es {EVIDENCE_MIN_LENGTH}")
+            continue
+        lowered = normalized.lower()
+        if lowered in EVIDENCE_MARKERS or any(term in lowered for term in AMBIGUOUS_TERMS):
+            emit_trace(rep, spec_id, "C-15", rel_tasks,
+                       f"la tarea {tid} declara una evidencia con un marcador de pendiente")
+
+
+def check_regularization_version(spec_id: str, fm: dict, body: str, rel_spec: str,
+                                 rep: Reporter) -> None:
+    """C-18: incremento PATCH y fila de motivo de la regularización (CB-017, DEC-006)."""
+    version = fm.get("version", "").strip().strip('"')
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
+    if not match:
+        return
+    patch = int(match.group(3))
+    history = _section(body, r"Historial de cambios")
+    rows = [(row.group(1), row.group(2).strip()) for row in CHANGE_ROW_RE.finditer(history)]
+    regularizacion = [(row_version, motive) for row_version, motive in rows
+                      if re.match(r"\s*regularizaci", motive, re.IGNORECASE)]
+    if regularizacion:
+        row_version, _ = regularizacion[-1]
+        if row_version != version or patch < 1:
+            emit_trace(rep, spec_id, "C-18", rel_spec,
+                       f"el campo `version` de {spec_id} es {version} y la fila de regularización "
+                       f"declara {row_version}; se exige el incremento PATCH con la fila de motivo",
+                       legacy=TRACE_LEGACY_SPECS)
+    elif spec_id in REGULARIZED_SPECS and patch >= 1:
+        emit_trace(rep, spec_id, "C-18", rel_spec,
+                   f"el campo `version` de {spec_id} incrementa PATCH a {version} y no registra "
+                   "la fila de motivo de la regularización",
+                   legacy=TRACE_LEGACY_SPECS)
+
+
+def check_integration_close(spec_id: str, fm: dict, text: str, rel_report: str,
+                            rep: Reporter) -> None:
+    """C-17: sección `Cierre de integración` con merge y tag (RF-006, CB-007 a CB-009, CB-016)."""
+    status = fm.get("status", "")
+    if status not in {"validated", "released"}:
+        return
+    if not CLOSE_SECTION_RE.search(text):
+        emit_trace(rep, spec_id, "C-17", rel_report,
+                   f"{spec_id} no declara la sección «Cierre de integración» en el reporte")
+        return
+    if not MERGE_LINE_RE.search(text):
+        emit_trace(rep, spec_id, "C-17", rel_report,
+                   f"{spec_id} no declara el commit de integración con la línea «Merge: <sha>»")
+    match = RELEASE_LINE_RE.search(text)
+    declared = match.group(1).strip() if match else ""
+    if status == "released" and not declared:
+        emit_trace(rep, spec_id, "C-17", rel_report,
+                   f"{spec_id} está en estado released y no declara el tag de release (`Release:`)")
+        return
+    if not declared:
+        return
+    frontmatter_release = fm.get("release", "").strip().strip('"')
+    if frontmatter_release and declared != frontmatter_release:
+        emit_trace(rep, spec_id, "C-17", rel_report,
+                   f"el tag {declared} del reporte difiere del campo `release` del frontmatter "
+                   f"({frontmatter_release})")
+        return
+    index_text = read_text(INDEX_PATH) if INDEX_PATH.exists() else ""
+    row = index_cells(index_text, spec_id)
+    if row and len(row) > 4:
+        index_release = row[4].strip()
+        if index_release and index_release != declared:
+            emit_trace(rep, spec_id, "C-17", rel_report,
+                       f"el tag {declared} del reporte difiere de la fila de {spec_id} en "
+                       f"specs/INDEX.md ({index_release})")
+
+
+def check_commit_references(rep: Reporter) -> None:
+    """C-16: cadena `Spec: SPEC-NNN` en los commits del alcance (RF-005, CB-005, CB-018)."""
+    point = ""
+    for base in (INTEGRATION_BRANCH, "main"):
+        result = run_git(["merge-base", "HEAD", base])
+        if result is not None and result.returncode == 0:
+            point = (result.stdout or "").strip()
+            if point:
+                break
+    args = ["log", "--no-merges", "--format=%H"]
+    args.append(f"{point}..HEAD" if point else "--max-count=50")
+    result = run_git(args)
+    shas = []
+    if result is not None and result.returncode == 0:
+        shas = [line.strip() for line in (result.stdout or "").splitlines()
+                if re.fullmatch(r"[0-9a-f]{7,40}", line.strip())]
+    if not shas:
+        print("Comprobación de historial: no aplicable (sin commits de implementación en el alcance)")
+        return
+    for sha in shas:
+        body = run_git(["show", "-s", "--format=%B", sha])
+        message = (body.stdout or "") if body is not None and body.returncode == 0 else ""
+        if not SPEC_CHAIN_RE.search(message):
+            rep.error("git", f"C-16: el commit {sha[:7]} no declara la cadena «Spec: SPEC-NNN»")
 
 
 # ------------------------------------------------------------------ validators
@@ -1058,6 +1276,9 @@ def validate_spec(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | None 
     # C-06 y C-07: historial de transiciones y estado vigente.
     check_transition_history(spec_id, body, status, rel, rep)
 
+    # C-18: versionado de la regularización.
+    check_regularization_version(spec_id, fm, body, rel, rep)
+
 
 def validate_clarify(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     path = spec_dir / "clarify.md"
@@ -1091,7 +1312,7 @@ def validate_plan(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
 
 
 def validate_tasks(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | None = None,
-                   aggregate: bool = False) -> None:
+                   aggregate: bool = False, criteria_owner: dict[str, str] | None = None) -> None:
     path = spec_dir / "tasks.md"
     rel = spec_relative(path)
     if not path.exists():
@@ -1140,6 +1361,14 @@ def validate_tasks(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | None
     spec_path = spec_dir / "spec.md"
     if spec_path.exists():
         spec_text = read_text(spec_path)
+
+    # C-14 y C-15: enlace `CA → T` y evidencia de las tareas cerradas.
+    if spec_text:
+        _spec_fm, spec_body, spec_err = parse_frontmatter(spec_text)
+        if spec_body is not None and not spec_err:
+            check_ca_links(spec_id, spec_body, text, rel, spec_relative(spec_path), rep,
+                           criteria_owner)
+            check_evidence(spec_id, text, rel, rep)
 
     covered: set[str] = set()
     for block in re.split(r"\n(?=#{2,3}\s+T-\d{3})", text):
@@ -1195,6 +1424,11 @@ def validate_report(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | Non
         emit(rep, spec_id, "C-13", rel,
              "el reporte de validación porta una casilla de aprobación; el registro "
              "corresponde solo a spec.md o a CHANGELOG.md")
+
+    # C-17: cierre de integración del reporte (RF-006, CB-007 a CB-009, CB-016).
+    fm, _ = load_spec(spec_dir)
+    if fm is not None:
+        check_integration_close(spec_id, fm, text, rel, rep)
 
 
 def validate_global(rep: Reporter) -> None:
@@ -1281,6 +1515,14 @@ def main(argv: list[str] | None = None) -> int:
 
     gate = args.gate
     spec_dirs = {sid: d for sid, d in list_spec_dirs()}
+    # C-14: propietario de cada criterio, calculado una vez por ejecución.
+    criteria_owner: dict[str, str] = {}
+    for owner_id in sorted(spec_dirs):
+        owner_fm, owner_body = load_spec(spec_dirs[owner_id])
+        if owner_fm is None or owner_body is None:
+            continue
+        for criterio in spec_criteria(owner_body):
+            criteria_owner.setdefault(criterio, owner_id)
 
     def validate_one(spec_id: str, spec_dir: Path, aggregate: bool) -> None:
         validate_spec(spec_id, spec_dir, rep, gate)
@@ -1288,7 +1530,8 @@ def main(argv: list[str] | None = None) -> int:
             validate_clarify(spec_id, spec_dir, rep)
         if gate is None or int(gate[1]) >= 2:
             validate_plan(spec_id, spec_dir, rep)
-            validate_tasks(spec_id, spec_dir, rep, gate, aggregate=aggregate)
+            validate_tasks(spec_id, spec_dir, rep, gate, aggregate=aggregate,
+                           criteria_owner=criteria_owner)
         if gate is None or int(gate[1]) >= 4:
             validate_report(spec_id, spec_dir, rep, gate)
         validate_approvals(spec_id, spec_dir, rep, gate)
@@ -1318,6 +1561,8 @@ def main(argv: list[str] | None = None) -> int:
         validate_global(rep)
         for spec_id, spec_dir in spec_dirs.items():
             validate_one(spec_id, spec_dir, aggregate=True)
+        # C-16: cadena `Spec:` en los commits del alcance de la rama.
+        check_commit_references(rep)
 
     rep.print()
     print_scope(executed_scope(gate, args.all, args.git), UNVERIFIED_CHECKS)

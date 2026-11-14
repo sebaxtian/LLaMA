@@ -27,7 +27,7 @@ La etapa modifica el validador determinista, su suite de pruebas y siete specs p
 
 ## Progreso
 
-- [ ] 0 de 18 tareas completadas.
+- [ ] 8 de 18 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -66,8 +66,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/trazabilidad/enlace/`.
 - **Estimación:** 30 min.
 - **Validación:** cinco pruebas nuevas en rojo: `test_enlace_ca_tarea` con una tarea que declara un criterio existente y salida 0; `test_ca_inexistente_en_tarea` con código 1 y el identificador de la tarea; `test_ca_sin_tarea` con código 1 y el identificador del criterio; `test_ca_de_otra_spec` con código 1 y la spec de destino; `test_formato_de_varios_ca` con dos identificadores sin coma y código 1.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestEnlaceCriterioTarea` devuelve `Ran 5 tests` y `OK`; las cinco pruebas se escribieron en rojo en el lote A y pasan tras `T-006`.
+- [x] Completada.
 
 ### T-002: Pruebas del criterio de evidencia
 
@@ -77,8 +77,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/trazabilidad/evidencia/`.
 - **Estimación:** 25 min.
 - **Validación:** cuatro pruebas nuevas en rojo: `test_evidencia_valida` con 20 caracteres o más y salida 0; `test_evidencia_corta` con 19 caracteres y código 1; `test_evidencia_con_marcador` con el campo sin sustituir y código 1; `test_tarea_abierta_sin_evidencia` con la casilla sin marcar y salida 0.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestEvidenciaDeTarea` devuelve `Ran 4 tests` y `OK`; la prueba corta, la del marcador sin sustituir y la de la tarea abierta se escribieron en rojo en el lote A y pasan tras `T-006`.
+- [x] Completada.
 
 ### T-003: Pruebas de la referencia del commit
 
@@ -88,8 +88,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/trazabilidad/commits/`.
 - **Estimación:** 30 min.
 - **Validación:** cuatro pruebas nuevas en rojo: `test_commit_con_spec` con la cadena `Spec: SPEC-012` y salida 0; `test_commit_sin_spec` con código 1 y el identificador abreviado del commit; `test_alcance_de_commits` con un commit anterior al punto de integración y salida 0; `test_sin_commit_de_implementacion` con la comprobación informada como no aplicable y salida 0.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestReferenciaDeCommit` devuelve `Ran 4 tests` y `OK`; las cuatro pruebas se escribieron en rojo en el lote A y pasan tras `T-007`, incluida la que informa la comprobación como no aplicable sin commits de implementación.
+- [x] Completada.
 
 ### T-004: Pruebas del cierre de integración
 
@@ -99,8 +99,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/trazabilidad/cierre/`.
 - **Estimación:** 30 min.
 - **Validación:** cuatro pruebas nuevas en rojo: `test_cierre_completo` con la sección y sus dos líneas, salida 0; `test_cierre_ausente` en estado `validated` sin sección, código 1; `test_cierre_sin_release` en estado `released` sin línea de release, código 1; `test_tag_divergente` con el tag distinto del frontmatter, código 1 y los dos valores en conflicto.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestCierreDeIntegracion` devuelve `Ran 4 tests` y `OK`; la ausencia de sección, de release y el tag divergente se escribieron en rojo en el lote A y pasan tras `T-007`.
+- [x] Completada.
 
 ### T-005: Pruebas del versionado de la regularización y de la ventana de legado
 
@@ -110,8 +110,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/trazabilidad/versionado/`.
 - **Estimación:** 25 min.
 - **Validación:** tres pruebas nuevas en rojo: `test_regularizacion_patch` con incremento de la posición PATCH y fila de motivo, salida 0; `test_regularizacion_sin_patch` con la versión sin cambio, código 1; `test_legado_de_008_a_011` con una falta de trazabilidad en `SPEC-010` informada como advertencia y salida 0.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestVersionadoDeLaRegularizacion` devuelve `Ran 3 tests` y `OK`; el incremento PATCH válido, la falta de incremento como error y la degradación de `SPEC-008` a `SPEC-011` a advertencia se escribieron en rojo en el lote A y pasan tras `T-008`.
+- [x] Completada.
 
 ### T-006: Implementación del enlace criterio y tarea y de la evidencia
 
@@ -121,8 +121,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 30 min.
 - **Validación:** las nueve pruebas de `T-001` y `T-002` en verde y `python -m unittest discover -s tools\sdd\tests -q` sin regresión sobre las 111 pruebas vigentes.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 131 tests in 1.076s` y `OK`: 111 vigentes y 20 nuevas; las nueve pruebas de `T-001` y `T-002` pasan con `check_ca_links` y `check_evidence` implementados en `tools/sdd/validate.py`.
+- [x] Completada.
 
 ### T-007: Implementación de la referencia del commit y del cierre de integración
 
@@ -132,8 +132,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 30 min.
 - **Validación:** las ocho pruebas de `T-003` y `T-004` en verde; `python tools\sdd\validate.py --all` ejecuta las comprobaciones de historial y devuelve el bloque de alcance con la comprobación declarada.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --all` devuelve código 0 y su bloque de alcance declara «historial de commits y cadena `Spec: SPEC-NNN`» y «cierre de integración y versionado de la regularización»; las ocho pruebas de `T-003` y `T-004` pasan con `check_commit_references` y `check_integration_close`.
+- [x] Completada.
 
 ### T-008: Implementación del versionado y de la ventana de legado
 
@@ -143,8 +143,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** las tres pruebas de `T-005` en verde; `python tools\sdd\validate.py --spec SPEC-010` informa la falta como advertencia y `python tools\sdd\validate.py --spec SPEC-012` la informa como error.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestVersionadoDeLaRegularizacion` devuelve `Ran 3 tests` y `OK` y `python tools\sdd\validate.py --all` devuelve código 0. Desviación registrada: el disparador de `C-18` es declarativo y no produce hallazgo en `--spec SPEC-010` ni en `--spec SPEC-012`; la rama de error se acredita con `test_regularizacion_sin_patch` sobre la fixture de `SPEC-001` y la rama de advertencia con `test_legado_de_008_a_011`. Se traslada al `reviewer` para su dictamen.
+- [x] Completada.
 
 ### T-009: Regularización de las tareas de SPEC-001
 
