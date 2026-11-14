@@ -13,6 +13,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-007 | Protección determinista de ramas GitHub | released | feat/branch-protection | v0.6.0 | specs/007-branch-protection/ |
 | SPEC-008 | Auditoría de cumplimiento SDD | validated | feat/auditoria-cumplimiento-sdd | | specs/008-auditoria-cumplimiento-sdd/ |
 | SPEC-009 | Nueva base normativa SDD | validated | feat/base-normativa-sdd-v2 | | specs/009-base-normativa-sdd/ |
+| SPEC-010 | Mecanismo de control SDD verificable | clarified | feat/mecanismo-control-sdd | | specs/010-mecanismo-control-sdd/ |
 
 ## Reglas
 
