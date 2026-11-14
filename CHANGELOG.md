@@ -10,6 +10,21 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Base normativa v2
+
+- Se publica la base normativa v2 (`SPEC-009`): constitución, `AGENTS.md`, protocolo operativo redactado desde cero, flujo Git alineado, plantillas de rango 5, índice del corpus y lista de firmantes autorizados. Fecha de corte `2026-11-14`.
+- El detalle de los documentos sustituidos consta en el anexo de transición de `docs/sdd/PROTOCOLO_OPERATIVO.md`.
+- El registro de aprobaciones queda unificado: G1 y G4 en `spec.md`, G6 en este archivo; el reporte de validación no porta casilla de aprobación.
+- El ciclo queda en siete etapas: Specify, Clarify, Plan, Tasks, Implement, Validate y Release.
+
+### Archivo de la rama Gemma
+
+- Se archiva la rama `feat/gemma-4-26b-a4b-it-qat-gguf` sin integrarla: dos commits no integrados, permanece local, no se publica y no se fusiona.
+
+### Registro de G6
+
+- G6 del release en curso: pendiente de la línea `- Approved by: Agent Sebaxtian` que el propietario introducirá en un commit firmado al publicar.
+
 ## [v0.6.0] - 2026-11-13
 
 ### Added

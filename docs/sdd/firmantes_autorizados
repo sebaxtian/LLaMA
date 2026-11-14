@@ -1,0 +1,5 @@
+# Firmantes autorizados del proyecto LLaMA
+# Solo claves públicas. La clave privada no se versiona.
+# Alta: 2026-11-14. La lista la mantiene el propietario.
+sebaxtianrioss@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK4ZSdN8ABsrSHfE/b7Io1duIV3uVHVMVrzCbCdixWnl agent@sebaxtian.dev
+agent@sebaxtian.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK4ZSdN8ABsrSHfE/b7Io1duIV3uVHVMVrzCbCdixWnl agent@sebaxtian.dev
