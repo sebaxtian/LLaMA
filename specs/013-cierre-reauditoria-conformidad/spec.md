@@ -1,8 +1,8 @@
 ---
 id: SPEC-013
 title: Cierre de la reauditoría de conformidad
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -367,6 +367,8 @@ Cubre: `RNF-007`, `RNF-008`.
 |---|---|---|
 | 0.1.0 | 2026-11-14 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-14 | Clarificación cerrada: 12 ambigüedades resueltas, caso borde `CB-016` añadido y parches aplicados a requisitos, casos borde y criterios |
+| 0.3.0 | 2026-11-14 | Plan: arquitectura de doce componentes, contratos del flujo, de las reglas de protección, de la sincronización, de la gramática, de las comprobaciones C-09, C-13, C-16 y C-17, de las dos ventanas de legado y de las correcciones documentales, once decisiones técnicas y matriz de cobertura de dieciséis requisitos, ocho no funcionales y dieciséis casos borde |
+| 0.4.0 | 2026-11-14 | Tasks: descomposición en cuarenta y cuatro tareas atómicas con cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas, estimaciones entre 15 y 30 minutos y una tarea reservada al propietario por la sección protegida |
 
 ### Historial de transiciones
 
@@ -374,3 +376,5 @@ Cubre: `RNF-007`, `RNF-008`.
 |---|---|---|---|---|---|
 | 2026-11-14 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` con dieciséis requisitos funcionales, ocho no funcionales, quince casos borde y dieciocho criterios de aceptación |
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con 12 hallazgos resueltos y sin casillas pendientes, y parches aplicados a `spec.md` |
+| 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `c61432d` y `plan.md` escrito con once decisiones y la matriz de cobertura de dieciséis requisitos, ocho no funcionales y dieciséis casos borde |
+| 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` escrito con cuarenta y cuatro tareas atómicas, cobertura de dieciséis requisitos funcionales, ocho no funcionales y dieciséis casos borde, dependencias acíclicas y estimaciones entre 15 y 30 minutos |
