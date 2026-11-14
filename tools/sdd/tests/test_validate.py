@@ -4,7 +4,9 @@ import ast
 import contextlib
 import io
 import re
+import shutil
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -354,6 +356,785 @@ class TestCoberturaReal(unittest.TestCase):
         )
         self.assertFalse(rep.has_errors(), f"errores inesperados: {rep.findings}")
         self.assertEqual(code, 0, "las advertencias de SPEC-001 no deben alterar el código de salida")
+
+
+# ==========================================================================
+# SPEC-010 · mecanismo de control verificable
+#
+# Pruebas de la Etapa 6 escritas antes de la implementación del validador
+# (fase roja del ciclo TDD). Cada comprobación nueva tiene una prueba
+# positiva y una negativa (RF-019); la positiva incluye un control que
+# demuestra que la comprobación discrimina.
+# ==========================================================================
+
+APPROVAL_LINE = "- Approved by: Agent Sebaxtian"
+MERGE_SHA = "f" * 40
+NON_MERGE_SHA = "a" * 40
+TARGET_SHA = "b" * 40
+PARENT_ONE = "1" * 40
+PARENT_TWO = "2" * 40
+FINGERPRINT_AUTORIZADA = "SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+FINGERPRINT_AJENA = "SHA256:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+TMP_BASE = ROOT / "tmp"
+WORK_BRANCH = "feat/mecanismo-control-sdd"
+STATE_ORDER = [
+    "draft",
+    "clarified",
+    "planned",
+    "tasked",
+    "implementing",
+    "implemented",
+    "validated",
+    "released",
+]
+TRANSITION_CHAIN = [
+    ("creación", "—", "`draft`", "`planner`", "redacción inicial de `spec.md`"),
+    ("T1", "`draft`", "`clarified`", "`planner`", "`clarify.md` cerrado sin casillas pendientes"),
+    ("T2", "`clarified`", "`planned`", "`planner`", "línea de G1 firmada y `plan.md` escrito"),
+    ("T3", "`planned`", "`tasked`", "`planner`", "`tasks.md` con los ocho campos"),
+    ("T4", "`tasked`", "`implementing`", "orquestador", "verificación de G2 registrada"),
+    ("T5", "`implementing`", "`implemented`", "orquestador", "G3 con cada tarea cerrada"),
+    ("T6", "`implemented`", "`validated`", "orquestador", "G4 aprobada por el propietario"),
+    ("T7", "`validated`", "`released`", "orquestador", "G5 y G6 cumplidas"),
+]
+TRANSITION_HEADER = (
+    "| Fecha (UTC) | Transición | Origen | Destino | Responsable | Evidencia |\n"
+    "|---|---|---|---|---|---|\n"
+)
+
+
+def transition_rows(status: str) -> list[str]:
+    """Filas del historial de transiciones coherentes hasta el estado indicado."""
+    if status == "superseded":
+        return transition_rows("validated") + [
+            "| 2026-11-14 | T10 | `validated` | `superseded` | propietario | sustituida por SPEC-011 |"
+        ]
+    limit = STATE_ORDER.index(status)
+    return [
+        f"| 2026-11-14 | {tid} | {origen} | {destino} | {responsable} | {evidencia} |"
+        for index, (tid, origen, destino, responsable, evidencia) in enumerate(TRANSITION_CHAIN)
+        if index <= limit
+    ]
+
+
+def set_frontmatter(text: str, **fields: str) -> str:
+    """Sustituye el valor de un campo del frontmatter sin tocar el resto del archivo."""
+    for key, value in fields.items():
+        text = re.sub(rf"^{key}:.*$", f"{key}: {value}", text, count=1, flags=re.MULTILINE)
+    return text
+
+
+def unmark(text: str, gate: str) -> str:
+    """Devuelve la casilla de la compuerta indicada al estado sin marcar."""
+    return re.sub(rf"^- \[[xX]\] {gate}:", f"- [ ] {gate}:", text, count=1, flags=re.MULTILINE)
+
+
+def replace_transitions(text: str, status: str) -> str:
+    """Reemplaza la subsección de historial por una cadena coherente con el estado."""
+    block = "### Historial de transiciones\n\n" + TRANSITION_HEADER + "\n".join(transition_rows(status)) + "\n"
+    heading = "### Historial de transiciones"
+    if heading in text:
+        return text.split(heading, 1)[0] + block
+    parent = "## Historial de cambios"
+    if parent not in text:
+        text = text.rstrip("\n") + "\n\n" + parent + "\n"
+    return text.rstrip("\n") + "\n\n" + block
+
+
+def with_status(text: str, status: str) -> str:
+    """Ajusta el estado del frontmatter y deja el historial de transiciones coherente."""
+    return replace_transitions(set_frontmatter(text, status=status), status)
+
+
+def read_fixture(*parts: str) -> str:
+    return FIXTURES.joinpath(*parts).read_text(encoding="utf-8")
+
+
+def make_repo(case: unittest.TestCase) -> Path:
+    """Crea un repositorio temporal dentro de `tmp/` y lo elimina al terminar la prueba."""
+    TMP_BASE.mkdir(parents=True, exist_ok=True)
+    root = Path(tempfile.mkdtemp(prefix="sdd-spec010-", dir=TMP_BASE))
+    case.addCleanup(shutil.rmtree, root, ignore_errors=True)
+    (root / "specs").mkdir()
+    return root
+
+
+def add_spec(root: Path, spec_id: str, text: str, *, slug: str = "fixture") -> Path:
+    number = spec_id.split("-")[1]
+    spec_dir = root / "specs" / f"{number}-{slug}"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    (spec_dir / "spec.md").write_text(text, encoding="utf-8")
+    return spec_dir
+
+
+def write_doc(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def report_text(g5_row: str | None = None, g6_row: str | None = None, approval_box: bool = False) -> str:
+    lines = [
+        "# Reporte de validación",
+        "",
+        "## Resumen",
+        "",
+        "Validación del fixture de prueba.",
+        "",
+        "## Matriz de trazabilidad",
+        "",
+        "| Requisito | Criterio | Estado |",
+        "|---|---|---|",
+        "| RF-001 | CA-001 | PASADO |",
+        "",
+        "## Dictamen",
+        "",
+        "- [x] CONVERGIDO",
+        "- [ ] NO CONVERGIDO",
+    ]
+    if g5_row or g6_row:
+        lines += ["", "### Registro de G5 y G6", ""]
+        if g5_row:
+            lines.append(g5_row)
+        if g6_row:
+            lines.append(g6_row)
+    if approval_box:
+        lines += ["", f"- [x] G4: `{APPROVAL_LINE}` (2026-11-14)"]
+    return "\n".join(lines) + "\n"
+
+
+def remove_approval(changelog: str) -> str:
+    return "\n".join(line for line in changelog.splitlines() if APPROVAL_LINE not in line) + "\n"
+
+
+def move_approval_to_unreleased(changelog: str) -> str:
+    out: list[str] = []
+    for line in changelog.splitlines():
+        if APPROVAL_LINE in line:
+            continue
+        out.append(line)
+        if line.startswith("## [Unreleased]"):
+            out += ["", APPROVAL_LINE]
+    return "\n".join(out) + "\n"
+
+
+class GitStub:
+    """Sustituto de `subprocess.run` con respuestas preparadas por subcadena de comando.
+
+    Registra cada comando para que la prueba pueda afirmar qué consultas hizo el
+    validador. No ejecuta Git real, no toca el repositorio y no consulta la red.
+    """
+
+    def __init__(self, rules, default=(0, "", "")):
+        self.rules = list(rules)
+        self.default = default
+        self.calls: list[str] = []
+
+    def __call__(self, args, **kwargs):
+        command = " ".join(str(arg) for arg in args)
+        self.calls.append(command)
+        for needles, response in self.rules:
+            if all(needle in command for needle in needles):
+                code, out, err = response
+                return types.SimpleNamespace(returncode=code, stdout=out, stderr=err)
+        code, out, err = self.default
+        return types.SimpleNamespace(returncode=code, stdout=out, stderr=err)
+
+    def commands_containing(self, needle: str) -> list[str]:
+        return [call for call in self.calls if needle in call]
+
+
+def _git_rule(*needles: str):
+    return tuple(needles)
+
+
+def git_stub(
+    *,
+    current_branch: str = "dev",
+    work_branch: str = WORK_BRANCH,
+    branch_present: bool = False,
+    remote_present: bool = False,
+    verify_ok: bool = True,
+    fingerprint: str = FINGERPRINT_AUTORIZADA,
+    authorized=(FINGERPRINT_AUTORIZADA,),
+    approval_sha: str = NON_MERGE_SHA,
+    approval_content: str = "",
+    tags=("v1.1.1", "v1.1.0"),
+    tag_type: str = "tag",
+    tag_message: str | None = None,
+    target_sha: str = TARGET_SHA,
+) -> GitStub:
+    """Función de Git inyectable con el texto preparado de cada consulta."""
+    local = ["main", "dev"] + ([work_branch] if branch_present else [])
+    remotes = [f"origin/{work_branch}"] if remote_present else []
+
+    verify_text = (
+        "gpg: Signature made Fri Nov 14 2026\n"
+        'gpg: Good signature from "Agent Sebaxtian" [unknown]\n'
+        f"Primary key fingerprint: {fingerprint}\n"
+    )
+    verify = (0, verify_text, verify_text) if verify_ok else (1, "", "error: gpg failed to verify the signature")
+    authorized_list = "\n".join(f"256 {value} agent@sebaxtian.dev (ED25519)" for value in authorized)
+    tag_lines = "\n".join(
+        f"{name}{' ' * 12}{tag_message or f'Release {name}'}" for name in tags
+    )
+    tag_names = "\n".join(tags)
+    heads = "\n".join(local)
+    remote_refs = "\n".join(f"refs/remotes/{ref}" for ref in remotes)
+    branch_list = "\n".join(
+        [f"  {name}" for name in local] + [f"  remotes/{ref}" for ref in remotes]
+    )
+    parents = f"{PARENT_ONE} {PARENT_TWO}"
+    merge_line = f"{MERGE_SHA} {PARENT_ONE} {PARENT_TWO}"
+    remote_answer = (0, TARGET_SHA, "") if remote_present else (1, "", "fatal: Needed a single revision")
+
+    rules = [
+        (_git_rule("--show-current"), (0, current_branch, "")),
+        (_git_rule("verify-commit"), verify),
+        (_git_rule("ssh-keygen"), (0, authorized_list, "")),
+        (_git_rule("cat-file"), (0, tag_type, "")),
+        (_git_rule("--format=%P"), (0, parents, "")),
+        (_git_rule("%P"), (0, parents, "")),
+        (_git_rule("--format=%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
+        (_git_rule("%B"), (0, f"Spec: SPEC-010\n\n{APPROVAL_LINE}\n", "")),
+        (_git_rule("--merges"), (0, MERGE_SHA, "")),
+        (_git_rule("--parents"), (0, merge_line, "")),
+        (_git_rule("-S"), (0, approval_sha, "")),
+        (_git_rule(f"{approval_sha}:"), (0, approval_content, "")),
+        (_git_rule("^{commit}"), (0, target_sha, "")),
+        (_git_rule("for-each-ref", "refs/remotes"), (0, remote_refs, "")),
+        (_git_rule("for-each-ref", "refs/heads"), (0, heads, "")),
+        (_git_rule("for-each-ref"), (0, tag_names, "")),
+        (_git_rule("rev-parse", "refs/remotes"), remote_answer),
+        (_git_rule("rev-parse"), (0, target_sha, "")),
+        (_git_rule("branch"), (0, branch_list, "")),
+        (_git_rule("merge-base"), (0, "", "")),
+        (_git_rule("tag -n"), (0, tag_lines, "")),
+        (_git_rule("tag --list"), (0, tag_lines, "")),
+        (_git_rule("tag"), (0, tag_lines, "")),
+        (_git_rule("log"), (0, "Spec: SPEC-010", "")),
+    ]
+    return GitStub(rules)
+
+
+class RunResult:
+    def __init__(self, code: int, output: str, reporter, git) -> None:
+        self.code = code
+        self.output = output
+        self.reporter = reporter
+        self.git = git
+
+    @property
+    def errors(self) -> list:
+        return [f for f in self.reporter.findings if f.severity == "ERROR"]
+
+    @property
+    def warnings(self) -> list:
+        return [f for f in self.reporter.findings if f.severity == "WARN"]
+
+    def messages(self, severity: str | None = None) -> list[str]:
+        return [f.message for f in self.reporter.findings if severity in (None, f.severity)]
+
+
+def run_in(root: Path, specs, argv, git=None) -> RunResult:
+    """Ejecuta main(argv) con ROOT, SPECS_DIR, INDEX, CHANGELOG y Git redirigidos."""
+    created: list = []
+
+    class RecordingReporter(v.Reporter):
+        def __init__(self):
+            super().__init__()
+            created.append(self)
+
+    out = io.StringIO()
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(mock.patch.object(v, "ROOT", root))
+        stack.enter_context(mock.patch.object(v, "SPECS_DIR", root / "specs"))
+        stack.enter_context(mock.patch.object(v, "INDEX_PATH", root / "specs" / "INDEX.md"))
+        stack.enter_context(mock.patch.object(v, "CHANGELOG_PATH", root / "CHANGELOG.md", create=True))
+        stack.enter_context(mock.patch.object(v, "list_spec_dirs", return_value=list(specs)))
+        stack.enter_context(mock.patch.object(v, "validate_global", lambda rep: None))
+        stack.enter_context(mock.patch.object(v, "Reporter", RecordingReporter))
+        if git is not None:
+            stack.enter_context(mock.patch.object(v.subprocess, "run", side_effect=git))
+        stack.enter_context(contextlib.redirect_stdout(out))
+        stack.enter_context(contextlib.redirect_stderr(io.StringIO()))
+        code = v.main(argv)
+    reporter = created[0] if created else v.Reporter()
+    return RunResult(code, out.getvalue(), reporter, git)
+
+
+def assert_error(case: unittest.TestCase, result: RunResult, *needles: str, any_of: bool = False) -> None:
+    """Afirma código 1 y que el mensaje del error nombre los términos indicados."""
+    case.assertEqual(result.code, 1, f"se esperaba código 1; hallazgos: {result.reporter.findings}")
+    text = " ".join(f"{f.message} {f.path}" for f in result.errors).lower()
+    checks = [needle.lower() in text for needle in needles]
+    ok = any(checks) if any_of else all(checks)
+    case.assertTrue(ok, f"el hallazgo debe nombrar {needles}; hallazgos: {result.reporter.findings}")
+
+
+class TestAprobacionCompuertas(unittest.TestCase):
+    """RF-007, RF-008, RF-020, CB-002, CB-003: aprobación de G1 y G4 en su ubicación única."""
+
+    def approval_run(self, fixture: str, *, status: str | None = None, gate: str | None = None,
+                     mutate=None, report: bool = True) -> RunResult:
+        root = make_repo(self)
+        text = read_fixture("aprobacion", fixture, "spec.md")
+        if status:
+            text = with_status(text, status)
+        if mutate:
+            text = mutate(text)
+        spec_dir = add_spec(root, "SPEC-010", text, slug=fixture)
+        if report:
+            write_doc(spec_dir / "validation_report.md", report_text())
+        argv = ["--spec", "SPEC-010"] + (["--gate", gate] if gate else [])
+        return run_in(root, [("SPEC-010", spec_dir)], argv, git_stub())
+
+    def test_aprobacion_g1_marcada(self):
+        result = self.approval_run("marcada", gate="G1")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([m for m in result.messages("ERROR") if "G1" in m],
+                         f"G1 marcada y firmada no debe producir error: {result.reporter.findings}")
+        self.assertTrue(result.git.commands_containing("verify-commit"),
+                        "G1 debe verificar la firma del commit que introdujo la línea")
+
+    def test_aprobacion_g1_sin_marcar_falla(self):
+        result = self.approval_run("sin-marcar", gate="G1")
+        assert_error(self, result, "G1")
+
+    def test_aprobacion_g4_requerida_en_validated(self):
+        marcada = self.approval_run("marcada", status="validated")
+        self.assertEqual(marcada.code, 0, f"hallazgos: {marcada.reporter.findings}")
+        self.assertFalse([m for m in marcada.messages("ERROR") if "G4" in m])
+        sin_casilla = self.approval_run(
+            "marcada", status="validated", mutate=lambda text: unmark(text, "G4")
+        )
+        self.assertEqual(sin_casilla.code, 1,
+                         "sin la casilla de G4 el estado validated no se declara superado")
+
+    def test_aprobacion_g4_sin_marcar_falla(self):
+        result = self.approval_run(
+            "marcada", status="validated", mutate=lambda text: unmark(text, "G4")
+        )
+        assert_error(self, result, "G4")
+
+    def test_aprobacion_fuera_de_seccion_falla(self):
+        result = self.approval_run("fuera-de-seccion", gate="G1")
+        assert_error(self, result, "G1")
+
+    def test_registro_dual_falla(self):
+        result = self.approval_run("registro-dual", gate="G1")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        texto = " ".join(result.messages("ERROR")).lower()
+        self.assertIn("dual", texto, f"el hallazgo debe nombrar el registro dual: {result.reporter.findings}")
+
+    def test_reporte_con_casilla_de_aprobacion_falla(self):
+        root = make_repo(self)
+        text = with_status(read_fixture("aprobacion", "marcada", "spec.md"), "validated")
+        spec_dir = add_spec(root, "SPEC-010", text, slug="reporte-casilla")
+        write_doc(spec_dir / "validation_report.md", report_text(approval_box=True))
+        result = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        combined = " ".join(f"{f.path} {f.message}" for f in result.errors).lower()
+        self.assertIn("aprobaci", combined,
+                      f"el hallazgo debe nombrar la casilla de aprobación del reporte: {result.reporter.findings}")
+
+
+class TestAutoridadAprobacion(unittest.TestCase):
+    """RF-010, CB-001, CB-015: autoría por commit firmado con clave autorizada."""
+
+    def authority_run(self, fixture: str, stub: GitStub) -> RunResult:
+        root = make_repo(self)
+        text = read_fixture("autoridad", fixture, "spec.md")
+        spec_dir = add_spec(root, "SPEC-010", text, slug=fixture)
+        write_doc(spec_dir / "validation_report.md", report_text())
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G1"], stub)
+
+    def test_autoridad_commit_firmado(self):
+        stub = git_stub()
+        result = self.authority_run("firmado", stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue(stub.commands_containing("verify-commit"),
+                        "debe verificar la firma del commit que introdujo la línea")
+        self.assertTrue(stub.commands_containing("ssh-keygen"),
+                        "debe cotejar la clave firmante con la lista de firmantes autorizados")
+        self.assertFalse([m for m in result.messages("ERROR") if "firma" in m.lower()])
+
+    def test_autoridad_sin_firma_falla(self):
+        result = self.authority_run("sin-firma", git_stub(verify_ok=False))
+        assert_error(self, result, "firma")
+
+    def test_autoridad_clave_ajena_falla(self):
+        result = self.authority_run("clave-ajena", git_stub(fingerprint=FINGERPRINT_AJENA))
+        assert_error(self, result, "clave")
+
+    def test_autoridad_commit_merge_verifica_no_merge(self):
+        stub = git_stub()
+        result = self.authority_run("merge", stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        verificados = stub.commands_containing("verify-commit")
+        self.assertTrue(verificados, "debe verificar la firma del commit no merge que introdujo la línea")
+        self.assertTrue(all(NON_MERGE_SHA in call for call in verificados),
+                        f"debe verificar el commit no merge: {verificados}")
+        self.assertFalse([call for call in verificados if MERGE_SHA in call],
+                         "no debe verificar la firma del commit de merge")
+
+
+class TestG6Release(unittest.TestCase):
+    """RF-009, RF-014, CB-007, CB-013: tag anotado, mensaje, INDEX y auditoría del release."""
+
+    def g6_run(self, fixture: str, stub: GitStub | None = None, *, gate: str | None = "G6",
+               mutate_changelog=None) -> RunResult:
+        root = make_repo(self)
+        base = FIXTURES / "g6" / fixture
+        text = read_fixture("g6", fixture, "spec.md")
+        release = re.search(r"^release:\s*(.+)$", text, re.MULTILINE).group(1).strip().strip('"')
+        spec_dir = add_spec(root, "SPEC-010", text, slug=fixture)
+        write_doc(spec_dir / "validation_report.md", read_fixture("g6", fixture, "validation_report.md"))
+        changelog = read_fixture("g6", fixture, "CHANGELOG.md")
+        if mutate_changelog:
+            changelog = mutate_changelog(changelog)
+        write_doc(root / "CHANGELOG.md", changelog)
+        write_doc(root / "specs" / "INDEX.md", read_fixture("g6", fixture, "INDEX.md"))
+        argv = ["--spec", "SPEC-010"] + (["--gate", gate] if gate else [])
+        if stub is None:
+            stub = git_stub(tags=(release, "v1.1.0"))
+        return run_in(root, [("SPEC-010", spec_dir)], argv, stub)
+
+    def test_g6_tag_anotado(self):
+        stub = git_stub(tags=("v1.1.1", "v1.1.0"))
+        result = self.g6_run("anotado", stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue(stub.commands_containing("cat-file"),
+                        "G6 debe comprobar que el tag es un objeto anotado")
+        self.assertFalse([m for m in result.messages("ERROR") if "tag" in m.lower()])
+
+    def test_g6_tag_ligero_falla(self):
+        result = self.g6_run("tag-ligero", git_stub(tags=("v1.1.1", "v1.1.0"), tag_type="commit"))
+        assert_error(self, result, "ligero")
+
+    def test_g6_mensaje_incorrecto_falla(self):
+        result = self.g6_run(
+            "anotado", git_stub(tags=("v1.1.1", "v1.1.0"), tag_message="Release v0.0.1")
+        )
+        assert_error(self, result, "mensaje")
+
+    def test_g6_index_divergente_falla(self):
+        result = self.g6_run("index-divergente")
+        assert_error(self, result, "index")
+
+    def test_g6_aprobacion_fuera_de_entrada_falla(self):
+        result = self.g6_run("anotado", mutate_changelog=move_approval_to_unreleased)
+        assert_error(self, result, "g6", "changelog", "aprobaci", any_of=True)
+
+    def test_g6_release_menor_sin_auditoria_falla(self):
+        result = self.g6_run("release-menor-sin-auditoria")
+        assert_error(self, result, "auditor")
+
+    def test_released_sin_aprobacion_g6_falla(self):
+        result = self.g6_run("anotado", gate=None, mutate_changelog=remove_approval)
+        assert_error(self, result, "g6", "changelog", "aprobaci", any_of=True)
+
+
+class TestCoberturaG2(unittest.TestCase):
+    """RF-011: la cobertura faltante es error desde G2 y advertencia antes."""
+
+    def cobertura_run(self, fixture: str, *, status: str, gate: str | None = None) -> RunResult:
+        root = make_repo(self)
+        text = read_fixture("cobertura", fixture, "spec.md")
+        text = set_frontmatter(text, id="SPEC-010")
+        text = with_status(text, status)
+        spec_dir = add_spec(root, "SPEC-010", text, slug=f"cobertura-{fixture}")
+        argv = ["--spec", "SPEC-010"] + (["--gate", gate] if gate else [])
+        return run_in(root, [("SPEC-010", spec_dir)], argv, git_stub())
+
+    def test_cobertura_completa_en_g2(self):
+        completa = self.cobertura_run("completa", status="tasked", gate="G2")
+        self.assertEqual(completa.code, 0, f"hallazgos: {completa.reporter.findings}")
+        self.assertFalse([m for m in completa.messages() if "cubre" in m.lower()],
+                         f"la cobertura completa no debe producir hallazgo: {completa.reporter.findings}")
+        faltante = self.cobertura_run("faltante", status="tasked", gate="G2")
+        self.assertEqual(faltante.code, 1,
+                         "el mismo hueco de cobertura con G2 debe devolver código 1")
+
+    def test_cobertura_error_con_g2(self):
+        result = self.cobertura_run("faltante", status="tasked", gate="G2")
+        assert_error(self, result, "RF-002")
+
+    def test_cobertura_advertencia_en_draft(self):
+        result = self.cobertura_run("faltante", status="draft")
+        self.assertEqual(result.code, 0,
+                         f"antes de G2 la cobertura solo advierte: {result.reporter.findings}")
+        self.assertTrue([f for f in result.warnings if "RF-002" in f.message],
+                        f"se esperaba una advertencia por RF-002: {result.reporter.findings}")
+        con_g2 = self.cobertura_run("faltante", status="tasked", gate="G2")
+        self.assertEqual(con_g2.code, 1,
+                         "el mismo hueco con G2 deja de ser advertencia y pasa a error")
+
+
+class TestTareasAbiertas(unittest.TestCase):
+    """RF-012, CB-008: tareas abiertas detectadas en la validación agregada."""
+
+    def tareas_run(self, fixture: str) -> RunResult:
+        root = make_repo(self)
+        base = FIXTURES / "tareas" / fixture
+        text = read_fixture("tareas", fixture, "spec.md")
+        release = re.search(r"^release:\s*(.+)$", text, re.MULTILINE).group(1).strip().strip('"')
+        spec_dir = add_spec(root, "SPEC-010", text, slug=f"tareas-{fixture}")
+        for name in ("tasks.md", "validation_report.md"):
+            write_doc(spec_dir / name, read_fixture("tareas", fixture, name))
+        write_doc(root / "CHANGELOG.md", read_fixture("tareas", fixture, "CHANGELOG.md"))
+        write_doc(root / "specs" / "INDEX.md", read_fixture("tareas", fixture, "INDEX.md"))
+        return run_in(root, [("SPEC-010", spec_dir)], ["--all"], git_stub(tags=(release, "v1.1.0")))
+
+    def test_tareas_abiertas_error_en_all_released(self):
+        abiertas = self.tareas_run("abiertas-released")
+        assert_error(self, abiertas, "T-002")
+        cerradas = self.tareas_run("cerradas-released")
+        self.assertEqual(cerradas.code, 0, f"hallazgos: {cerradas.reporter.findings}")
+
+    def test_tareas_abiertas_advertencia_en_implementing(self):
+        result = self.tareas_run("abiertas-implementing")
+        self.assertEqual(result.code, 0,
+                         f"en implementing la tarea abierta solo advierte: {result.reporter.findings}")
+        self.assertTrue([f for f in result.warnings if "T-002" in f.message],
+                        f"se esperaba una advertencia por T-002: {result.reporter.findings}")
+
+
+class TestTransiciones(unittest.TestCase):
+    """RF-015, CB-004: el estado es destino de una transición admitida y la compuerta exige origen."""
+
+    def transition_run(self, fixture: str) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-010", read_fixture("transiciones", fixture, "spec.md"),
+                            slug=f"transicion-{fixture}")
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+
+    def history_run(self, fixture: str) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-010", read_fixture("transiciones", fixture, "spec.md"),
+                            slug=f"historial-{fixture}")
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+
+    def test_transicion_admitida(self):
+        admitida = self.transition_run("admitida")
+        self.assertEqual(admitida.code, 0, f"hallazgos: {admitida.reporter.findings}")
+        self.assertFalse([m for m in admitida.messages("ERROR") if "transic" in m.lower()])
+        rechazada = self.transition_run("no-admitida")
+        self.assertEqual(rechazada.code, 1, "una transición no admitida debe devolver código 1")
+
+    def test_transicion_no_admitida_falla(self):
+        result = self.transition_run("no-admitida")
+        assert_error(self, result, "draft", "planned")
+
+    def test_historial_coherente_sin_hallazgo(self):
+        coherente = self.history_run("historial-coherente")
+        self.assertEqual(coherente.code, 0, f"hallazgos: {coherente.reporter.findings}")
+        self.assertFalse([m for m in coherente.messages("ERROR") if "transic" in m.lower()])
+        sin_fila = self.history_run("historial-sin-fila")
+        self.assertEqual(sin_fila.code, 1, "un historial sin la fila del estado debe devolver código 1")
+
+    def test_historial_sin_fila_del_estado_falla(self):
+        result = self.history_run("historial-sin-fila")
+        assert_error(self, result, "historial de transiciones", "implemented")
+
+    def test_tabla_transitions_coincide_con_protocolo(self):
+        esperado = protocol_transitions()
+        self.assertEqual(len(esperado), 10, f"la tabla de §5 debe declarar diez transiciones: {esperado}")
+        declarado = getattr(v, "TRANSITIONS", None)
+        self.assertIsNotNone(declarado, "el validador debe declarar la constante TRANSITIONS")
+        self.assertEqual(normalized_transitions(declarado), esperado,
+                         "TRANSITIONS debe coincidir con la tabla de §5 del protocolo")
+
+    def test_gate_desde_estado_incorrecto_falla(self):
+        root = make_repo(self)
+        text = with_status(read_fixture("aprobacion", "marcada", "spec.md"), "tasked")
+        spec_dir = add_spec(root, "SPEC-010", text, slug="gate-origen")
+        write_doc(spec_dir / "validation_report.md", report_text())
+        result = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G4"], git_stub())
+        assert_error(self, result, "tasked", "origen", any_of=True)
+
+
+class TestSucesion(unittest.TestCase):
+    """RF-017, CB-005, CB-006: reciprocidad de supersedes y superseded_by y coherencia de estado."""
+
+    def succession_run(self, fixture: str) -> RunResult:
+        root = make_repo(self)
+        base = FIXTURES / "sucesion" / fixture
+        specs = []
+        for source in sorted(path for path in base.iterdir() if path.is_dir()):
+            text = (source / "spec.md").read_text(encoding="utf-8")
+            spec_id = re.search(r"^id:\s*(SPEC-\d{3})", text, re.MULTILINE).group(1)
+            slug = source.name.split("-", 1)[1]
+            specs.append((spec_id, add_spec(root, spec_id, text, slug=slug)))
+        return run_in(root, specs, ["--all"], git_stub())
+
+    def test_sucesion_reciproca(self):
+        reciproca = self.succession_run("reciproca")
+        self.assertEqual(reciproca.code, 0, f"hallazgos: {reciproca.reporter.findings}")
+        self.assertFalse([m for m in reciproca.messages("ERROR") if "sucesi" in m.lower()])
+        asimetrica = self.succession_run("asimetrica")
+        self.assertEqual(asimetrica.code, 1, "una sucesión asimétrica debe devolver código 1")
+
+    def test_sucesion_asimetrica_falla(self):
+        asimetrica = self.succession_run("asimetrica")
+        assert_error(self, asimetrica, "supersedes", "superseded_by")
+        sin_carpeta = self.succession_run("sin-carpeta")
+        assert_error(self, sin_carpeta, "SPEC-099")
+        sin_estado = self.succession_run("sin-estado")
+        assert_error(self, sin_estado, "superseded")
+
+
+class TestG5Integracion(unittest.TestCase):
+    """RF-013, CB-012: G5 sin consulta de red."""
+
+    def g5_run(self, fixture: str, stub: GitStub) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-010", read_fixture("g5", fixture, "spec.md"), slug=f"g5-{fixture}")
+        write_doc(spec_dir / "validation_report.md", read_fixture("g5", fixture, "validation_report.md"))
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G5"], stub)
+
+    def test_g5_merge_dos_padres(self):
+        stub = git_stub()
+        result = self.g5_run("merge-dos-padres", stub)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([call for call in stub.calls if "branch" in call or "refs/remotes" in call],
+                        "G5 debe comprobar las ramas locales y las referencias remotas de seguimiento")
+        self.assertFalse([call for call in stub.calls if "ls-remote" in call],
+                         "G5 no debe consultar el remoto")
+        self.assertFalse([m for m in result.messages("ERROR") if "G5" in m])
+
+    def test_g5_rama_presente_falla(self):
+        result = self.g5_run("rama-presente", git_stub(branch_present=True))
+        assert_error(self, result, WORK_BRANCH)
+
+    def test_g5_rama_remota_seguimiento_falla(self):
+        result = self.g5_run("rama-remota-seguimiento", git_stub(remote_present=True))
+        assert_error(self, result, "remot", "origin/", any_of=True)
+
+
+def unverified_items(output: str) -> list[str]:
+    """Entradas de la lista de comprobaciones no verificadas impresa por el validador."""
+    items: list[str] = []
+    collecting = False
+    for line in output.splitlines():
+        lowered = line.lower()
+        if "comprobaciones no verificadas" in lowered:
+            collecting = True
+            continue
+        if not collecting:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith("=") or stripped.startswith("-"):
+            if items:
+                break
+            continue
+        items.append(stripped)
+    return items
+
+
+class TestAlcance(unittest.TestCase):
+    """RF-018, RNF-004: alcance impreso y formato de cada hallazgo."""
+
+    def aggregated(self) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-001", read_fixture("valid", "001-demo", "spec.md"), slug="demo")
+        return run_in(root, [("SPEC-001", spec_dir)], ["--all"], git_stub())
+
+    def test_alcance_impreso_en_ejecucion_agregada(self):
+        result = self.aggregated()
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        lowered = result.output.lower()
+        self.assertIn("comprobaciones ejecutadas", lowered,
+                      f"la ejecución debe imprimir las comprobaciones ejecutadas: {result.output}")
+        self.assertIn("comprobaciones no verificadas", lowered,
+                      f"la ejecución debe imprimir las comprobaciones no verificadas: {result.output}")
+
+    def test_alcance_sin_bloque_no_verificadas_no_es_conforme(self):
+        result = self.aggregated()
+        items = unverified_items(result.output)
+        self.assertTrue(items,
+                        "una salida sin la lista de comprobaciones no verificadas no se acepta como conforme")
+
+    def test_hallazgo_con_severidad_ruta_y_comprobacion(self):
+        root = make_repo(self)
+        text = read_fixture("aprobacion", "sin-marcar", "spec.md")
+        spec_dir = add_spec(root, "SPEC-010", text, slug="hallazgo")
+        result = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G1"], git_stub())
+        lineas = [line for line in result.output.splitlines() if line.startswith("[")]
+        self.assertTrue(lineas, f"todo hallazgo ocupa una línea con severidad, ruta y comprobación: {result.output}")
+        self.assertTrue(any(re.match(r"^\[(ERROR|WARN)\]\s+\S.*:\s+\S", line) for line in lineas),
+                        f"el formato del hallazgo debe incluir severidad, ruta y comprobación: {lineas}")
+        self.assertTrue(any("G1" in line for line in lineas),
+                        f"el hallazgo de G1 debe estar impreso: {lineas}")
+
+
+class TestLegado(unittest.TestCase):
+    """CB-014, RNF-006: ventana de legado de SPEC-001 a SPEC-009."""
+
+    def legacy_run(self, fixture: str, spec_id: str) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, spec_id, read_fixture("legado", fixture, "spec.md"), slug="legado")
+        return run_in(root, [(spec_id, spec_dir)], ["--all"], git_stub())
+
+    def test_legado_advertencia_sin_codigo_1(self):
+        result = self.legacy_run("spec-001-sin-historial", "SPEC-001")
+        self.assertEqual(result.code, 0,
+                         f"el legado no devuelve código 1 por una comprobación nueva: {result.reporter.findings}")
+        self.assertTrue([f for f in result.warnings if "legado" in f.message.lower()],
+                        f"se esperaba una advertencia que nombre la cláusula de legado: {result.reporter.findings}")
+
+    def test_legado_spec_nueva_error_con_codigo_1(self):
+        result = self.legacy_run("spec-010-sin-aprobacion", "SPEC-010")
+        self.assertEqual(result.code, 1,
+                         f"la misma condición en SPEC-010 debe ser error: {result.reporter.findings}")
+        self.assertTrue([f for f in result.errors if "transic" in f.message.lower()],
+                        f"el error debe nombrar la subsección del historial: {result.reporter.findings}")
+
+
+def protocol_transitions() -> dict[str, tuple[frozenset[str], str]]:
+    """Tabla de transiciones de §5 del protocolo, normalizada por identificador."""
+    text = (ROOT / "docs" / "sdd" / "PROTOCOLO_OPERATIVO.md").read_text(encoding="utf-8")
+    section = text.split("## 5. Máquina de estados", 1)[1].split("\n## ", 1)[0]
+    result: dict[str, tuple[frozenset[str], str]] = {}
+    for line in section.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 3 or not re.fullmatch(r"T\d+", cells[0]):
+            continue
+        origins = frozenset(re.findall(r"`([a-z]+)`", cells[1]))
+        destinos = re.findall(r"`([a-z]+)`", cells[2])
+        if origins and destinos:
+            result[cells[0]] = (origins, destinos[0])
+    return result
+
+
+def _origin_set(value) -> frozenset[str]:
+    if isinstance(value, str):
+        return frozenset(re.findall(r"[a-z]+", value.lower()))
+    return frozenset(str(item).strip("`").lower() for item in value)
+
+
+def normalized_transitions(value) -> dict[str, tuple[frozenset[str], str]]:
+    """Normaliza TRANSITIONS desde un mapping o una secuencia de pares."""
+    result: dict[str, tuple[frozenset[str], str]] = {}
+    if isinstance(value, dict):
+        for tid, payload in value.items():
+            if isinstance(payload, dict):
+                origin = payload.get("origen") or payload.get("origenes") or payload.get("from")
+                destino = payload.get("destino") or payload.get("to")
+            else:
+                origin, destino = payload[0], payload[1]
+            result[str(tid)] = (_origin_set(origin), str(destino).strip("`"))
+        return result
+    for item in value:
+        item = tuple(item)
+        if len(item) == 3:
+            tid, origin, destino = item
+        elif len(item) == 2:
+            tid = f"T{len(result) + 1}"
+            origin, destino = item
+        else:
+            continue
+        result[str(tid)] = (_origin_set(origin), str(destino).strip("`"))
+    return result
 
 
 if __name__ == "__main__":

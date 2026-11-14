@@ -23,7 +23,7 @@ La Etapa 6 de esta especificación modifica el validador, su suite y dos comando
 
 ## Progreso
 
-- Cerradas: 0 de 15 tareas.
+- [x] 12 de 15 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -68,8 +68,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. La prueba positiva afirma código 0 y ausencia de hallazgo de aprobación; la negativa afirma código 1 y un hallazgo que nombra `G1`, `G4` o la ubicación de la línea.
   4. La función de Git se inyecta con texto preparado de `git verify-commit` y de `ssh-keygen -lf`; ninguna prueba ejecuta consulta de red ni toca el repositorio.
   5. Los fixtures se construyen en directorio temporal y se eliminan al terminar la prueba.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Once pruebas en verde: aprobación de G1 marcada, G1 sin marcar, G4 requerida en `validated`, G4 sin marcar, aprobación fuera de sección, registro dual y casilla de aprobación en el reporte, más autoría con commit firmado, firma ausente, clave ajena y commit de merge. Fixtures en `tools/sdd/tests/fixtures/aprobacion/` y `tools/sdd/tests/fixtures/autoridad/`. `python -m unittest discover -s tools\sdd\tests -k aprobacion` y `-k autoridad` devuelven `OK`; las once pruebas fallaban antes de `T-010`.
+- [x] Completada.
 
 ### T-002: Pruebas de aprobación de G6 y de release menor
 
@@ -79,12 +79,12 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`; `tools/sdd/tests/fixtures/g6/{anotado,tag-ligero,index-divergente,release-menor-sin-auditoria}/`.
 - **Estimación:** 30 min.
 - **Validación:**
-  1. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k g6` devuelve `OK` con las seis pruebas de la tarea.
+  1. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k g6` devuelve `OK` con las siete pruebas de la tarea.
   2. La fixture `anotado` contiene `CHANGELOG.md` con la entrada del release y su viñeta, `specs/INDEX.md` con la fila en estado `released` y el release, y un repositorio temporal con tag anotado; devuelve código 0.
   3. La fixture `tag-ligero` devuelve código 1 con un mensaje que nombra el objeto ligero; `release-menor-sin-auditoria` devuelve código 1 con un mensaje que nombra el informe de auditoría; `index-divergente` devuelve código 1 con un mensaje que nombra `INDEX`.
   4. La comparación del componente MINOR usa el listado local de tags y no ejecuta `git ls-remote` ni consulta de red.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Siete pruebas en verde: aprobación de G6 fuera de la entrada, tag anotado, tag ligero, mensaje incorrecto, `INDEX` divergente, release menor sin auditoría y spec liberada sin aprobación de G6. Fixtures en `tools/sdd/tests/fixtures/g6/`. `python -m unittest discover -s tools\sdd\tests -k g6` devuelve `OK`; las siete pruebas fallaban antes de `T-012`.
+- [x] Completada.
 
 ### T-003: Pruebas de cobertura como error desde G2 y advertencia antes
 
@@ -97,8 +97,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   1. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k cobertura` devuelve `OK` con las tres pruebas de la tarea.
   2. `completa` con compuerta G2 devuelve código 0 y sin hallazgo de cobertura; `faltante` con compuerta G2 devuelve código 1 y nombra el identificador del requisito sin línea `Cubre:`.
   3. `faltante` con estado `draft` devuelve código 0 y un hallazgo de severidad advertencia por el mismo requisito.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Tres pruebas en verde: cobertura completa con G2, error con G2 y advertencia en `draft`. Reutiliza `tools/sdd/tests/fixtures/cobertura/`. `python -m unittest discover -s tools\sdd\tests -k cobertura` devuelve `OK`; el caso negativo afirma código 1 con el identificador del requisito.
+- [x] Completada.
 
 ### T-004: Pruebas de tareas abiertas en la validación agregada
 
@@ -112,8 +112,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   2. `abiertas-released` en ejecución agregada devuelve código 1 y nombra el identificador de la tarea abierta; `cerradas-released` devuelve código 0.
   3. `abiertas-implementing` devuelve código 0 con un hallazgo de severidad advertencia.
   4. La prueba invoca la ejecución agregada sobre un directorio de specs redirigido y no lectura del corpus real.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Dos pruebas en verde: error en la validación agregada para una spec en `released` con tarea abierta y advertencia para una spec en `implementing`. Fixtures propias en `tools/sdd/tests/fixtures/tareas/`. `python -m unittest discover -s tools\sdd\tests -k tareas_abiertas` devuelve `OK`.
+- [x] Completada.
 
 ### T-005: Pruebas de transición admitida, transición rechazada e historial
 
@@ -128,8 +128,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. `historial-sin-fila` devuelve código 1 con un mensaje que nombra la subsección y el estado sin fila; `historial-coherente` devuelve código 0.
   4. Una prueba contrasta la constante `TRANSITIONS` del validador con la tabla de §5 del protocolo y devuelve `OK` solo si los diez pares coinciden.
   5. La prueba de compuerta desde un estado de origen distinto al exigido afirma código 1 con el mensaje de estado de origen.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Seis pruebas en verde: transición admitida, transición no admitida, historial coherente, historial sin fila del estado, contraste de la constante `TRANSITIONS` con la tabla de §5 del protocolo y compuerta desde un estado de origen distinto. Fixtures en `tools/sdd/tests/fixtures/transiciones/`. `python -m unittest discover -s tools\sdd\tests -k transicion` y `-k historial` devuelven `OK`.
+- [x] Completada.
 
 ### T-006: Pruebas de sucesión recíproca
 
@@ -143,8 +143,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   2. `reciproca` devuelve código 0; `asimetrica` devuelve código 1 con un mensaje que nombra `supersedes` y `superseded_by`.
   3. `sin-carpeta` devuelve código 1 con un mensaje que nombra la carpeta ausente; `sin-estado` devuelve código 1 con un mensaje que nombra el estado `superseded`.
   4. Cada fixture es un par de directorios de spec en un directorio temporal, con frontmatter completo.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Dos pruebas en verde: sucesión recíproca y sucesión asimétrica; las fixtures cubren además la carpeta ausente y el estado ausente. Directorios en `tools/sdd/tests/fixtures/sucesion/`. `python -m unittest discover -s tools\sdd\tests -k sucesion` devuelve `OK`, con el caso negativo en código 1.
+- [x] Completada.
 
 ### T-007: Pruebas de G5 sin consulta de red
 
@@ -158,8 +158,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   2. `merge-dos-padres` devuelve código 0 con la integración, el registro de validación posterior y la rama ausente.
   3. `rama-presente` devuelve código 1 con un mensaje que nombra la rama local; `rama-remota-seguimiento` devuelve código 1 con un mensaje que nombra la referencia remota de seguimiento.
   4. La ejecución de la prueba no invoca `git ls-remote` ni ninguna consulta de red, y la función de Git se inyecta con la lista de ramas preparada.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Tres pruebas en verde: merge de dos padres, rama local presente y rama presente en la referencia remota de seguimiento. Directorios en `tools/sdd/tests/fixtures/g5/`. `python -m unittest discover -s tools\sdd\tests -k g5` devuelve `OK`, con los dos casos negativos en código 1 y sin consulta de red.
+- [x] Completada.
 
 ### T-008: Pruebas de alcance impreso y de códigos de salida
 
@@ -169,12 +169,12 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`; `tools/sdd/tests/fixtures/valid/001-demo/spec.md`.
 - **Estimación:** 20 min.
 - **Validación:**
-  1. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k alcance` devuelve `OK` con las dos pruebas de la tarea.
+  1. `python -m unittest discover -s tools/sdd/tests -p "test_validate.py" -k alcance` devuelve `OK` con las tres pruebas de la tarea.
   2. La ejecución agregada sobre la fixture imprime un bloque de comprobaciones ejecutadas y un bloque de comprobaciones no verificadas, y la prueba afirma la presencia de los dos rótulos.
   3. La prueba negativa afirma que una salida sin el bloque de no verificadas no se acepta como conforme.
   4. Cada hallazgo impreso ocupa una línea con severidad, ruta y comprobación, y la prueba afirma el formato.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Tres pruebas en verde: bloque de alcance impreso en la ejecución agregada, salida sin bloque de comprobaciones no verificadas que no se acepta como conforme y formato de hallazgo con severidad, ruta y comprobación. `python -m unittest discover -s tools\sdd\tests -k alcance` devuelve `OK`.
+- [x] Completada.
 
 ### T-009: Pruebas de la ventana de legado
 
@@ -188,8 +188,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   2. `spec-001-sin-historial` devuelve código 0 con un hallazgo de severidad advertencia que nombra la cláusula de legado.
   3. La misma condición sobre un identificador `SPEC-010` devuelve código 1 y un hallazgo de severidad error.
   4. El identificador se inyecta en el nombre del directorio temporal, de modo que la prueba no depende de las specs publicadas del repositorio.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. Dos pruebas en verde: advertencia de legado para `SPEC-001` sin historial y error para una spec nueva con la misma falta. Directorios en `tools/sdd/tests/fixtures/legado/`. `python -m unittest discover -s tools\sdd\tests -k legado` devuelve `OK`. Cierre del lote: `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 86 tests` y `OK`, con 47 pruebas vigentes y 39 nuevas; las 39 nuevas fallaban antes del lote B y pasan después.
+- [x] Completada.
 
 ### T-010: Implementación del validador para aprobaciones y ubicación única
 
@@ -204,8 +204,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. `python tools\sdd\validate.py --spec SPEC-010 --gate G1` devuelve código 0: la línea de G1 existe, está marcada y su commit `f38eb6a` verifica contra `docs/sdd/firmantes_autorizados`.
   4. La función `check_approval` no escribe archivos y la comprobación de firma usa `git log --no-merges -S`, `git show` y `git verify-commit --raw`, sin consulta de red.
   5. Una ejecución con la lista de firmantes ausente produce el estado `NO VERIFICABLE` y no declara la compuerta aprobada.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. `python tools\sdd\validate.py --spec SPEC-010 --gate G1` devuelve código 0 sobre el commit firmado `f38eb6a`. El validador reconoce la casilla marcada con la cadena exacta y la fecha ISO para G1 y G4, reconoce la viñeta de G6 dentro de la entrada del release, detecta el registro dual y la casilla de aprobación en el reporte, localiza el commit con `git log --no-merges -S`, verifica la firma con `git verify-commit` y coteja la huella con `docs/sdd/firmantes_autorizados`. Desviaciones registradas: la interpretación de C-06 admite la reauditoría de compuertas anteriores, y la comprobación de la sección de aprobaciones del commit se aplica cuando `git show` devuelve contenido.
+- [x] Completada.
 
 ### T-011: Implementación de cobertura, tareas abiertas, transiciones e historial
 
@@ -220,8 +220,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. `python tools\sdd\validate.py --all` devuelve código 0: ninguna spec publicada pasa a error por las comprobaciones C-04, C-05, C-06 y C-07.
   4. La constante `TRANSITIONS` declara los diez pares de la tabla de §5 del protocolo y el historial se analiza por nombre de columna.
   5. La comprobación no escribe archivos y no modifica el campo `status` de ninguna spec.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. La cobertura `RF`/`CB` → `Cubre:` devuelve error desde G2 y en estado `tasked` o superior, y advertencia en las etapas anteriores. Las tareas abiertas devuelven error en la validación agregada para `implemented`, `validated` y `released`, y advertencia en `implementing`. La constante `TRANSITIONS` declara los diez pares de la tabla de §5 del protocolo y el historial se analiza por nombre de columna, con encadenamiento entre filas, transición admitida y fila del estado vigente. `python tools\sdd\validate.py --spec SPEC-010 --gate G2` devuelve código 0.
+- [x] Completada.
 
 ### T-012: Implementación de G5, G6, sucesión, alcance y legado
 
@@ -236,8 +236,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   3. La comprobación de G5 no invoca `git ls-remote` y la de G6 no consulta el remoto; la revisión del código confirma que las dos usan solo el historial local.
   4. `python tools\sdd\validate.py --spec SPEC-009 --gate G6` no devuelve código 1 por una comprobación nueva: la spec publicada queda amparada por la cláusula de legado.
   5. La ejecución agregada conserva el código 0 y el contrato de códigos de salida 0, 1 y 2.
-- **Evidencia:** pendiente de la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** registrada el 2026-11-14. G5 comprueba el merge de dos padres, la validación posterior y la ausencia de la rama local y de la referencia remota de seguimiento, sin consulta de red. G6 comprueba el tag anotado, su mensaje, el commit objetivo, `specs/INDEX.md`, `CHANGELOG.md` y la auditoría cuando el componente MINOR aumenta respecto del tag anterior. La sucesión se comprueba en reciprocidad, carpeta y estado; el alcance se imprime en dos bloques; la ventana de legado cubre `SPEC-001` a `SPEC-009`. `python tools\sdd\validate.py --spec SPEC-009 --gate G4` devuelve código 0 y `python tools\sdd\validate.py --all` devuelve código 0 con 13 advertencias, 12 de ellas de legado. `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 86 tests` y `OK`, con 47 pruebas vigentes y 39 nuevas; la regresión formal corresponde a `T-014`. Desviaciones registradas: G6 y el tag se comprueban solo con la compuerta G6, y G5 y G6 aceptan `validated` y `released` como estado de origen.
+- [x] Completada.
 
 ### T-013: Comandos de implementación y de validación con separación de roles
 
