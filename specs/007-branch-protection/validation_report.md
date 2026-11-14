@@ -61,6 +61,11 @@
 - [x] CONVERGIDO (100 % de requisitos con evidencia PASADO: 28 de 28).
 - [ ] NO CONVERGIDO
 
+## Cierre de integración
+
+Merge: 502c69d
+Release: v0.6.0
+
 ## Aprobación
 
 - [x] G4: - Approved by: Agent Sebaxtian (2026-11-13).

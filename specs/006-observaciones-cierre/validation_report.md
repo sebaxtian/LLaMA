@@ -46,6 +46,11 @@
 - [x] CONVERGIDO (100 % de requisitos con evidencia PASADO: 8 de 8).
 - [ ] NO CONVERGIDO
 
+## Cierre de integración
+
+Merge: 0afc2ee
+Release: v0.5.1
+
 ## Aprobación
 
 - [ ] G4: pendiente de aprobación del propietario (`- Approved by: Agent Sebaxtian`).

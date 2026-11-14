@@ -2,9 +2,9 @@
 id: SPEC-007
 title: Protección determinista de ramas GitHub
 status: released
-version: 0.2.0
+version: 0.2.1
 created: 2026-11-13
-updated: 2026-11-13
+updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/branch-protection
 release: v0.6.0
@@ -237,3 +237,4 @@ Cubre: `RF-010`, `CB-011`.
 |---|---|---|
 | 0.1.0 | 2026-11-13 | Redacción inicial |
 | 0.2.0 | 2026-11-13 | Parches tras clarificación AMB-001 a AMB-006 |
+| 0.2.1 | 2026-11-14 | Regularización de la trazabilidad de tareas y del cierre de integración |

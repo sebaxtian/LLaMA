@@ -2,9 +2,9 @@
 id: SPEC-001
 title: Menú principal main.bat
 status: released
-version: 0.1.0
+version: 0.3.1
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/main-menu
 release: "v0.2.0"
@@ -102,3 +102,4 @@ Cubre: `RF-006`, `CB-003`.
 | 0.1.0 | 2026-11-12 | Redacción inicial |
 | 0.2.0 | 2026-11-12 | Aprobación G1, plan y tareas |
 | 0.3.0 | 2026-11-12 | Implementación y validación |
+| 0.3.1 | 2026-11-14 | Regularización de la trazabilidad de tareas y del cierre de integración |

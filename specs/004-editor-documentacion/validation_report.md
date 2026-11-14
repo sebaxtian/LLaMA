@@ -136,6 +136,11 @@ Este código 0 del validador se confirma como comprobación formal. El dictamen 
 
 Dictamen de auditoría: **CONVERGIDO**. 12 de 12 requisitos (RF-001..RF-006, RNF-001..RNF-003, CB-001..CB-003) y 6 de 6 criterios CA en PASADO (100 %). BRE-01 y BRE-02 cerradas. Sin brechas abiertas.
 
+## Cierre de integración
+
+Merge: b38ed6c
+Release: v0.4.0
+
 ## Aprobación
 
 - [ ] G4: `- Approved by: Agent Sebaxtian` (YYYY-MM-DD). Pendiente del propietario; no aprobada por este reporte.
