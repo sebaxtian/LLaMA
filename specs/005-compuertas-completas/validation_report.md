@@ -68,6 +68,11 @@ Cobertura de requisitos: RF-001 a RF-005, RNF-001 a RNF-003 y CB-001 a CB-003 (1
 - [x] CONVERGIDO (100 % de requisitos con evidencia `PASADO`: 11 de 11).
 - [ ] NO CONVERGIDO
 
+## Cierre de integración
+
+Merge: 2781db5
+Release: v0.5.0
+
 ## Aprobación
 
 - [ ] G4: pendiente de aprobación del propietario. Este reporte no aprueba la compuerta G4.

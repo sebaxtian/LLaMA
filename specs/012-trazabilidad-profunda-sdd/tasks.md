@@ -27,7 +27,7 @@ La etapa modifica el validador determinista, su suite de pruebas y siete specs p
 
 ## Progreso
 
-- [ ] 15 de 18 tareas completadas.
+- [ ] 16 de 18 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -231,8 +231,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/001-main-menu/validation_report.md` a `specs/007-branch-protection/validation_report.md`.
 - **Estimación:** 30 min.
 - **Validación:** los siete reportes declaran la sección de cierre con el par de la tabla del plan (`753c3e5` y `v0.2.0`, `ec6a063` y `v0.3.0`, `39b27a2` y `v0.3.1`, `b38ed6c` y `v0.4.0`, `2781db5` y `v0.5.0`, `0afc2ee` y `v0.5.1`, `502c69d` y `v0.6.0`); `python tools\sdd\validate.py --spec SPEC-001` hasta `--spec SPEC-007` no registra hallazgo de `C-17`; la matriz y el dictamen de cada reporte quedan sin alteración y los siete merges se acreditan contra el historial local.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** Los siete reportes incorporan `## Cierre de integración` con `Merge:` y `Release:` de la tabla del plan y `git diff --numstat` devuelve 35 líneas añadidas y 0 eliminadas; `python tools\sdd\validate.py --all` deja 4 hallazgos de `C-17` (SPEC-008 a SPEC-011, en advertencia por legado) y ninguno en SPEC-001 a SPEC-007; los siete merges resuelven a commits de dos padres y cada tag anotado los contiene.
+- [x] Completada.
 
 ### T-017: Regresión completa del corpus y de la suite
 

@@ -175,6 +175,11 @@ Observaciones residuales que no bloquean la convergencia: O-16 (decisión sobre 
 
 El dictamen de este reporte no aprueba G4: la aprobación es exclusiva del propietario.
 
+## Cierre de integración
+
+Merge: ec6a063
+Release: v0.3.0
+
 ## Aprobación
 
 - [ ] G4: `- Approved by: Agent Sebaxtian` (AAAA-MM-DD).
