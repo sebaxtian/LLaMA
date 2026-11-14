@@ -14,7 +14,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-008 | Auditoría de cumplimiento SDD | validated | feat/auditoria-cumplimiento-sdd | | specs/008-auditoria-cumplimiento-sdd/ |
 | SPEC-009 | Nueva base normativa SDD | validated | feat/base-normativa-sdd-v2 | | specs/009-base-normativa-sdd/ |
 | SPEC-010 | Mecanismo de control SDD verificable | validated | feat/mecanismo-control-sdd | | specs/010-mecanismo-control-sdd/ |
-| SPEC-011 | Práctica operativa SDD verificable | clarified | feat/practica-operativa-sdd | | specs/011-practica-operativa-sdd/ |
+| SPEC-011 | Práctica operativa SDD verificable | tasked | feat/practica-operativa-sdd | | specs/011-practica-operativa-sdd/ |
 
 ## Reglas
 

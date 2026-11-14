@@ -1,8 +1,8 @@
 ---
 id: SPEC-011
 title: Práctica operativa SDD verificable
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -338,6 +338,8 @@ Cubre: `RF-013`.
 |---|---|---|
 | 0.1.0 | 2026-11-14 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-14 | Clarificación: ocho ambigüedades resueltas; precedencia de cuatro reglas y reflejo en `opencode.jsonc`; ruta y shell del rol `auditor`; disparadores, entorno y límites de la integración continua; evidencia de cierre de `AUD-081` a `AUD-084` y de `AUD-091`; alcance de `AGENTS.md` y de `MEMORY.md`; allowlist de shell por rol |
+| 0.3.0 | 2026-11-14 | Plan: arquitectura de cinco capas, procedimiento de resolución de permisos, contratos de rol, configuración, flujo y pruebas, diez decisiones técnicas y matriz de cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
+| 0.4.0 | 2026-11-14 | Tareas: trece tareas atómicas con dependencias acíclicas, tres escritores declarados, una prueba positiva y un caso negativo por tarea de prueba, y cobertura completa de requisitos y casos borde |
 
 ### Historial de transiciones
 
@@ -345,3 +347,5 @@ Cubre: `RF-013`.
 |---|---|---|---|---|---|
 | 2026-11-14 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` con once requisitos funcionales, cinco no funcionales, catorce casos borde y trece criterios de aceptación |
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con `AMB-001` a `AMB-008` resueltos, tres casos borde nuevos y los once parches marcados en `spec.md` |
+| 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `5b0d7f1` y `plan.md` escrito con diez decisiones y la matriz de cobertura de treinta y ocho filas |
+| 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con trece tareas, ocho campos por tarea, dependencias acíclicas y cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
