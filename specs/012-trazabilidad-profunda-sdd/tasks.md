@@ -143,7 +143,7 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** las tres pruebas de `T-005` en verde; `python tools\sdd\validate.py --spec SPEC-010` informa la falta como advertencia y `python tools\sdd\validate.py --spec SPEC-012` la informa como error.
-- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestVersionadoDeLaRegularizacion` devuelve `Ran 3 tests` y `OK` y `python tools\sdd\validate.py --all` devuelve código 0. Desviación registrada: el disparador de `C-18` es declarativo y no produce hallazgo en `--spec SPEC-010` ni en `--spec SPEC-012`; la rama de error se acredita con `test_regularizacion_sin_patch` sobre la fixture de `SPEC-001` y la rama de advertencia con `test_legado_de_008_a_011`. Se traslada al `reviewer` para su dictamen.
+- **Evidencia:** `python tools\sdd\validate.py --all` devuelve código 0 con 44 hallazgos `C-14` y 4 `C-17`, todos en `SPEC-008` a `SPEC-011`, y `python -m unittest discover -s tools\sdd\tests -q` devuelve `Ran 131 tests` y `OK`. La ventana se endureció por decisión del propietario: `TRACE_LEGACY_WINDOW = set(TRACE_LEGACY_SPECS)` limita la degradación a `SPEC-008` a `SPEC-011` y la fixture `g3/tareas-completas` recibe criterio y evidencia. Desviación declarada: el disparador de `C-18` es declarativo y no produce hallazgo en `--spec SPEC-010` ni en `--spec SPEC-012`; la rama de error se acredita con `test_regularizacion_sin_patch` sobre la fixture de `SPEC-001` y la de advertencia con `test_legado_de_008_a_011`.
 - [x] Completada.
 
 ### T-009: Regularización de las tareas de SPEC-001

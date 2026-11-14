@@ -147,8 +147,10 @@ UNVERIFIED_CHECKS = [
 # ---------------------------------------------------------- SPEC-012 (C-14 a C-18)
 # Ventana de legado de esta spec (DEC-007): las cuatro specs validadas sin release.
 TRACE_LEGACY_SPECS = {f"SPEC-{n:03d}" for n in range(8, 12)}
-# Ventana efectiva de C-14, C-15 y C-17: añade la degradación heredada de SPEC-010 (001 a 009).
-TRACE_LEGACY_WINDOW = TRACE_LEGACY_SPECS | {f"SPEC-{n:03d}" for n in range(1, 10)}
+# Ventana efectiva de C-14, C-15 y C-17: coincide con RNF-006 y DEC-007, es decir, solo las
+# cuatro specs validadas sin release. Ya no incluye la degradación heredada de SPEC-010
+# (SPEC-001 a SPEC-009), porque SPEC-001 a SPEC-007 están regularizadas.
+TRACE_LEGACY_WINDOW = set(TRACE_LEGACY_SPECS)
 # Las siete specs publicadas cuya regularización verifica C-18 (RF-007).
 REGULARIZED_SPECS = {f"SPEC-{n:03d}" for n in range(1, 8)}
 # C-15: umbral y marcas del campo `Evidencia` (RNF-008, DEC-002).
