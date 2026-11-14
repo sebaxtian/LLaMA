@@ -1,8 +1,8 @@
 ---
 id: SPEC-011
 title: Práctica operativa SDD verificable
-status: implemented
-version: 0.4.0
+status: validated
+version: 0.5.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -330,6 +330,7 @@ Cubre: `RF-013`.
 <!-- Sección protegida: solo la escribe el propietario mediante un commit firmado. Dos casillas y ninguna más: G1 y G4. -->
 
 - [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-14)
+- [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-14)
 - [ ] G4: `- Approved by: Agent Sebaxtian` (YYYY-MM-DD)
 
 ## Historial de cambios
@@ -340,6 +341,7 @@ Cubre: `RF-013`.
 | 0.2.0 | 2026-11-14 | Clarificación: ocho ambigüedades resueltas; precedencia de cuatro reglas y reflejo en `opencode.jsonc`; ruta y shell del rol `auditor`; disparadores, entorno y límites de la integración continua; evidencia de cierre de `AUD-081` a `AUD-084` y de `AUD-091`; alcance de `AGENTS.md` y de `MEMORY.md`; allowlist de shell por rol |
 | 0.3.0 | 2026-11-14 | Plan: arquitectura de cinco capas, procedimiento de resolución de permisos, contratos de rol, configuración, flujo y pruebas, diez decisiones técnicas y matriz de cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
 | 0.4.0 | 2026-11-14 | Tareas: trece tareas atómicas con dependencias acíclicas, tres escritores declarados, una prueba positiva y un caso negativo por tarea de prueba, y cobertura completa de requisitos y casos borde |
+| 0.5.0 | 2026-11-14 | Práctica operativa implementada con seis agentes, rol `auditor`, CI y 111 pruebas; revisión independiente con cuatro brechas cerradas y dictamen `CONVERGIDO` 38/38; G4 aprobada y estado `validated` |
 
 ### Historial de transiciones
 
@@ -351,3 +353,4 @@ Cubre: `RF-013`.
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con trece tareas, ocho campos por tarea, dependencias acíclicas y cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
 | 2026-11-14 | T4 | `tasked` | `implementing` | orquestador | G2 verificada y ejecución agrupada autorizada; trece tareas cerradas con evidencia y 111 pruebas en verde |
 | 2026-11-14 | T5 | `implementing` | `implemented` | orquestador | G3 con `OK: sin hallazgos`, trece tareas cerradas y 111 pruebas en verde |
+| 2026-11-14 | T6 | `implemented` | `validated` | `reviewer` y G4 | `validation_report.md` con dictamen `CONVERGIDO` 38/38 y línea de G4 firmada en `spec.md` |
