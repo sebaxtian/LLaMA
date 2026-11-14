@@ -79,3 +79,10 @@ Sin brechas abiertas: las 35 filas de la matriz figuran en `PASADO` y las dos ej
 - [ ] NO CONVERGIDO.
 
 > El dictamen `CONVERGIDO` indica que la matriz cumple el 100 % de requisitos y casos borde con evidencia `PASADO`. No aprueba G4: la aprobación corresponde al propietario y su registro vive en la sección de aprobaciones de `spec.md`.
+
+## Cierre de integración
+
+Merge: b87e32c
+Release:
+
+- G5: merge b87e32c con dos padres; validación posterior a la integración sin hallazgos; rama feat/trazabilidad-profunda-sdd eliminada en local y en remoto.
