@@ -395,7 +395,7 @@ Cubre: `RF-028`, `CB-011`.
 
 <!-- Solo el propietario puede rellenar esta sección. -->
 
-- [ ] G1: `- Approved by: Agent Sebaxtian` (YYYY-MM-DD)
+- [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-14)
 
 ## Historial de cambios
 
