@@ -1,8 +1,8 @@
 ---
 id: SPEC-014
 title: Cierre de las observaciones de la reauditoría final
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -209,6 +209,8 @@ Cubre: `RNF-004`, `RNF-005`.
 |---|---|---|
 | 0.1.0 | 2026-11-14 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-14 | Clarificación cerrada: 6 ambigüedades resueltas, casos borde `CB-006` y `CB-007` añadidos y parches aplicados a requisitos, casos borde, criterios y actores |
+| 0.3.0 | 2026-11-14 | Plan técnico redactado: 6 decisiones `DEC-001` a `DEC-006`, 6 contratos `C-1` a `C-6`, estrategia de testing y matriz de cobertura de 17 filas |
+| 0.4.0 | 2026-11-14 | Descomposición en tareas: 13 tareas atómicas con dependencias acíclicas, cobertura completa de `RF`, `RNF` y `CB`, y matriz de tareas y de criterios |
 
 ### Historial de transiciones
 
@@ -216,3 +218,5 @@ Cubre: `RNF-004`, `RNF-005`.
 |---|---|---|---|---|---|
 | 2026-11-14 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` con cinco requisitos funcionales, cinco no funcionales, cinco casos borde y siete criterios de aceptación |
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con 6 hallazgos resueltos y sin casillas pendientes, y parches aplicados a `spec.md` con los casos borde `CB-006` y `CB-007` |
+| 2026-11-14 | T2 | `clarified` | `planned` | `planner` | `plan.md` redactado con 6 decisiones `DEC-001` a `DEC-006`, 6 contratos, estrategia de testing y matriz de cobertura de 17 filas |
+| 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 13 tareas atómicas, dependencias acíclicas y cobertura de 5 requisitos funcionales, 5 no funcionales y 7 casos borde |
