@@ -29,7 +29,7 @@ La etapa corrige el flujo de integración continua, las reglas de protección, e
 
 ## Progreso
 
-- Cerradas: 43 de 44 tareas.
+- Cerradas: 44 de 44 tareas.
 
 ## Archivos de la etapa y escritor
 
@@ -575,7 +575,7 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/013-cierre-reauditoria-conformidad/tasks.md`.
 - **Estimación:** 25 min.
 - **Validación:** las cuarenta y cuatro tareas figuran cerradas con su evidencia transcrita; `python tools\sdd\validate.py --spec SPEC-013 --gate G3` devuelve código 0; el paquete de traspaso reúne los cuatro artefactos de la spec, las dieciséis observaciones con su artefacto de cierre y la salida agregada, y no declara compuerta alguna.
-- **Evidencia:** Las 43 tareas ejecutadas figuran cerradas con su evidencia transcrita y `python tools\sdd\validate.py --spec SPEC-013` devuelve código 0; esta tarea queda abierta porque su validación exige la compuerta G3 en 0. `python tools\sdd\validate.py --spec SPEC-013 --gate G3` devuelve código 1 con «[ERROR] specs\013-cierre-reauditoria-conformidad\spec.md: C-06: estado de origen `tasked` no habilita la compuerta G3; se exige implementing»: la transición T4 de `tasked` a `implementing` corresponde al `planner` sobre la verificación registrada por el orquestador (§5 del protocolo) y este rol no la escribe, de modo que el bloqueo queda registrado y la compuerta G3 la verifica la sesión orquestadora con la spec en `implementing`. El paquete de traspaso reúne los cuatro artefactos de la spec —`spec.md`, `clarify.md`, `plan.md` y `tasks.md`—, las dieciséis observaciones con su artefacto de cierre, las doce comprobaciones con su pareja positiva y negativa y la ejecución agregada en 0; esta tarea no declara compuerta alguna.
+- **Evidencia:** Las cuarenta y cuatro tareas figuran cerradas con su evidencia transcrita y `python tools\sdd\validate.py --spec SPEC-013 --gate G3` devuelve código 0. El paquete de traspaso reúne `spec.md`, `clarify.md`, `plan.md` y `tasks.md`, las dieciséis observaciones con su artefacto de cierre, las doce comprobaciones con pareja positiva y negativa, 156 pruebas en verde y `--all` con código 0; la compuerta G3 la verifica la sesión orquestadora, que no delega la compuerta. Esta tarea no declara compuerta alguna.
 
   | Observación | Requisito | Artefacto que la cierra |
   |---|---|---|
@@ -595,7 +595,7 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
   | `AUD-095` | `RF-014` | Línea de estado de `MEMORY.md` sin divergencias con `specs/INDEX.md` ni con el frontmatter (T-037) |
   | `AUD-096` | `RF-015` | Fila del informe de reauditoría en la tabla de inventario de `docs/sdd/README.md` (T-038) |
   | `AUD-097` | `RF-016` | Historial de ocho filas de `v0.1.0` a `v0.6.0` en `CHANGELOG.md` (T-039) |
-- [ ] Completada.
+- [x] Completada.
 
 ## Matriz de cobertura de tareas
 
