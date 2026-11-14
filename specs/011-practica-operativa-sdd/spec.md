@@ -1,7 +1,7 @@
 ---
 id: SPEC-011
 title: Práctica operativa SDD verificable
-status: tasked
+status: implemented
 version: 0.4.0
 created: 2026-11-14
 updated: 2026-11-14
@@ -349,3 +349,5 @@ Cubre: `RF-013`.
 | 2026-11-14 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con `AMB-001` a `AMB-008` resueltos, tres casos borde nuevos y los once parches marcados en `spec.md` |
 | 2026-11-14 | T2 | `clarified` | `planned` | `planner` | línea de G1 firmada en `spec.md` en el commit `5b0d7f1` y `plan.md` escrito con diez decisiones y la matriz de cobertura de treinta y ocho filas |
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` con trece tareas, ocho campos por tarea, dependencias acíclicas y cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
+| 2026-11-14 | T4 | `tasked` | `implementing` | orquestador | G2 verificada y ejecución agrupada autorizada; trece tareas cerradas con evidencia y 111 pruebas en verde |
+| 2026-11-14 | T5 | `implementing` | `implemented` | orquestador | G3 con `OK: sin hallazgos`, trece tareas cerradas y 111 pruebas en verde |

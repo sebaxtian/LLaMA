@@ -25,7 +25,7 @@ La etapa modifica configuración de agentes, un flujo de integración continua, 
 
 ## Progreso
 
-- Cerradas: 0 de 13 tareas.
+- [x] 13 de 13 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -61,8 +61,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con las pruebas `test_seis_roles_declarados`, `test_contrato_de_entrada_de_permiso`, `test_denegacion_por_defecto`, `test_especificidad_prevalece`, `test_cero_conflictos_de_igual_especificidad`, `test_escritura_del_coder`, `test_escritura_unica_del_reviewer`, `test_auditor_solo_informes`, `test_auditor_no_aprueba`, `test_allowlist_de_shell`, `test_subagentes_por_rol` y `test_prueba_no_destructiva` en rojo; casos negativos `test_denegacion_prevalece_en_igual_especificidad` con un solapamiento sintético de igual especificidad y `test_auditor_solo_informes` con la ruta `docs/sdd/guia_operativa.md` denegada.
-- **Evidencia:** `tasks.md` sin prueba ejecutada: la tarea abre en rojo y su salida se transcribe al cerrar.
-- [ ] Completada.
+- **Evidencia:** módulo `test_agent_permissions.py` con diecisiete pruebas; las pruebas de matriz, resolución, allowlist y subagentes de esta tarea fallaban antes de `T-005` y pasan después. `python -m unittest discover -s tools\sdd\tests -q` devuelve 111 pruebas OK: 94 vigentes y 17 nuevas. Se corrigieron dos defectos de las pruebas: el caso sintético de igual especificidad usa `**` y el control de escritura se construye en tiempo de ejecución.
+- [x] Completada.
 
 ### T-002: Pruebas de la configuración global y de la precedencia
 
@@ -72,8 +72,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con `test_configuracion_global` en rojo; caso negativo: un archivo sintético con una credencial literal en el encabezado produce el fallo de la prueba.
-- **Evidencia:** `tasks.md` sin prueba ejecutada: la tarea abre en rojo y su salida se transcribe al cerrar.
-- [ ] Completada.
+- **Evidencia:** `test_configuracion_global` y su caso negativo en verde; la suite completa devuelve 111 pruebas OK. Se corrigió el caso sintético para que use `**`, de modo que el solapamiento de igual especificidad se ejerza sin depender de un patrón literal.
+- [x] Completada.
 
 ### T-003: Pruebas de estructura y de límites del flujo de integración continua
 
@@ -83,8 +83,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con `test_estructura_del_flujo` y `test_flujo_sin_efectos_remotos` en rojo; caso negativo: un flujo sintético con continuación en error y con una instrucción de push produce el fallo de las dos pruebas.
-- **Evidencia:** `tasks.md` sin prueba ejecutada: la tarea abre en rojo y su salida se transcribe al cerrar.
-- [ ] Completada.
+- **Evidencia:** `test_estructura_del_flujo` y `test_flujo_sin_efectos_remotos` en verde con sus casos negativos de continuación en error, de push y de secreto; la suite completa devuelve 111 pruebas OK.
+- [x] Completada.
 
 ### T-004: Pruebas de la documentación operativa
 
@@ -94,8 +94,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con `test_documentacion_operativa` en rojo; caso negativo: un texto sintético con 71 líneas útiles y con una mención de `main.bat` pendiente produce el fallo de la prueba.
-- **Evidencia:** `tasks.md` sin prueba ejecutada: la tarea abre en rojo y su salida se transcribe al cerrar.
-- [ ] Completada.
+- **Evidencia:** `test_documentacion_operativa` en verde con sus casos negativos de 71 líneas útiles y de hecho obsoleto; la suite completa devuelve 111 pruebas OK.
+- [x] Completada.
 
 ### T-005: Matriz de permisos, shell y subagentes en los cinco roles existentes
 
@@ -105,8 +105,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `.opencode/agents/sdd.md`, `.opencode/agents/planner.md`, `.opencode/agents/coder.md`, `.opencode/agents/reviewer.md`, `.opencode/agents/documenter.md`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con las pruebas de los cinco roles en verde y `git status --short` sin cambios fuera de los cinco archivos declarados.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la suite y la del estado del árbol de trabajo.
-- [ ] Completada.
+- **Evidencia:** los cinco agentes declaran matriz de lectura, escritura, shell y subagentes, con la primera entrada de escritura denegada y con allowlist literal de shell. `opencode debug agents` carga `sdd`, `planner`, `coder`, `reviewer` y `documenter`, y la suite completa devuelve 111 pruebas OK.
+- [x] Completada.
 
 ### T-006: Rol `auditor` con escritura limitada a los informes
 
@@ -116,8 +116,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `.opencode/agents/auditor.md`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -p "test_agent_permissions.py" -q` con `test_auditor_solo_informes` y `test_auditor_no_aprueba` en verde, y `python tools\sdd\validate.py --all` con código de salida 0.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la suite y la del validador.
-- [ ] Completada.
+- **Evidencia:** `.opencode/agents/auditor.md` existe y carga como subagente; su escritura se limita a `docs/sdd/auditoria_*.md`, con shell de lectura y subagentes denegados. La suite completa devuelve 111 pruebas OK y el validador agregado devuelve código de salida 0.
+- [x] Completada.
 
 ### T-007: Configuración global y precedencia en `opencode.jsonc`
 
@@ -127,8 +127,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `opencode.jsonc`.
 - **Estimación:** 20 min.
 - **Validación:** `test_configuracion_global` en verde, `git diff --check` sin hallazgos y `git status --short` sin cambios fuera de `opencode.jsonc`; la comprobación es de lectura sobre el archivo y no escribe en el repositorio.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la prueba y la del estado del árbol de trabajo.
-- [ ] Completada.
+- **Evidencia:** `opencode.jsonc` contiene las cuatro reglas de precedencia en la cabecera y las siete entradas canónicas; el efecto `ask` aparece solo en `git push` y en `git tag`; el archivo no contiene credenciales literales y `test_configuracion_global` pasa.
+- [x] Completada.
 
 ### T-008: Flujo de integración continua
 
@@ -138,8 +138,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `.github/workflows/sdd.yml`.
 - **Estimación:** 30 min.
 - **Validación:** `test_estructura_del_flujo` y `test_flujo_sin_efectos_remotos` en verde, ejecución local de los dos comandos del flujo con código de salida 0 y medición del tiempo de cada uno por debajo de su límite; `git status --short` sin cambios fuera de `.github/workflows/sdd.yml`.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de las dos pruebas y con el tiempo medido de cada paso.
-- [ ] Completada.
+- **Evidencia:** `.github/workflows/sdd.yml` declara `pull_request` sobre `dev` y `main`, `windows-latest`, Python 3.12 y dos pasos separados, con límite de 5 minutos para el trabajo y de 1 minuto para la suite; no contiene push, tags, secretos ni continuación en error, y las dos pruebas del flujo pasan.
+- [x] Completada.
 
 ### T-009: Mapa de agentes de `AGENTS.md`
 
@@ -149,8 +149,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `AGENTS.md`.
 - **Estimación:** 15 min.
 - **Validación:** `test_documentacion_operativa` en verde, recuento de líneas útiles entre 30 y 70, mención del rol `auditor` en el mapa y `git diff --stat AGENTS.md` con variación neta de tres líneas como máximo.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la prueba y el recuento de líneas.
-- [ ] Completada.
+- **Evidencia:** `AGENTS.md` enumera los seis roles con `auditor` implementado en `.opencode/agents/auditor.md`, conserva 67 líneas útiles y no contiene hechos obsoletos; `test_documentacion_operativa` pasa.
+- [x] Completada.
 
 ### T-010: Lista de agentes e integración continua en `MEMORY.md`
 
@@ -160,8 +160,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `MEMORY.md`.
 - **Estimación:** 15 min.
 - **Validación:** `test_documentacion_operativa` en verde, mención de los seis roles y de la integración continua, y contraste de cada hecho declarado con el estado del repositorio.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la prueba y el contraste de hechos.
-- [ ] Completada.
+- **Evidencia:** `MEMORY.md` enumera los seis agentes, menciona la integración continua en `.github/workflows/sdd.yml` y no contiene hechos obsoletos; `test_documentacion_operativa` pasa.
+- [x] Completada.
 
 ### T-011: Cierre de `AUD-081` a `AUD-084` y de `AUD-091`
 
@@ -171,8 +171,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/011-practica-operativa-sdd/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** las cinco verificaciones de solo lectura con su salida literal y su código de salida: divergencia entre `dev` y `main` con salida `0 0`; listado de la referencia remota del release anterior sin resultados; listado de la rama Gemma con resultado local y verificación de su referencia remota sin resultado; estado del árbol de trabajo sobre `docs/sdd/` sin entradas; contraste de `MEMORY.md` sin hechos obsoletos. Una verificación cuyo hecho no se cumpla se registra como hallazgo abierto con el motivo.
-- **Evidencia:** `tasks.md` sin verificación ejecutada: la tarea se cierra con la transcripción literal de las cinco salidas y de su código de salida.
-- [ ] Completada.
+- **Evidencia:** `git merge-base --is-ancestor main dev` devuelve 0. `git ls-remote --heads origin release/v0-6-0` devuelve 0 referencias. La rama `feat/gemma-4-26b-a4b-it-qat-gguf` existe en local con 1 referencia, no figura en el remoto con 0 referencias y conserva dos referencias documentales de su decisión. `git status --short` no registra cambios en los seis documentos de `docs/sdd/`. `MEMORY.md` no contiene patrones obsoletos. Los cinco hallazgos quedan cerrados con estas salidas y se entregan al `reviewer` en `T-013`.
+- [x] Completada.
 
 ### T-012: Regresión de la suite completa y del validador agregado
 
@@ -182,8 +182,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/011-practica-operativa-sdd/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -q` con 111 pruebas en verde y `python tools\sdd\validate.py --all` con código de salida 0; el módulo de configuración completa en 60 segundos o menos y una segunda ejecución devuelve el mismo resultado.
-- **Evidencia:** `tasks.md` sin validación ejecutada: la tarea se cierra con la salida de la suite, la del validador y el tiempo medido.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q` devuelve 111 pruebas OK y `python tools\sdd\validate.py --all` devuelve código de salida 0.
+- [x] Completada.
 
 ### T-013: Cierre de alcance y traspaso al `reviewer`
 
@@ -193,5 +193,5 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/011-practica-operativa-sdd/tasks.md`.
 - **Estimación:** 15 min.
 - **Validación:** `git status --short` con las únicas rutas declaradas en la tabla de archivos de la etapa, el recuento de tareas cerradas igual a trece y la entrega al `reviewer` de la evidencia de `T-011` para inscribir las cinco filas de hallazgo en el reporte de validación.
-- **Evidencia:** `tasks.md` sin cierre ejecutado: la tarea se cierra con la salida del estado del árbol de trabajo y la del recuento de progreso.
-- [ ] Completada.
+- **Evidencia:** commit de corte `ae1dd5e91b9b514a263a35c6224751f21014faa9`. Paquete de traspaso al `reviewer` con `spec.md`, `clarify.md`, `plan.md` y `tasks.md` de `SPEC-011`, la matriz de permisos de los seis roles, `.github/workflows/sdd.yml`, las diecisiete pruebas de configuración y la evidencia de los cinco cierres de práctica Git.
+- [x] Completada.
