@@ -87,8 +87,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/casilla/`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_casilla_unica_por_compuerta`: una sección de aprobaciones con una casilla de G1 y una de G4 produce 0 hallazgos y salida 0; caso negativo `test_casilla_duplicada_sin_marcar_es_error`: una sección con una segunda casilla de G4 sin marcar produce código 1 con la compuerta y el recuento en el mensaje; la prueba se escribe en rojo antes de `T-011`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_validate.TestCasillaDeAprobacion -q` con las pruebas en verde y el recuento de casos.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestCasillaDeAprobacion -q`: «Ran 2 tests in 0.018s» y «OK»; el caso positivo no produce hallazgo de `C-13` y el negativo devuelve código 1 con «registro dual de G4: la spec declara 2 casillas de G4 y la sección admite 1».
+- [x] Completada.
 
 ### T-002: Pruebas del alcance de la referencia a la spec
 
@@ -98,8 +98,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/alcance/`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_alcance_desde_ultimo_tag`: un historial con tag anotado de release acota el alcance a los commits posteriores y cada commit declara la cadena `Spec: SPEC-NNN`, con salida 0; caso negativo `test_commit_sin_spec_en_alcance`: un commit de implementación del alcance sin la cadena produce código 1 con su identificador abreviado; complementarias `test_alcance_sin_tag_usa_merge_base`, `test_alcance_vacio_no_aplicable` y `test_merges_excluidos_del_alcance`; las cinco se escriben en rojo antes de `T-012`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_validate.TestAlcanceDeLaReferencia -q` con las cinco pruebas y el código de salida de cada caso.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestAlcanceDeLaReferencia -q`: «Ran 5 tests in 0.048s» y «OK»; el caso positivo acota el alcance a `v0.6.0..HEAD` e informa «1 commits examinados», el negativo devuelve código 1 con el identificador abreviado del commit, el alcance vacío se informa «no aplicable» y la enumeración conserva `--no-merges` sin el recuento de 50 commits.
+- [x] Completada.
 
 ### T-003: Pruebas del cierre de integración del reporte
 
@@ -109,8 +109,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/cierre/`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_cierre_de_spec_validada`: un reporte en estado `validated` con la sección `## Cierre de integración`, la línea `Merge:` y la línea `Release:` vacía produce 0 hallazgos; caso negativo `test_release_declarado_en_validated_es_error`: un reporte en estado `validated` con un tag declarado en la línea `Release:` produce código 1 por release declarado sin publicación; complementaria `test_cierre_append_only_conserva_dictamen`, con dictamen no convergido conservado sin alteración; las tres se escriben en rojo antes de `T-013`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_validate.TestCierreDeIntegracion -q` con las tres pruebas y el mensaje del caso negativo.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestCierreDeIntegracion.test_cierre_de_spec_validada tools.sdd.tests.test_validate.TestCierreDeIntegracion.test_release_declarado_en_validated_es_error tools.sdd.tests.test_validate.TestCierreDeIntegracion.test_cierre_append_only_conserva_dictamen -q`: «Ran 3 tests in 0.028s» y «OK»; el caso negativo declara «está en estado validated y declara el tag v1.1.1 en «Release:»; el release no está publicado y la línea debe quedar vacía».
+- [x] Completada.
 
 ### T-004: Pruebas del check exigible en G5
 
@@ -120,8 +120,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/g5-check/`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_reglas_de_proteccion_exigen_verify`: las reglas de `main` y de `dev` declaran exigible el contexto `verify` y la comprobación produce 0 hallazgos; caso negativo `test_proteccion_sin_check_bloquea_g5`: una regla de rama sin el contexto exigible registra el bloqueo de G5 con la rama y el check ausente y devuelve código 1; ambas se escriben en rojo antes de `T-014`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_validate.TestCheckExigibleEnG5 -q` con las dos pruebas y el mensaje que nombra la rama y el check.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestCheckExigibleEnG5 -q`: «Ran 2 tests in 0.032s» y «OK»; el caso negativo devuelve código 1 con «la regla de protección de dev no declara exigible el check «verify» del flujo SDD; la compuerta G5 queda bloqueada», y las dos reglas declaradas del repositorio convergen con `strict: true`.
+- [x] Completada.
 
 ### T-005: Pruebas de la estructura del flujo de integración continua
 
@@ -131,8 +131,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`, `tools/sdd/tests/fixtures/flujo/`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_estructura_del_flujo`: el flujo declara `actions/checkout` como primera preparación, `actions/setup-python`, el job `verify`, el límite de 5 minutos y 0 efectos remotos, con salida 0; caso negativo `test_flujo_sin_preparacion_del_arbol`: un flujo sintético sin `actions/checkout` produce código 1 por ausencia de los archivos que valida; ambas se escriben en rojo antes de `T-018`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFlujoDeIntegracionContinua -q` con las dos pruebas y el mensaje del caso negativo.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_agent_permissions.TestFlujoDeIntegracionContinua -q`: «Ran 3 tests in 0.003s» y «OK»; el caso negativo declara «la primera preparación del job no usa actions/checkout» sobre el flujo sintético sin preparación del árbol.
+- [x] Completada.
 
 ### T-006: Pruebas del comparador de las reglas de protección
 
@@ -142,8 +142,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/git/tests/test_verify_branch_protection.py`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_required_status_checks_declarado`: el objeto declarado con `strict` verdadero y el contexto `verify` converge con la respuesta simulada; caso negativo `test_required_status_checks_divergente`: un contexto distinto produce discrepancia con el contexto esperado y el observado; ambas se escriben en rojo antes de `T-020`.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.git.tests.test_verify_branch_protection -q` con las dos pruebas y el texto de la discrepancia.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.git.tests.test_verify_branch_protection -q`: «Ran 39 tests in 0.015s» y «OK»; el objeto declarado converge con la respuesta que presenta `SDD / verify` y la discrepancia del caso negativo declara «required_status_checks: contextos esperados ['verify'], observados ['lint']».
+- [x] Completada.
 
 ### T-007: Pruebas de la gramática de nombres de rama
 
@@ -197,8 +197,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** la prueba positiva y la negativa de `T-001` en verde; `python tools\sdd\validate.py --spec SPEC-012` no registra hallazgo de `C-13` y `python tools\sdd\validate.py --spec SPEC-010` registra el registro dual de G4 mientras la casilla residual siga presente.
-- **Evidencia:** Se transcribe al cerrar: salida de `python tools\sdd\validate.py --spec SPEC-010` con el hallazgo `C-13` de registro dual y la salida de `--spec SPEC-012` sin hallazgo.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-010` devuelve código 1 con «[ERROR] specs\010-mecanismo-control-sdd\spec.md: C-13: registro dual de G4: la spec declara 2 casillas de G4 y la sección admite 1», y `python tools\sdd\validate.py --spec SPEC-012` devuelve código 0 con «OK: sin hallazgos».
+- [x] Completada.
 
 ### T-012: Implementación del alcance de la referencia a la spec
 
@@ -219,8 +219,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** las tres pruebas de `T-003` en verde; `python tools\sdd\validate.py --spec SPEC-008` informa la ausencia de la sección de cierre antes de `T-031` y la informa como error fuera de la ventana de legado.
-- **Evidencia:** Se transcribe al cerrar: salida de `python tools\sdd\validate.py --spec SPEC-008` con el estado del hallazgo `C-17` anterior a la corrección del reporte.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-008` devuelve código 0 y registra «SPEC-008 no declara la sección «Cierre de integración» en el reporte (cláusula de legado)»; fuera de la ventana de legado la misma ausencia es error, como demuestra `test_cierre_ausente` sobre SPEC-012 con código 1.
+- [x] Completada.
 
 ### T-014: Implementación del check exigible en G5
 
@@ -230,8 +230,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** las dos pruebas de `T-004` en verde; la comprobación lee las reglas declaradas de `main` y de `dev` y registra el bloqueo de G5 con la rama y el check cuando el contexto `verify` no figura.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_validate.TestCheckExigibleEnG5 -q` y el mensaje de bloqueo transcrito en la evidencia de la prueba negativa.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_validate.TestCheckExigibleEnG5 -q`: «Ran 2 tests in 0.032s» y «OK»; la comprobación lee las reglas declaradas de `main` y de `dev` y el bloqueo de G5 se registra con la rama y el check ausente.
+- [x] Completada.
 
 ### T-015: Etapas del orquestador y retirada de su escritura sobre `specs/`
 
@@ -274,8 +274,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `.github/workflows/sdd.yml`.
 - **Estimación:** 20 min.
 - **Validación:** `actions/checkout@v4` figura como primera preparación del job `verify`, seguida de `actions/setup-python@v5` con la versión 3.12, la validación agregada y la suite; se conservan el disparador de Pull Request hacia `main` y `dev`, el límite de 5 minutos, `contents: read` y 0 efectos remotos; las pruebas de `T-005` en verde.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFlujoDeIntegracionContinua -q` y diff del archivo del flujo.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.sdd.tests.test_agent_permissions.TestFlujoDeIntegracionContinua -q`: «Ran 3 tests in 0.003s» y «OK»; `git diff --numstat` del flujo declara 2 líneas añadidas y 0 eliminadas, con `actions/checkout@v4` como primera preparación del job `verify`, seguida de `actions/setup-python@v5` con la versión 3.12.
+- [x] Completada.
 
 ### T-019: Check `verify` exigible en las reglas de protección
 
@@ -285,8 +285,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/git/protection_rules/main.json`, `tools/git/protection_rules/dev.json`.
 - **Estimación:** 20 min.
 - **Validación:** ambos archivos declaran `required_status_checks` como objeto con `strict` verdadero y una entrada de contexto `verify`; se conservan los valores de `enforce_admins`, revisiones, restricciones, historial lineal, fuerza, borrado y resolución de conversaciones; `test_reglas_de_proteccion_exigen_verify` en verde.
-- **Evidencia:** Se transcribe al cerrar: contenido del bloque `required_status_checks` de los dos archivos y salida de la prueba que lo verifica.
-- [ ] Completada.
+- **Evidencia:** `main.json` y `dev.json` declaran `"required_status_checks": {"strict": true, "checks": [{"context": "verify"}]}` con 8 líneas añadidas y 1 eliminada cada uno; `test_reglas_de_proteccion_exigen_verify` contrasta el bloque declarado con `required_status_contexts` y devuelve 0 hallazgos.
+- [x] Completada.
 
 ### T-020: Comparación del objeto de comprobaciones exigibles
 
@@ -296,8 +296,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/git/verify_branch_protection.py`.
 - **Estimación:** 30 min.
 - **Validación:** el comparador contrasta `strict` y el conjunto de contextos del objeto declarado, toma el segmento posterior a `/ ` de la forma presentada por la interfaz y conserva la detección de comprobaciones inesperadas cuando el valor esperado es nulo; las pruebas de `T-006` en verde.
-- **Evidencia:** Se transcribe al cerrar: salida de `python -m unittest tools.git.tests.test_verify_branch_protection -q` y el mensaje de discrepancia del caso negativo con los dos valores.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.git.tests.test_verify_branch_protection -q`: «Ran 39 tests in 0.015s» y «OK»; la discrepancia del caso negativo declara el contexto esperado y el observado, la comparación toma el segmento posterior a `/ ` de la forma presentada por la interfaz y el valor esperado nulo conserva la detección de comprobaciones inesperadas.
+- [x] Completada.
 
 ### T-021: Declaración de la firma verificada en el protocolo
 

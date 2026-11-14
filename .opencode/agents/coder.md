@@ -27,9 +27,6 @@ permissions:
     resource: '.opencode/**'
     effect: deny
   - action: edit
-    resource: '.github/**'
-    effect: deny
-  - action: edit
     resource: '.env'
     effect: deny
   - action: edit

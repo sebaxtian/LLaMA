@@ -3,6 +3,7 @@
 import ast
 import contextlib
 import io
+import json
 import re
 import shutil
 import sys
@@ -1048,6 +1049,8 @@ class TestG5Integracion(unittest.TestCase):
             text = mutate(text)
         spec_dir = add_spec(root, "SPEC-010", text, slug=f"g5-{fixture}")
         write_doc(spec_dir / "validation_report.md", read_fixture("g5", fixture, "validation_report.md"))
+        # C-09: la compuerta lee las reglas de protección declaradas de main y de dev.
+        write_protection_rules(root)
         return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G5"], stub)
 
     def test_g5_merge_dos_padres(self):
@@ -1455,6 +1458,42 @@ class TestCierreDeIntegracion(unittest.TestCase):
                                   release="v1.1.1")
         assert_error(self, result, "v1.1.1", "v1.2.0")
 
+    def cierre_validada_run(self, fixture: str) -> RunResult:
+        """Ejecuta el validador sobre un reporte en estado `validated` del fixture indicado."""
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-012", read_fixture("cierre", "validada", "spec.md"),
+                            slug=f"cierre-{fixture}")
+        write_doc(spec_dir / "validation_report.md",
+                  read_fixture("cierre", fixture, "validation_report.md"))
+        return run_in(root, [("SPEC-012", spec_dir)], ["--spec", "SPEC-012"], git_stub())
+
+    def test_cierre_de_spec_validada(self):
+        """RF-006, CA-006: `validated` con merge y línea de release vacía no produce hallazgo."""
+        result = self.cierre_validada_run("validada")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([f for f in result.reporter.findings if f.message.startswith("C-17")],
+                         f"el cierre declarado no debe producir hallazgo: {result.reporter.findings}")
+
+    def test_release_declarado_en_validated_es_error(self):
+        """CB-008, CA-006: un tag en «Release:» de una spec `validated` es release sin publicar."""
+        result = self.cierre_validada_run("release-declarado")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        c17 = [f for f in result.errors if f.message.startswith("C-17")]
+        self.assertTrue(c17, f"el tag declarado debe producir C-17: {result.reporter.findings}")
+        texto = " ".join(f.message for f in c17).lower()
+        self.assertIn("validated", texto, f"el hallazgo debe nombrar el estado: {c17}")
+        self.assertIn("v1.1.1", texto, f"el hallazgo debe nombrar el tag declarado: {c17}")
+        self.assertIn("publicad", texto, f"el hallazgo debe declarar el release sin publicar: {c17}")
+
+    def test_cierre_append_only_conserva_dictamen(self):
+        """CB-007, CA-006: el cierre se añade sin alterar un dictamen no convergido."""
+        result = self.cierre_validada_run("dictamen-no-convergido")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([f for f in result.errors if "NO CONVERGIDO" in f.message],
+                        f"el dictamen no convergido debe conservarse: {result.reporter.findings}")
+        self.assertFalse([f for f in result.errors if f.message.startswith("C-17")],
+                         f"la sección añadida no debe alterar el dictamen: {result.reporter.findings}")
+
 
 class TestVersionadoDeLaRegularizacion(unittest.TestCase):
     """RNF-006, CB-017: incremento PATCH, fila de motivo y ventana de legado (C-18)."""
@@ -1502,3 +1541,184 @@ class TestVersionadoDeLaRegularizacion(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ==========================================================================
+# SPEC-013 · cierre de la reauditoría de conformidad
+#
+# Pruebas de las comprobaciones C-09, C-13, C-16 y C-17 corregidas, escritas
+# antes de su implementación (fase roja). Cada comprobación declara un caso
+# positivo y un caso negativo.
+# ==========================================================================
+
+CASILLA_DIR = FIXTURES / "casilla"
+ALCANCE_DIR = FIXTURES / "alcance"
+CIERRE_DIR = FIXTURES / "cierre"
+G5_CHECK_DIR = FIXTURES / "g5-check"
+ALCANCE_BRANCH = "feat/reauditoria-cierre"
+REQUIRED_CHECK = "verify"
+
+
+def write_protection_rules(root: Path, *, main: str = "main.json",
+                           dev: str = "dev.json") -> None:
+    """Escribe las reglas de protección declaradas de `main` y de `dev` en el árbol temporal."""
+    for branch, fixture in (("main", main), ("dev", dev)):
+        write_doc(root / "tools" / "git" / "protection_rules" / f"{branch}.json",
+                  read_fixture("g5-check", fixture))
+
+
+class TestCasillaDeAprobacion(unittest.TestCase):
+    """RF-003, CB-006, CA-003: una sola casilla por compuerta en la sección de aprobaciones."""
+
+    def casilla_run(self, fixture: str) -> RunResult:
+        root = make_repo(self)
+        spec_dir = add_spec(root, "SPEC-010", read_fixture("casilla", fixture, "spec.md"),
+                            slug=fixture)
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+
+    def test_casilla_unica_por_compuerta(self):
+        """Una casilla de G1 y una de G4 producen 0 hallazgos y código 0."""
+        result = self.casilla_run("unica")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([f for f in result.reporter.findings if "C-13" in f.message],
+                         f"una casilla por compuerta no produce hallazgo de C-13: {result.reporter.findings}")
+
+    def test_casilla_duplicada_sin_marcar_es_error(self):
+        """Una segunda casilla de G4 sin marcar produce código 1 con la compuerta y el recuento."""
+        result = self.casilla_run("duplicada-sin-marcar")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        dual = [f for f in result.errors if "C-13" in f.message]
+        self.assertTrue(dual, f"la segunda casilla de G4 debe producir C-13: {result.reporter.findings}")
+        texto = " ".join(f.message for f in dual)
+        self.assertIn("G4", texto, f"el hallazgo debe nombrar la compuerta: {dual}")
+        self.assertIn("2 casillas", texto, f"el hallazgo debe declarar el recuento: {dual}")
+
+
+def stub_de_alcance(commits, *, tag: str | None = None, annotated: bool = True,
+                    ancestor: bool = True, merge_base: str = "") -> GitStub:
+    """Función Git con el punto de corte, el historial y la lista de commits del alcance."""
+    tag_lines = ""
+    if tag:
+        tag_lines = f"{tag} {'tag' if annotated else 'commit'}\nv0.5.0 tag"
+    rules = [
+        (_git_rule("--show-current"), (0, ALCANCE_BRANCH, "")),
+        (_git_rule("for-each-ref", "refs/tags"), (0, tag_lines, "")),
+        (_git_rule("--is-ancestor"), (0 if ancestor else 1, "", "")),
+        (_git_rule("merge-base"), (0, merge_base, "") if merge_base else (1, "", "fatal")),
+    ]
+    for sha, cuerpo_commit in commits:
+        rules.append((_git_rule("--format=%B", sha), (0, cuerpo_commit, "")))
+    lista = "\n".join(sha for sha, _ in commits)
+    rules.append((_git_rule("--format=%H"), (0, lista, "")))
+    rules.append((_git_rule("log"), (0, lista, "")))
+    return GitStub(rules)
+
+
+class TestAlcanceDeLaReferencia(unittest.TestCase):
+    """RF-007, CB-005, CA-007: alcance de la cadena «Spec: SPEC-NNN» (C-16)."""
+
+    def alcance_run(self, *, commits, tag: str | None = None, annotated: bool = True,
+                    ancestor: bool = True, merge_base: str = "") -> tuple[RunResult, GitStub]:
+        root = make_repo(self)
+        base = ALCANCE_DIR / "valido"
+        spec_dir = add_spec(root, "SPEC-013",
+                            (base / "spec.md").read_text(encoding="utf-8"), slug="alcance")
+        write_doc(spec_dir / "tasks.md", (base / "tasks.md").read_text(encoding="utf-8"))
+        stub = stub_de_alcance(commits, tag=tag, annotated=annotated, ancestor=ancestor,
+                               merge_base=merge_base)
+        result = run_in(root, [("SPEC-013", spec_dir)], ["--all"], stub)
+        return result, stub
+
+    def test_alcance_desde_ultimo_tag(self):
+        """Un tag anotado de release acota el alcance a los commits posteriores."""
+        result, stub = self.alcance_run(commits=[("a" * 40, "Spec: SPEC-013\n\nImplementa T-001")],
+                                        tag="v0.6.0")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue(stub.commands_containing("refs/tags"),
+                        f"la comprobación debe leer los tags anotados: {stub.calls}")
+        self.assertTrue(stub.commands_containing("v0.6.0..HEAD"),
+                        f"el alcance debe empezar en el tag anotado: {stub.calls}")
+        self.assertIn("v0.6.0", result.output,
+                      f"la comprobación debe informar el punto de corte: {result.output}")
+        self.assertIn("commits examinados", result.output,
+                      f"la comprobación debe informar el recuento de commits: {result.output}")
+        self.assertIn("1 commits examinados", result.output,
+                      f"el alcance declara un commit y la comprobación debe informarlo: {result.output}")
+
+    def test_commit_sin_spec_en_alcance(self):
+        """Un commit de implementación del alcance sin la cadena produce código 1."""
+        result, _ = self.alcance_run(commits=[("b" * 40, "Implementa T-001 sin la referencia")],
+                                     tag="v0.6.0")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue([f for f in result.errors if "b" * 7 in f.message],
+                        f"el error debe nombrar el commit abreviado: {result.reporter.findings}")
+
+    def test_alcance_sin_tag_usa_merge_base(self):
+        """Sin tag anotado de release el punto de corte es el ancestro común con `main`."""
+        punto = "9" * 40
+        result, stub = self.alcance_run(commits=[("c" * 40, "Spec: SPEC-013\n\nCierra T-001")],
+                                        merge_base=punto)
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertTrue(stub.commands_containing(f"{punto}..HEAD"),
+                        f"el alcance debe empezar en el ancestro común: {stub.calls}")
+        self.assertIn("ancestro", result.output.lower(),
+                      f"la comprobación debe informar el punto de corte: {result.output}")
+
+    def test_alcance_vacio_no_aplicable(self):
+        """Sin tag y sin ancestro común el alcance es vacío y se informa como no aplicable."""
+        result, _ = self.alcance_run(commits=[("d" * 40, "Implementa T-001 sin la referencia")])
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertIn("no aplicable", result.output.lower(),
+                      f"el alcance vacío debe informarse como no aplicable: {result.output}")
+
+    def test_merges_excluidos_del_alcance(self):
+        """Los commits de merge se excluyen de la enumeración del alcance."""
+        result, stub = self.alcance_run(commits=[("e" * 40, "Spec: SPEC-013\n\nCierra T-001")],
+                                        tag="v0.6.0")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        recorridos = stub.commands_containing("v0.6.0..HEAD")
+        self.assertTrue(recorridos, f"el alcance debe acotarse al tag: {stub.calls}")
+        self.assertTrue(all("--no-merges" in call for call in recorridos),
+                        f"la enumeración debe excluir los merges: {recorridos}")
+        self.assertFalse([call for call in recorridos if "--max-count" in call],
+                         f"un alcance con punto de corte no usa el recuento de 50 commits: {recorridos}")
+
+
+class TestCheckExigibleEnG5(unittest.TestCase):
+    """RF-010, CB-010, CA-010: el check `verify` del flujo SDD es exigible para G5."""
+
+    def g5_check_run(self, dev_rule: str, main_rule: str = "main.json") -> RunResult:
+        root = make_repo(self)
+        base = FIXTURES / "g5" / "merge-dos-padres"
+        spec_dir = add_spec(root, "SPEC-010", (base / "spec.md").read_text(encoding="utf-8"),
+                            slug="g5-check")
+        write_doc(spec_dir / "validation_report.md",
+                  (base / "validation_report.md").read_text(encoding="utf-8"))
+        write_protection_rules(root, main=main_rule, dev=dev_rule)
+        return run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G5"],
+                      git_stub())
+
+    def test_reglas_de_proteccion_exigen_verify(self):
+        """Las reglas de `main` y de `dev` declaran exigible el contexto `verify`."""
+        result = self.g5_check_run("dev.json")
+        self.assertEqual(result.code, 0, f"hallazgos: {result.reporter.findings}")
+        self.assertFalse([f for f in result.reporter.findings if REQUIRED_CHECK in f.message],
+                         f"las dos reglas declaran el check y no producen hallazgo: {result.reporter.findings}")
+        # Las reglas declaradas del repositorio nombran el check exigible y el modo estricto.
+        for branch in ("main", "dev"):
+            ruta = ROOT / "tools" / "git" / "protection_rules" / f"{branch}.json"
+            regla = json.loads(ruta.read_text(encoding="utf-8"))
+            self.assertIn(REQUIRED_CHECK, v.required_status_contexts(regla),
+                          f"la regla de {branch} no declara exigible el contexto {REQUIRED_CHECK}")
+            self.assertIs(regla["required_status_checks"].get("strict"), True,
+                          f"la regla de {branch} no declara `strict: true`")
+
+    def test_proteccion_sin_check_bloquea_g5(self):
+        """Una rama sin el contexto exigible bloquea G5 y nombra la rama y el check."""
+        result = self.g5_check_run("dev-sin-verify.json")
+        self.assertEqual(result.code, 1, f"hallazgos: {result.reporter.findings}")
+        bloqueo = [f for f in result.errors if REQUIRED_CHECK in f.message and "bloqueada" in f.message]
+        self.assertTrue(bloqueo, f"la ausencia del check debe bloquear G5: {result.reporter.findings}")
+        texto = " ".join(f.message for f in bloqueo)
+        self.assertIn("dev", texto, f"el hallazgo debe nombrar la rama: {bloqueo}")
+        self.assertIn(REQUIRED_CHECK, texto, f"el hallazgo debe nombrar el check ausente: {bloqueo}")

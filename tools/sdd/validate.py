@@ -12,6 +12,7 @@ Códigos de salida:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -162,6 +163,11 @@ CRITERIA_FIELD_RE = re.compile(r"\*\*Criterio de aceptación:\*\*\s*(.*)")
 CRITERIA_ID_RE = re.compile(r"^`(CA-\d{3})`$")
 # C-16: cadena de la spec en el cuerpo del commit.
 SPEC_CHAIN_RE = re.compile(r"Spec:\s*(SPEC-\d{3})")
+# C-16: nombre de un tag de release anotado (C-6, paso 1).
+RELEASE_TAG_RE = re.compile(r"^v\d+\.\d+\.\d+$")
+# C-09: contexto exigible del flujo `SDD` en las reglas de protección (C-2).
+REQUIRED_CHECK_CONTEXT = "verify"
+PROTECTION_BRANCHES = ("main", "dev")
 # C-17: sección de cierre y sus dos líneas.
 CLOSE_SECTION_RE = re.compile(r"^##\s+Cierre de integración\s*$", re.MULTILINE)
 MERGE_LINE_RE = re.compile(r"^Merge:\s*([0-9a-f]{7,40})\s*$", re.MULTILINE)
@@ -442,9 +448,14 @@ def check_approval_form(gate: str, body: str) -> tuple[str | None, str | None, s
     """Forma y ubicación de la casilla de una compuerta (C-01, C-13).
 
     Devuelve (línea marcada, problema, clase de problema). La clase es ``forma``,
-    ``dual``, ``ubicacion`` o ``marcada``.
+    ``dual``, ``ubicacion`` o ``marcada``. El registro dual se cuenta sobre las
+    casillas declaradas, con independencia de que la casilla adicional esté marcada.
     """
     section_lines = {line.strip() for line in _section(body, r"Aprobaciones").splitlines()}
+    casillas = [line for which, _, line in approval_casillas(body) if which == gate]
+    if len(casillas) > 1:
+        return None, (f"registro dual de {gate}: la spec declara {len(casillas)} casillas "
+                      f"de {gate} y la sección admite 1"), "dual"
     marked: list[str] = []
     for which, is_marked, line in approval_casillas(body):
         if which != gate or not is_marked:
@@ -454,13 +465,11 @@ def check_approval_form(gate: str, body: str) -> tuple[str | None, str | None, s
         if not valid_iso_date(line):
             return None, f"{gate} marcada sin una fecha ISO válida (YYYY-MM-DD)", "forma"
         marked.append(line)
-    if len(marked) > 1:
-        return None, f"registro dual de {gate}: la línea aparece en más de una ubicación", "dual"
     if marked:
         if marked[0].strip() in section_lines:
             return marked[0], None, None
         return None, f"la línea de {gate} está marcada fuera de la sección de aprobaciones", "ubicacion"
-    if [line for which, _, line in approval_casillas(body) if which == gate]:
+    if casillas:
         return None, f"{gate} no está marcada en la sección de aprobaciones", "marcada"
     return None, f"no existe la casilla de {gate} en la sección de aprobaciones", "marcada"
 
@@ -855,6 +864,61 @@ def validate_release(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | No
 # ------------------------------------------------------------------- C-09
 
 
+def check_required_status_check(spec_id: str, rep: Reporter) -> None:
+    """C-09: el check `verify` del flujo `SDD` es exigible en `main` y en `dev` (CB-010).
+
+    Sin la declaración exigible en alguna de las dos ramas, la verificación de G5
+    queda bloqueada y el hallazgo nombra la rama y el check ausente.
+    """
+    for branch in PROTECTION_BRANCHES:
+        path = protection_rules_dir() / f"{branch}.json"
+        rel = spec_relative(path)
+        if not path.exists():
+            emit(rep, spec_id, "C-09", rel,
+                 f"G5: la regla de protección de {branch} no existe y el check "
+                 f"«{REQUIRED_CHECK_CONTEXT}» del flujo SDD no se declara exigible; "
+                 "la compuerta G5 queda bloqueada")
+            continue
+        try:
+            rule = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            emit(rep, spec_id, "C-09", rel,
+                 f"G5: la regla de protección de {branch} no se puede leer ({exc}) y el check "
+                 f"«{REQUIRED_CHECK_CONTEXT}» del flujo SDD no se declara exigible; "
+                 "la compuerta G5 queda bloqueada")
+            continue
+        if REQUIRED_CHECK_CONTEXT not in required_status_contexts(rule):
+            emit(rep, spec_id, "C-09", rel,
+                 f"G5: la regla de protección de {branch} no declara exigible el check "
+                 f"«{REQUIRED_CHECK_CONTEXT}» del flujo SDD; la compuerta G5 queda bloqueada")
+
+
+def protection_rules_dir() -> Path:
+    """Directorio de las reglas declaradas de protección (C-2)."""
+    return ROOT / "tools" / "git" / "protection_rules"
+
+
+def required_status_contexts(rule: dict) -> set[str]:
+    """Contextos exigibles de una regla de protección, normalizados al nombre del job (C-2).
+
+    La interfaz presenta el contexto como `SDD / verify`; la comparación toma el
+    segmento posterior a `/ ` y lo contrasta con el nombre del job.
+    """
+    status = rule.get("required_status_checks")
+    if not isinstance(status, dict):
+        return set()
+    contexts: list[str] = []
+    for entry in status.get("checks") or []:
+        if isinstance(entry, dict) and entry.get("context"):
+            contexts.append(str(entry["context"]))
+        elif isinstance(entry, str) and entry:
+            contexts.append(entry)
+    for entry in status.get("contexts") or []:
+        if entry:
+            contexts.append(str(entry))
+    return {re.split(r"/\s*", value)[-1].strip() for value in contexts if value.strip()}
+
+
 def check_g5(spec_id: str, spec_dir: Path, rep: Reporter) -> None:
     """C-09: merge en `dev`, dos padres, validación posterior y rama ausente (RF-013, CB-012).
 
@@ -1160,6 +1224,11 @@ def check_integration_close(spec_id: str, fm: dict, text: str, rel_report: str,
         emit_trace(rep, spec_id, "C-17", rel_report,
                    f"{spec_id} está en estado released y no declara el tag de release (`Release:`)")
         return
+    if status == "validated" and declared:
+        emit_trace(rep, spec_id, "C-17", rel_report,
+                   f"{spec_id} está en estado validated y declara el tag {declared} en «Release:»; "
+                   "el release no está publicado y la línea debe quedar vacía")
+        return
     if not declared:
         return
     frontmatter_release = fm.get("release", "").strip().strip('"')
@@ -1178,25 +1247,58 @@ def check_integration_close(spec_id: str, fm: dict, text: str, rel_report: str,
                        f"specs/INDEX.md ({index_release})")
 
 
-def check_commit_references(rep: Reporter) -> None:
-    """C-16: cadena `Spec: SPEC-NNN` en los commits del alcance (RF-005, CB-005, CB-018)."""
-    point = ""
-    for base in (INTEGRATION_BRANCH, "main"):
-        result = run_git(["merge-base", "HEAD", base])
+def annotated_release_tags() -> list[str]:
+    """Tags anotados de release en orden de creación descendente (C-16, paso 1)."""
+    result = run_git(["for-each-ref", "refs/tags", "--sort=-creatordate",
+                      "--format=%(refname:short) %(objecttype)"])
+    if result is None or result.returncode != 0:
+        return []
+    tags: list[str] = []
+    for line in (result.stdout or "").splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and RELEASE_TAG_RE.match(parts[0]) and parts[1] == "tag":
+            tags.append(parts[0])
+    return tags
+
+
+def scope_point() -> tuple[str, str]:
+    """Punto de corte del alcance como (descripción, tramo) (C-16, pasos 1 a 4).
+
+    El tramo vacío declara que no hay punto de corte y la comprobación no se aplica.
+    """
+    for tag in annotated_release_tags():
+        result = run_git(["merge-base", "--is-ancestor", tag, "HEAD"])
         if result is not None and result.returncode == 0:
-            point = (result.stdout or "").strip()
-            if point:
-                break
-    args = ["log", "--no-merges", "--format=%H"]
-    args.append(f"{point}..HEAD" if point else "--max-count=50")
-    result = run_git(args)
+            return f"el tag anotado {tag}", f"{tag}..HEAD"
+    result = run_git(["merge-base", "HEAD", "main"])
+    sha = (result.stdout or "").strip() if result is not None and result.returncode == 0 else ""
+    if re.fullmatch(r"[0-9a-f]{40}", sha):
+        return f"el ancestro común con main {sha[:7]}", f"{sha}..HEAD"
+    return "sin punto de corte", ""
+
+
+def check_commit_references(rep: Reporter) -> None:
+    """C-16: cadena `Spec: SPEC-NNN` en los commits del alcance (RF-007, CB-005).
+
+    El punto de corte es el último tag anotado de release que es ancestro de `HEAD`
+    y, en su defecto, el ancestro común con `main`. Los merges se excluyen y una
+    enumeración vacía se informa como no aplicable.
+    """
+    punto, tramo = scope_point()
+    if not tramo:
+        print("Comprobación de historial: no aplicable "
+              "(sin tag anotado de release ni ancestro común con main)")
+        return
+    result = run_git(["log", "--no-merges", "--format=%H", tramo])
     shas = []
     if result is not None and result.returncode == 0:
         shas = [line.strip() for line in (result.stdout or "").splitlines()
                 if re.fullmatch(r"[0-9a-f]{7,40}", line.strip())]
     if not shas:
-        print("Comprobación de historial: no aplicable (sin commits de implementación en el alcance)")
+        print("Comprobación de historial: no aplicable "
+              f"(sin commits de implementación posteriores a {punto})")
         return
+    print(f"Comprobación de historial: punto de corte {punto}, {len(shas)} commits examinados")
     for sha in shas:
         body = run_git(["show", "-s", "--format=%B", sha])
         message = (body.stdout or "") if body is not None and body.returncode == 0 else ""
@@ -1542,6 +1644,7 @@ def main(argv: list[str] | None = None) -> int:
         check_gate_origin(spec_id, read_status(spec_dir), gate,
                           spec_relative(spec_dir / "spec.md"), rep)
         if gate == "G5":
+            check_required_status_check(spec_id, rep)
             check_g5(spec_id, spec_dir, rep)
 
     if args.spec:

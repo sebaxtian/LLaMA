@@ -665,5 +665,57 @@ class TestMainCliExecution(unittest.TestCase):
         self.assertIn("CONVERGENCIA PLENA (código 0)", text)
 
 
+class TestComprobacionesExigibles(unittest.TestCase):
+    """SPEC-013 · RF-010, CA-010: el objeto `required_status_checks` se compara por `strict` y contextos."""
+
+    def setUp(self):
+        self.expected = {
+            "required_status_checks": {
+                "strict": True,
+                "checks": [{"context": "verify"}],
+            }
+        }
+
+    def test_required_status_checks_declarado(self):
+        """El objeto declarado converge con la respuesta que presenta `SDD / verify`."""
+        actual = {
+            "required_status_checks": {
+                "strict": True,
+                "checks": [{"context": "SDD / verify"}],
+            }
+        }
+        self.assertEqual(vbp.compare_protection_dicts(actual, self.expected), [])
+        # La misma respuesta sin `strict` no converge.
+        divergente = {
+            "required_status_checks": {
+                "strict": False,
+                "checks": [{"context": "SDD / verify"}],
+            }
+        }
+        self.assertTrue(
+            any("required_status_checks.strict" in d for d in vbp.compare_protection_dicts(divergente, self.expected)),
+            "un `strict` distinto debe producir discrepancia",
+        )
+
+    def test_required_status_checks_divergente(self):
+        """Un contexto distinto produce discrepancia con el esperado y el observado."""
+        actual = {
+            "required_status_checks": {
+                "strict": True,
+                "checks": [{"context": "SDD / lint"}],
+            }
+        }
+        diffs = vbp.compare_protection_dicts(actual, self.expected)
+        self.assertTrue(diffs, "un contexto distinto debe producir discrepancia")
+        texto = " ".join(diffs)
+        self.assertIn("verify", texto, f"la discrepancia debe nombrar el contexto esperado: {diffs}")
+        self.assertIn("lint", texto, f"la discrepancia debe nombrar el contexto observado: {diffs}")
+        self.assertTrue(
+            any("required_status_checks: esperado configurado, actual=None" in d
+                for d in vbp.compare_protection_dicts({}, self.expected)),
+            "la ausencia del objeto debe producir discrepancia",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
