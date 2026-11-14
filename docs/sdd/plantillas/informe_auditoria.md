@@ -1,6 +1,6 @@
 # Informe de auditoría — <alcance>
 
-*Plantilla de rango 5: norma de forma del informe de auditoría. Rol habilitado: auditoría, con lectura de la base completa y escritura limitada a este informe. Mientras ese rol no exista en `.opencode/`, la escritura la ejecuta `documenter` bajo la declaración del rol.*
+*Plantilla de rango 5: norma de forma del informe de auditoría. Rol ejecutor: `auditor`, implementado en `.opencode/agents/auditor.md`, con lectura de la base completa y escritura limitada a este informe.*
 
 - **Fecha:** YYYY-MM-DD (UTC).
 - **Alcance:** <base normativa y documentos auditados>.

@@ -76,7 +76,7 @@ El proceso declara seis compuertas —G1, G2, G3, G4, G5 y G6— y diez estados 
 - **Sección protegida:** la sección de aprobaciones de `spec.md` y la entrada del release en `CHANGELOG.md` solo las modifica el propietario mediante un commit firmado. Ningún agente las escribe ni las rellena.
 - **Prohibición de autoaprobación:** ningún agente aprueba su propia spec, su propia implementación ni su propio release, y ningún agente declara una compuerta. Un agente que redacta una línea de aprobación produce un registro sin valor y el caso se trata como incumplimiento.
 - **Firma ausente o no verificada:** si la firma falta, no verifica o la clave no figura en la lista de firmantes, la compuerta no se considera aprobada y el caso se registra como incumplimiento.
-- **Roles:** los seis roles de agente son orquestador, planner, documenter, coder, reviewer y auditor. El propietario es la persona que aprueba y no forma parte de la matriz de agentes. El rol de auditoría tiene lectura sobre la base normativa completa, sin permiso de modificar requisitos y sin permiso de aprobar compuertas; su implementación en `.opencode/` corresponde al bloque B3.
+- **Roles:** los seis roles de agente son orquestador, planner, documenter, coder, reviewer y auditor. El propietario es la persona que aprueba y no forma parte de la matriz de agentes. El rol de auditoría tiene lectura sobre la base normativa completa, sin permiso de modificar requisitos y sin permiso de aprobar compuertas; está implementado en `.opencode/agents/auditor.md`.
 
 ## 8. Control de cambios de la base
 
