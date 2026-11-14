@@ -1,8 +1,8 @@
 ---
 id: SPEC-009
 title: Nueva base normativa SDD
-status: tasked
-version: 0.4.0
+status: validated
+version: 0.5.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -396,6 +396,7 @@ Cubre: `RF-028`, `CB-011`.
 <!-- Solo el propietario puede rellenar esta sección. -->
 
 - [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-14)
+- [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-14)
 
 ## Historial de cambios
 
@@ -405,3 +406,4 @@ Cubre: `RF-028`, `CB-011`.
 | 0.2.0 | 2026-11-14 | Clarificación: mapa de autoridad en tres niveles, autoría frente a propiedad, sustitución y transición, rol de auditoría, alcance del índice, versionado de specs, archivo de la rama Gemma y recuento histórico |
 | 0.3.0 | 2026-11-14 | Plan: arquitectura documental de la base v2, contrato de cada documento y plantilla, modelo de aprobación por commit firmado, trece decisiones técnicas y dieciséis comprobaciones |
 | 0.4.0 | 2026-11-14 | Tasks: diecinueve tareas atómicas con dependencias acíclicas, criterio de aceptación y campo de evidencia, dos escritores declarados según `DEC-013` y cobertura de `RF-001` a `RF-028`, `CB-001` a `CB-013` y `RNF-001` a `RNF-006` |
+| 0.5.0 | 2026-11-14 | Base v2 implementada en dieciséis rutas, revisión independiente con cuatro brechas cerradas y dictamen `CONVERGIDO` 47/47; G4 aprobada y estado `validated` |
