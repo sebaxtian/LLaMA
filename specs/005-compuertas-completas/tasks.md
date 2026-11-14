@@ -12,6 +12,7 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-001`, `RNF-003`.
+- **Criterio de aceptación:** `CA-001`, `CA-006`.
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/g3/**`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests`. Las pruebas nuevas de `TestG3Tareas` (CA-001) fallan y las existentes pasan. Código `1` por las pruebas nuevas.
@@ -21,12 +22,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - Fallo esperado: `test_tarea_pendiente_con_g3_es_error` → `AssertionError: False is not true : una tarea sin [x] con G3 debe producir error`.
   - Pasan: las 34 pruebas existentes más `test_tareas_completas_con_g3_sin_errores` y `test_sin_tareas_con_g3_es_error`. Estas dos son guardas: el validador actual ya cumple su aserción («sin tareas» ya produce error con cualquier compuerta), por lo que no pueden fallar en rojo.
   - Fixtures creados: `g3/tarea-pendiente/`, `g3/tareas-completas/`, `g3/sin-tareas/` (`spec.md` y `tasks.md`). `tools/sdd/validate.py` no se ha modificado.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-001 y RNF-003: «Ran 47 tests OK; salidas indicadas arriba» y «Ran 47 tests, OK, código 0»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-002
 
 - **Dependencias:** `T-001`.
 - **Requisitos cubiertos:** `RF-001`, `RNF-001`, `RNF-002`.
+- **Criterio de aceptación:** `CA-001`, `CA-006`.
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests` pasa (CA-001). `python tools\sdd\validate.py --spec SPEC-001 --gate G3` devuelve `0`.
@@ -39,12 +42,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - `python tools\sdd\validate.py --spec SPEC-001 --gate G3` y `--spec SPEC-002 --gate G3` → código `0`.
   - `python tools\sdd\validate.py --spec SPEC-005 --gate G3` → código `1`, con un error por tarea pendiente T-002 a T-009. Es el comportamiento esperado hasta completar SPEC-005.
   - `git diff --check` → código `0`.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-001, RNF-001 y RNF-002: «Ran 47 tests OK; salidas indicadas arriba», «Códigos 0, 1 y 2 verificados» y «Suite OK; solo biblioteca estándar»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-003
 
 - **Dependencias:** `T-002`.
 - **Requisitos cubiertos:** `RF-002`, `CB-001`.
+- **Criterio de aceptación:** `CA-002`.
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/matriz/**`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests`. Fallan las pruebas nuevas de `TestMatrizEstados` para `matriz/compuesta`, `sin-columna-estado` y `celda-vacia`. Pasan `observacion` y `tabla-ajena` (CA-002).
@@ -56,12 +61,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - Pasan las 37 pruebas existentes (45 − 6 fallos − 2 nuevas verdes = 37 sin cambios).
   - Fixtures creados: `matriz/{pendiente,parcial,compuesta,pasado-fallado,observacion,tabla-ajena,sin-columna-estado,celda-vacia}/` (`spec.md` y `validation_report.md`). `validate.py` no modificado.
   - Nota: `pendiente` y `parcial` y `pasado-fallado` no están en la lista de T-003 de `tasks.md`; se añaden por RF-002 («estado distinto de PASADO») y CA-002.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-002 y CB-001: «Cada caso produce error; la suite pasa» y «Observación: sin error. PASADO / FALLADO: error»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-004
 
 - **Dependencias:** `T-003`.
 - **Requisitos cubiertos:** `RF-002`, `CB-001`, `RNF-001`.
+- **Criterio de aceptación:** `CA-002`, `CA-006`.
 - **Archivos:** `tools/sdd/validate.py`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests` pasa (CA-002). `python tools\sdd\validate.py --spec SPEC-002 --gate G4` devuelve `0`.
@@ -75,12 +82,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - `python tools\sdd\validate.py --spec SPEC-003 --gate G4` → código `0`, `OK: sin hallazgos.`.
   - Comprobación de que la regla no omite datos: en los reportes reales se detectan las tablas de trazabilidad (SPEC-002 y SPEC-003 tienen 2 cada una) y ninguna fila produce entrada de error. Las tablas de verificación, sesión, brecha, caso y comando no se evalúan.
   - Ningún reporte real incumple el contrato; no se ha relajado ninguna regla.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-002, CB-001 y RNF-001: «Cada caso produce error; la suite pasa» y «Códigos 0, 1 y 2 verificados»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-005
 
 - **Dependencias:** `T-004`.
 - **Requisitos cubiertos:** `RF-003`, `CB-002`, `RNF-003`.
+- **Criterio de aceptación:** `CA-003`, `CA-006`.
 - **Archivos:** `tools/sdd/tests/test_validate.py`, `tools/sdd/tests/fixtures/rama/**`, `tools/sdd/validate.py`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests` pasa, incluido `TestRamaEstado` (CA-003). La prueba comprueba que `git_checks` recibe `None` en `released` y `superseded`, y la rama declarada en `draft`.
@@ -93,12 +102,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - `python tools\sdd\validate.py --all` → código `0`, sin errores.
   - `python tools\sdd\validate.py --spec SPEC-002 --gate G4 --git` (rama actual `feat/compuertas-completas`) → código `0`, `OK: sin hallazgos.`. Sin el cambio, SPEC-002 daría `[ERROR] git: rama actual 'feat/compuertas-completas' no coincide con la declarada 'feat/orquestacion-subagentes-sdd'` porque su estado es `released`.
   - `python tools\sdd\validate.py --spec SPEC-001 --gate G4 --git` → código `0` (SPEC-001 también es `released`).
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-003, CB-002 y RNF-003: «released y superseded con rama inexistente devuelven 0 sin error de rama; validated con rama distinta devuelve 1»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-006
 
 - **Dependencias:** `T-005`.
 - **Requisitos cubiertos:** `RF-004`.
+- **Criterio de aceptación:** `CA-004`.
 - **Archivos:** `specs/001-main-menu/spec.md`.
 - **Ejecutor:** `planner`. Los permisos de `coder` impiden editar `specs/**`, salvo `tasks.md`.
 - **Estimación:** 15 min.
@@ -110,6 +121,7 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
 
 - **Dependencias:** `T-006`.
 - **Requisitos cubiertos:** `RF-005`.
+- **Criterio de aceptación:** `CA-005`.
 - **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`.
 - **Ejecutor:** `documenter`. Solo tiene permiso sobre `docs/**` y `AGENTS.md`.
 - **Estimación:** 20 min.
@@ -123,6 +135,7 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
 
 - **Dependencias:** `T-007`.
 - **Requisitos cubiertos:** `RF-001`, `RF-002`, `RF-003`, `RF-004`, `RF-005`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-004`, `CA-005`.
 - **Archivos:** `CHANGELOG.md`, sección `## [Unreleased]`.
 - **Ejecutor:** `coder`. Autorización del propietario: `coder` puede editar `CHANGELOG.md` durante el flujo de release, como en los releases v0.3.0, v0.3.1 y v0.4.0. Su configuración deniega `specs/**` y `docs/**`, pero no `CHANGELOG.md`, así que la edición está dentro de sus permisos.
 - **Estimación:** 15 min.
@@ -133,12 +146,14 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - Finales de línea: 150 LF y 150 CRLF; el archivo termina en CRLF (`0D 0A`).
   - `python tools\sdd\validate.py --all` → código `0`.
   - `git diff --check` → código `0`.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas RF-001, RF-002, RF-003, RF-004 y RF-005: «Ran 47 tests OK; salidas indicadas arriba», «Cada caso produce error; la suite pasa», «released y superseded con rama inexistente devuelven 0 sin error de rama; validated con rama distinta devuelve 1», «Mapeo idéntico: CA-001 {RF-001, RF-003, RNF-001}; CA-002 {RF-002, RNF-002, CB-002}; CA-003 {RF-004}; CA-004 {RF-005, CB-001}; CA-005 {RF-006, CB-003}» y «Lectura de docs/sdd/PROTOCOLO_OPERATIVO.md §10, línea 162» en la columna Prueba / comando; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-009
 
 - **Dependencias:** `T-008`.
 - **Requisitos cubiertos:** `CB-003`, `RNF-001`, `RNF-002`, `RNF-003`.
+- **Criterio de aceptación:** `CA-006`.
 - **Archivos:** ninguno. Solo ejecución y lectura.
 - **Estimación:** 30 min.
 - **Validación:** regresión final (CA-006):
@@ -156,4 +171,5 @@ Orden de ejecución: una tarea por invocación de `coder` (salvo T-006, T-007 y 
   - `python tools\sdd\validate.py --spec SPEC-002 --gate G3` → código `0`, `OK: sin hallazgos.`.
   - Históricos: `python tools\sdd\validate.py --spec SPEC-003 --gate G4` → código `0`, `OK: sin hallazgos.`. `python tools\sdd\validate.py --spec SPEC-004 --gate G4` → código `0`, `OK: sin hallazgos.`.
   - `git diff --check` → código `0`, sin hallazgos.
+- **Evidencia:** Reporte de validación de SPEC-005, matriz de trazabilidad, filas CB-003, RNF-001, RNF-002 y RNF-003: «Históricos válidos con la regla nueva» y «Ran 47 tests, OK, código 0»; dictamen CONVERGIDO.
 - [x] Completada.

@@ -10,9 +10,11 @@
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-002`, `RF-003`, `RF-005`, `RNF-001`, `RNF-003`, `CB-001`, `CB-002`, `CB-003`.
+- **Criterio de aceptación:** `CA-002`, `CA-003`, `CA-005`, `CA-006`.
 - **Archivos:** `.opencode/agents/documenter.md`.
 - **Estimación:** 25 min.
 - **Validación:** `Select-String -Path .opencode/agents/documenter.md -Pattern '^mode: subagent$'` devuelve una coincidencia; la lista de permisos sigue el orden de DEC-001 (denegaciones generales de edición, de shell y de subagentes antes de las excepciones de `docs/**` y `AGENTS.md`); la lista efectiva incluye `shell *` deny (AMB-006); el cuerpo contiene la regla de parada de CB-001 y la conservación de CRLF.
+- **Evidencia:** Reporte de validación de SPEC-004, matriz de trazabilidad, filas RF-002, RF-003, RF-005, RNF-001, RNF-003, CB-001, CB-002 y CB-003: «Denegaciones generales (edit *, shell *, subagent *) preceden a las excepciones docs/** y AGENTS.md», «0 LF desnudos y salto final en los 10 archivos verificados» y «Regla de parada sin editar y reporte al orquestador (línea 37)»; dictamen CONVERGIDO.
 - [x] Completada.
 - **Evidencia (2026-11-13):**
   - Archivo creado `.opencode/agents/documenter.md` (1497 bytes), UTF-8 sin BOM, CRLF en todas las líneas y salto final; sin LF desnudos.
@@ -29,9 +31,11 @@
 
 - **Dependencias:** `T-001`.
 - **Requisitos cubiertos:** `RF-001`, `RF-004`.
+- **Criterio de aceptación:** `CA-001`, `CA-004`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 20 min.
 - **Validación:** `Select-String -Path .opencode/agents/sdd.md -Pattern 'documenter'` devuelve al menos dos coincidencias (regla de permiso y orquestación); `Select-String -Path .opencode/agents/sdd.md -Pattern 'Resultado esperado'` devuelve la interfaz de solicitud de `documenter` con «Etapa:» (AMB-004).
+- **Evidencia:** Reporte de validación de SPEC-004, matriz de trazabilidad, filas RF-001 y RF-004: «subagent * deny seguido de subagent documenter allow» y «Lectura de .opencode/agents/sdd.md, líneas 93-99 (T-002)» en la columna Prueba / comando; dictamen CONVERGIDO.
 - [x] Completada.
 - **Evidencia (2026-11-13):**
   - Frontmatter de `.opencode/agents/sdd.md`: añadido `subagent documenter allow` justo después de `subagent explore allow`. Diff de 3 líneas insertadas, sin otros cambios. CRLF y salto final conservados.
@@ -48,9 +52,11 @@
 
 - **Dependencias:** `T-001`, `T-002`.
 - **Requisitos cubiertos:** `RF-005`, `RF-006`, `RNF-003`, `CB-001`.
+- **Criterio de aceptación:** `CA-005`, `CA-006`.
 - **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`, `AGENTS.md`, `docs/Flujo_de_Trabajo_Git.md`.
 - **Estimación:** 30 min.
 - **Validación:** `Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern 'aprueba la implementación validada'` devuelve una coincidencia; `Select-String -Path AGENTS.md -Pattern 'G4 \(implementación validada\)'` devuelve una coincidencia; `Select-String -Path docs/Flujo_de_Trabajo_Git.md -Pattern 'specs/INDEX.md'` devuelve al menos una coincidencia en la sección de release; `git diff --check` no reporta errores; cada archivo editado conserva CRLF y salto final.
+- **Evidencia:** Reporte de validación de SPEC-004, matriz de trazabilidad, filas RF-005, RF-006, RNF-003 y CB-001: «G4 como aprobación de la implementación validada en §6 y AGENTS.md» y «0 LF desnudos y salto final en los 10 archivos verificados»; dictamen CONVERGIDO.
 - [x] Completada.
 - **Evidencia (2026-11-13, verificada por la sesión orquestadora):**
   - `git diff --stat` (docs y AGENTS.md): `AGENTS.md` (-1/+1), `docs/Flujo_de_Trabajo_Git.md` (+2/-1), `docs/sdd/PROTOCOLO_OPERATIVO.md` (+2/-1).
@@ -65,9 +71,11 @@
 
 - **Dependencias:** `T-003`.
 - **Requisitos cubiertos:** `RNF-002`.
+- **Criterio de aceptación:** `CA-005`.
 - **Archivos:** `CHANGELOG.md`.
 - **Estimación:** 15 min.
 - **Validación:** `Select-String -Path CHANGELOG.md -Pattern 'SPEC-004'` devuelve una coincidencia situada entre `## [Unreleased]` y la siguiente sección de versión; `git diff --check` no reporta errores.
+- **Evidencia:** Reporte de validación de SPEC-004, matriz de trazabilidad, fila RNF-002: «4 coincidencias bajo ## [Unreleased]»; dictamen CONVERGIDO.
 - [x] Completada.
 - **Evidencia (2026-11-13):**
   - `git diff -- CHANGELOG.md`: solo añade, bajo `## [Unreleased]`, las secciones `### Added` (1 entrada) y `### Changed` (3 entradas), todas con `(SPEC-004)`. No se modifica `## [v0.3.1]` ni anteriores.
@@ -80,9 +88,11 @@
 
 - **Dependencias:** `T-001`, `T-002`, `T-003`, `T-004`.
 - **Requisitos cubiertos:** `RF-001`, `RF-002`, `RF-003`, `RF-004`, `RNF-001`, `CB-002`, `CB-003`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-004`.
 - **Archivos:** `specs/004-editor-documentacion/**` (artefactos de la propia spec), `specs/INDEX.md` (fila de registro) y, en solo lectura, los declarados en T-001 a T-004.
 - **Estimación:** 30 min.
 - **Validación:** `opencode api get /api/agent/documenter` (desde la raíz del repositorio) muestra `mode: subagent`, con permisos en el orden de DEC-001; `opencode api get /api/agent/sdd` muestra la regla de `documenter`; las reglas efectivas de `documenter` permiten `docs/**` y `AGENTS.md` y deniegan el resto de la edición y el lanzamiento de subagentes; `python tools\sdd\validate.py --spec SPEC-004 --gate G2` y `python tools\sdd\validate.py --all` salen con código `0`; `git status --short` no muestra cambios fuera de los archivos declarados. Si el endpoint no lista los agentes del repositorio, la tarea queda BLOQUEADA y no se marca como completada (DEC-005).
+- **Evidencia:** Reporte de validación de SPEC-004, matriz de trazabilidad, filas RF-001, RF-002, RF-003, RF-004, RNF-001, CB-002 y CB-003: «edit * deny, luego edit docs/** allow y edit AGENTS.md allow», «subagent * deny como última regla coincidente» y «Denegaciones generales (edit *, shell *, subagent *) preceden a las excepciones docs/** y AGENTS.md»; dictamen CONVERGIDO.
 - [x] Completada.
 - **Evidencia de verificación final (2026-11-13):**
   1. `opencode api get '/api/agent?location[directory]=…LLaMA'`: `documenter` con `mode: subagent`; `sdd` con `mode: primary`.

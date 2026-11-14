@@ -10,90 +10,110 @@
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-002`.
+- **Criterio de aceptación:** `CA-001`, `CA-006`.
 - **Archivos:** `.opencode/agents/planner.md`.
 - **Estimación:** 15 min.
 - **Validación:** el frontmatter declara `mode: all` y la `description` indica que es invocable por `sdd`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RF-002: «`ses_e2a57522` (planner, `succeeded`, edita `plan.md` tres veces); `ses_e2a5440c` (planner, `succeeded`)»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-002
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-003`.
+- **Criterio de aceptación:** `CA-002`, `CA-006`.
 - **Archivos:** `.opencode/agents/coder.md`.
 - **Estimación:** 15 min.
 - **Validación:** el frontmatter declara `mode: all` y la `description` indica que es invocable por `sdd`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RF-003: «`ses_e2a65fcc` y `ses_e2a55d9c` (coder, tres turnos `succeeded` cada una)»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-003
 
 - **Dependencias:** `T-001`, `T-002`.
 - **Requisitos cubiertos:** `RF-001`, `RF-004`, `RF-005`, `RNF-001`.
+- **Criterio de aceptación:** `CA-001`, `CA-003`, `CA-004`, `CA-009`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 20 min.
 - **Validación:** el frontmatter conserva `edit deny *` y añade `subagent deny *` seguido de `allow` para `planner`, `coder`, `reviewer` y `explore`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, filas RF-001, RF-004, RF-005 y RNF-001: «Sesiones hijas de `ses_e2a83d57` con agente `planner`», «Orden efectivo verificado en la configuración cargada», «Denegación verificada en configuración» y «Reglas generales antes de excepciones; cada regla declara `action`, `resource` y `effect`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-004
 
 - **Dependencias:** `T-003`.
 - **Requisitos cubiertos:** `RF-006`, `RF-007`, `CB-001`, `CB-002`, `CB-003`.
+- **Criterio de aceptación:** `CA-005`, `CA-007`, `CA-008`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 25 min.
 - **Validación:** el cuerpo documenta tabla etapa-subagente, plantillas de prompt con spec, etapa y salida esperada, y la parada ante compuerta no aprobada, ambigüedad o error del validador.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, filas RF-006, RF-007, CB-001, CB-002 y CB-003: «Código `0`. Texto de `sdd.md` verificado en la API», «resultado esperado en 11 de 11», «Precondición de Implement con G2 verificada; ninguna precondición de Implement cita G4», «Bloqueo registrado y propietario consultado» y «Registro del código de salida y parada si es distinto de `0`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-005
 
 - **Dependencias:** `T-004`.
 - **Requisitos cubiertos:** `RNF-002`.
+- **Criterio de aceptación:** `CA-010`.
 - **Archivos:** `specs/INDEX.md`, `CHANGELOG.md`, `specs/002-orquestacion-subagentes-sdd/tasks.md`, `specs/002-orquestacion-subagentes-sdd/spec.md`.
 - **Estimación:** 20 min.
 - **Validación:** `python tools\sdd\validate.py --all` devuelve código 0 y `git diff --check` no reporta problemas.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RNF-002: «Sección sin cambios desde `b7fe653`; describe la configuración final (`shell *` `ask` con allowlist, `subagent * deny` en `planner` y `coder`, `mode: all`)»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-006
 
 - **Dependencias:** `T-003`.
 - **Requisitos cubiertos:** `RNF-001`.
+- **Criterio de aceptación:** `CA-009`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 20 min.
 - **Validación:** la lista cargada en `/api/agent/sdd` declara la regla general `shell *` con efecto `ask` seguida de diez reglas `allow`: `git status *`, `git diff *`, `git log *`, `git show *`, `git rev-parse *`, `git branch --show-current`, `git branch --all *`, `git add *`, `git commit *` y `python tools\sdd\validate.py *`; merge, tag y push permanecen en `ask`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RNF-001: «Reglas generales antes de excepciones; cada regla declara `action`, `resource` y `effect`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-007
 
 - **Dependencias:** `T-004`.
 - **Requisitos cubiertos:** `RF-006`, `CB-001`, `CB-003`.
+- **Criterio de aceptación:** `CA-005`, `CA-007`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 25 min.
 - **Validación:** la tabla «Etapa, subagente y precondición» declara en la fila 3 Clarify «rama `feat/*` y spec en `draft`», en la fila 4 Plan «G1 aprobada y spec en `clarified`» y en la fila 6 Implement «G2 aprobada y spec en `tasked`»; la regla 2 dice «No lances `coder` sin G2 aprobada; no lances `reviewer` sin G3 completa»; el contraste con PROTOCOLO §2 no presenta contradicción.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, filas RF-006, CB-001 y CB-003: «Código `0`. Texto de `sdd.md` verificado en la API», «Precondición de Implement con G2 verificada; ninguna precondición de Implement cita G4» y «Registro del código de salida y parada si es distinto de `0`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-008
 
 - **Dependencias:** `T-001`, `T-002`.
 - **Requisitos cubiertos:** `RNF-001`.
+- **Criterio de aceptación:** `CA-009`.
 - **Archivos:** `.opencode/agents/planner.md`, `.opencode/agents/coder.md`.
 - **Estimación:** 15 min.
 - **Validación:** `/api/agent` muestra `subagent *` con efecto `deny` en las listas de permisos de `planner` y de `coder`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RNF-001: «Reglas generales antes de excepciones; cada regla declara `action`, `resource` y `effect`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-009
 
 - **Dependencias:** `T-007`.
 - **Requisitos cubiertos:** `RF-006`, `CB-003`.
+- **Criterio de aceptación:** `CA-005`, `CA-007`.
 - **Archivos:** `.opencode/agents/sdd.md`.
 - **Estimación:** 20 min.
 - **Validación:** la fila «6 Implement» de la tabla «Etapa, subagente y precondición» declara «G2 verificada (`python tools\sdd\validate.py --spec SPEC-002 --gate G2`) y spec en `tasked`»; la regla 1 exige registrar el código de salida del validador antes de decidir y detener el lanzamiento si es distinto de `0`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, filas RF-006 y CB-003: «Código `0`. Texto de `sdd.md` verificado en la API» y «Registro del código de salida y parada si es distinto de `0`»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-010
 
 - **Dependencias:** `T-006`, `T-008`, `T-009`.
 - **Requisitos cubiertos:** `RNF-002`.
+- **Criterio de aceptación:** `CA-010`.
 - **Archivos:** `CHANGELOG.md`.
 - **Estimación:** 15 min.
 - **Validación:** las entradas de `Unreleased` describen la configuración final: regla general `shell *` con efecto `ask`, allowlist exacta de `sdd` (incluidas `git add *` y `git commit *`) y `subagent *` con efecto `deny` en `planner` y `coder`.
+- **Evidencia:** Reporte de validación de SPEC-002, matriz de trazabilidad, fila RNF-002: «describe la configuración final (`shell *` `ask` con allowlist, `subagent * deny` en `planner` y `coder`, `mode: all`)»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ## Evidencia

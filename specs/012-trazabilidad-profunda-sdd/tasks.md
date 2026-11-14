@@ -27,7 +27,7 @@ La etapa modifica el validador determinista, su suite de pruebas y siete specs p
 
 ## Progreso
 
-- [ ] 8 de 18 tareas completadas.
+- [ ] 15 de 18 tareas completadas.
 
 ## Archivos de la etapa y escritor
 
@@ -154,8 +154,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/001-main-menu/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** las 4 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-001` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior muestra como diferencia solo los dos campos añadidos, la versión y la fila de motivo, y 0 líneas de requisito, caso borde, criterio, estimación o estado modificadas.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-001` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/001-main-menu/tasks.md` devuelve 8 líneas añadidas y 0 eliminadas, con las 4 tareas provistas de criterio y evidencia; el frontmatter pasa de 0.1.0 a 0.3.1 con la fila «Regularización de la trazabilidad de tareas y del cierre de integración».
+- [x] Completada.
 
 ### T-010: Regularización de las tareas de SPEC-002
 
@@ -165,8 +165,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/002-orquestacion-subagentes-sdd/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** las 10 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-002` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo, con 0 líneas de contenido funcional modificadas.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-002` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/002-orquestacion-subagentes-sdd/tasks.md` devuelve 20 líneas añadidas y 0 eliminadas, con las 10 tareas provistas de criterio y evidencia; `version` pasa de 0.12.0 a 0.12.1 con la fila de regularización.
+- [x] Completada.
 
 ### T-011: Regularización de las tareas de SPEC-003
 
@@ -176,8 +176,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/003-validacion-g4/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** las 5 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-003` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-003` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/003-validacion-g4/tasks.md` devuelve 10 líneas añadidas y 5 eliminadas, limitadas a la etiqueta `Evidencia` vacía que pasa a llevar la transcripción; las 5 tareas declaran criterio y evidencia y `version` pasa de 0.6.0 a 0.6.1.
+- [x] Completada.
 
 ### T-012: Regularización de las tareas de SPEC-004
 
@@ -187,8 +187,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/004-editor-documentacion/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** las 5 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-004` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-004` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/004-editor-documentacion/tasks.md` devuelve 10 líneas añadidas y 0 eliminadas, con las 5 tareas provistas de criterio y evidencia; `version` pasa de 0.9.0 a 0.9.1.
+- [x] Completada.
 
 ### T-013: Regularización de las tareas de SPEC-005
 
@@ -198,8 +198,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/005-compuertas-completas/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** las 9 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-005` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-005` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/005-compuertas-completas/tasks.md` devuelve 16 líneas añadidas y 0 eliminadas: las 9 tareas declaran criterio, 7 reciben evidencia nueva y `T-006` y `T-007` conservan la suya; `version` pasa de 0.6.0 a 0.6.1.
+- [x] Completada.
 
 ### T-014: Regularización de las tareas de SPEC-006
 
@@ -209,8 +209,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/006-observaciones-cierre/tasks.md`.
 - **Estimación:** 20 min.
 - **Validación:** las 5 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-006` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-006` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/006-observaciones-cierre/tasks.md` devuelve 10 líneas añadidas y 0 eliminadas, con las 5 tareas provistas de criterio y evidencia; `version` pasa de 0.6.0 a 0.6.1.
+- [x] Completada.
 
 ### T-015: Regularización de las tareas de SPEC-007
 
@@ -220,8 +220,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/007-branch-protection/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** las 10 tareas declaran criterio de aceptación y evidencia con fuente; `python tools\sdd\validate.py --spec SPEC-007` no registra hallazgo de `C-14` ni de `C-15`; el contraste con la versión anterior se limita a los campos añadidos, la versión y la fila de motivo.
-- **Evidencia:** Se transcribe la salida de la validación al cerrar la tarea.
-- [ ] Completada.
+- **Evidencia:** `python tools\sdd\validate.py --spec SPEC-007` no registra hallazgo de `C-14`, `C-15` ni `C-18`; `git diff --numstat` de `specs/007-branch-protection/tasks.md` devuelve 20 líneas añadidas y 10 eliminadas, limitadas a la etiqueta `Evidencia` vacía que pasa a llevar la transcripción; las 10 tareas declaran criterio y evidencia, y `version` pasa de 0.2.0 a 0.2.1.
+- [x] Completada.
 
 ### T-016: Regularización de los siete reportes de validación
 

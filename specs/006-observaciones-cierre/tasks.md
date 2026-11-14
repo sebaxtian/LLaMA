@@ -23,6 +23,7 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-001`, `CB-001`, `RNF-001`.
+- **Criterio de aceptación:** `CA-001`, `CA-004`.
 - **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`.
 - **Estimación:** 20 min.
 - **Validación:** `Select-String -Path docs\sdd\PROTOCOLO_OPERATIVO.md -Pattern "orquestador de solo lectura sobre artefactos y código" -SimpleMatch -CaseSensitive:$false` devuelve la fila de `sdd` dentro de §10. La fila limita el bookkeeping Git a artefactos de control. Ningún otro texto del protocolo cambia.
@@ -30,12 +31,14 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
   - `Select-String -Path docs\sdd\PROTOCOLO_OPERATIVO.md -Pattern "Orquestador de solo lectura sobre artefactos y código" -SimpleMatch` → coincidencia en la línea 162, dentro de §10.
   - Fila de `sdd` en §10 (primera fila de la tabla de agentes): `| \`sdd\` | Orquestador de solo lectura sobre artefactos y código; estado y diagnóstico | Puede lanzar subagentes y ejecutar \`git add\` y \`git commit\` de artefactos de control |`. El bookkeeping queda limitado a artefactos de control.
   - `git diff -- docs/sdd/PROTOCOLO_OPERATIVO.md`: una línea eliminada y una añadida, ambas en la fila de `sdd`. Ningún otro texto cambia.
+- **Evidencia:** Reporte de validación de SPEC-006, matriz de trazabilidad, filas RF-001, CB-001 y RNF-001: «Orquestador de solo lectura sobre artefactos y código», «Ninguna tarea requirió cambiar requisitos, código ni permisos» y «LF == CRLF y ends_CRLF=True»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-002
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-002`, `CB-002`, `RNF-001`.
+- **Criterio de aceptación:** `CA-002`, `CA-004`.
 - **Archivos:** `MEMORY.md`.
 - **Estimación:** 25 min.
 - **Validación:** `Select-String -Path MEMORY.md -Pattern "documenter"` encuentra la lista de agentes. La línea de `.opencode/` enumera `sdd`, `planner`, `coder`, `reviewer` y `documenter`, y `explore` figura como integrado. La viñeta de consulta contiene `opencode debug agents` y la advertencia de directorio. Ejecutar el comando desde la raíz lista `sdd`, `planner`, `coder`, `reviewer` y `documenter`. Ejecutarlo desde otro directorio no los lista.
@@ -48,12 +51,14 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
   - `python tools\sdd\validate.py --all` → código `0`. `AGENTS.md` tiene 42 líneas útiles, dentro del rango 30–70. Única advertencia: `specs\006-observaciones-cierre\validation_report.md no existe`, que corresponde a la etapa de validación.
   - `MEMORY.md` mantiene CRLF (130 LF, 130 CRLF) y termina en CRLF.
   - `git diff --check` → código `0`.
+- **Evidencia:** Reporte de validación de SPEC-006, matriz de trazabilidad, filas RF-002, CB-002 y RNF-001: «explore es subagente integrado», «opencode debug agents se ejecuta desde la raíz del repositorio» y «LF == CRLF y ends_CRLF=True»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-003
 
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-003`, `RNF-001`.
+- **Criterio de aceptación:** `CA-003`, `CA-004`.
 - **Archivos:** `specs/005-compuertas-completas/clarify.md`.
 - **Estimación:** 15 min.
 - **Validación:** `Select-String -Path specs\005-compuertas-completas\clarify.md -Pattern "Nota de confirmación (SPEC-006)"` encuentra la nota al final del archivo. La nota contiene la confirmación de AMB-001, la fecha 2026-11-13 y el responsable Agent Sebaxtian. Las decisiones y parches anteriores no cambian. `python tools\sdd\validate.py --spec SPEC-005 --gate G4` devuelve `0`.
@@ -61,12 +66,14 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
   - `specs/005-compuertas-completas/clarify.md` contiene «## Nota de confirmación (SPEC-006)» al final, línea 57. Confirma AMB-001: solo cuenta como superada una celda PASADO, con paréntesis de observación opcional; NO PASADO, PENDIENTE, PARCIAL y celdas compuestas con estado negativo son error.
   - Fecha: 2026-11-13 (UTC). Responsable: Agent Sebaxtian.
   - `python tools\sdd\validate.py --spec SPEC-005 --gate G4` → código `0`, `OK: sin hallazgos.`
+- **Evidencia:** Reporte de validación de SPEC-006, matriz de trazabilidad, filas RF-003 y RNF-001: «registran la confirmación explícita del propietario (Agent Sebaxtian, 2026-11-13 (UTC)) sobre la regla de celda superada de AMB-001» y «LF == CRLF y ends_CRLF=True»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-004
 
 - **Dependencias:** `T-001`, `T-002`, `T-003`.
 - **Requisitos cubiertos:** `RNF-002`, `RNF-001`.
+- **Criterio de aceptación:** `CA-004`.
 - **Archivos:** `CHANGELOG.md`.
 - **Estimación:** 15 min.
 - **Validación:** `Select-String -Path CHANGELOG.md -Pattern "SPEC-006"` encuentra una entrada bajo `## [Unreleased]`, antes de la primera versión publicada. La entrada cita las correcciones de §10, memoria operativa y clarificación de SPEC-005.
@@ -77,12 +84,14 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
   - Finales de línea: 160 LF y 160 CRLF; termina en CRLF.
   - `python tools\sdd\validate.py --all` → código `0`. Única advertencia: `specs\006-observaciones-cierre\validation_report.md no existe`.
   - `git diff --check` → código `0`.
+- **Evidencia:** Reporte de validación de SPEC-006, matriz de trazabilidad, filas RNF-002 y RNF-001: «Tres entradas bajo ## [Unreleased] / ### Changed (líneas 15-17) que citan SPEC-006» y «LF == CRLF y ends_CRLF=True»; dictamen CONVERGIDO.
 - [x] Completada.
 
 ### T-005
 
 - **Dependencias:** `T-001`, `T-002`, `T-003`, `T-004`.
 - **Requisitos cubiertos:** `RNF-001`, `RNF-003`, `CB-001`, `CB-002`.
+- **Criterio de aceptación:** `CA-002`, `CA-004`.
 - **Archivos:** ninguno. Solo lectura y ejecución de comandos.
 - **Estimación:** 25 min.
 - **Validación:** `python tools\sdd\validate.py --spec SPEC-006 --gate G2` y `python tools\sdd\validate.py --all` devuelven `0`. `python -m unittest discover -s tools\sdd\tests` ejecuta 47 pruebas con resultado `OK`. `git diff --name-only` lista solo `docs/sdd/PROTOCOLO_OPERATIVO.md`, `MEMORY.md`, `CHANGELOG.md`, `specs/005-compuertas-completas/clarify.md` y los archivos de `specs/006-observaciones-cierre/` y `specs/INDEX.md`. Cada archivo modificado conserva CRLF y salto final.
@@ -95,4 +104,5 @@ Orden de ejecución: T-001, T-002 y T-003 son independientes entre sí. T-004 va
   - `git diff --check` → código `0`, sin hallazgos.
   - `git diff --name-only` → `CHANGELOG.md`, `MEMORY.md`, `docs/sdd/PROTOCOLO_OPERATIVO.md`, `specs/005-compuertas-completas/clarify.md`, `specs/INDEX.md`. Y `specs/006-observaciones-cierre/` como carpeta nueva sin seguimiento. Coincide con el alcance de T-005.
   - Finales de línea: `docs/sdd/PROTOCOLO_OPERATIVO.md` (168 LF, 168 CRLF), `MEMORY.md` (130/130), `CHANGELOG.md` (160/160) y `specs/005-compuertas-completas/clarify.md` (61/61). Los cuatro terminan en CRLF.
+- **Evidencia:** Reporte de validación de SPEC-006, matriz de trazabilidad, filas RNF-003, CB-001, CB-002 y RNF-001: «Solo cambian CHANGELOG.md, MEMORY.md, docs/sdd/PROTOCOLO_OPERATIVO.md, specs/005-compuertas-completas/clarify.md, specs/INDEX.md y specs/006-observaciones-cierre/», «Ninguna tarea requirió cambiar requisitos, código ni permisos» y «LF == CRLF y ends_CRLF=True»; dictamen CONVERGIDO.
 - [x] Completada.
