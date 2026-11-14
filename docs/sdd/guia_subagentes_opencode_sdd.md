@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Configuración e Integración de Subagentes en OpenCode y SDD**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 Un **Subagente** es un agente de Inteligencia Artificial especializado y subordinado que opera bajo la dirección de un agente primario o coordinador (_orchestrator_).
 

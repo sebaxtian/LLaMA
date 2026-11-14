@@ -88,3 +88,8 @@ Sin entradas: el conjunto de los 38 requisitos y casos borde queda con evidencia
 - [ ] NO CONVERGIDO.
 
 `38` de `38` requisitos y casos borde con evidencia `PASADO`. Queda pendiente el registro de G4 en la sección de aprobaciones de `spec.md` mediante un commit firmado por el propietario; esta auditoría no lo declara.
+
+## Cierre de integración
+
+Merge: 9df8446
+Release:

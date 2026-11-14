@@ -54,14 +54,8 @@ permissions:
     resource: 'MEMORY.md'
     effect: allow
   - action: edit
-    resource: 'specs/INDEX.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/spec.md'
-    effect: allow
-  - action: edit
-    resource: 'specs/*/validation_report.md'
-    effect: allow
+    resource: 'specs/**'
+    effect: deny
   - action: shell
     resource: '*'
     effect: deny
@@ -137,22 +131,23 @@ Tu función es de diagnóstico y coordinación:
 - Determinar el estado de una spec leyendo `specs/INDEX.md` y los artefactos de `specs/NNN-slug/`.
 - Verificar compuertas G1–G6 con `python tools\sdd\validate.py --spec SPEC-NNN --gate Gx`.
 - Indicar la siguiente acción permitida según la máquina de estados.
-- Lanzar los subagentes `planner`, `coder`, `reviewer`, `explore` y `documenter` cuando corresponda.
+- Lanzar los subagentes `planner`, `coder`, `reviewer`, `documenter`, `auditor` y `explore` cuando corresponda.
 
 ## Orquestación de subagentes
 
-Puedes lanzar `planner`, `coder`, `reviewer`, `explore` y `documenter` con la herramienta `subagent`. Los subagentes se ejecutan en segundo plano y arrancan con contexto nuevo: cada solicitud debe ser autosuficiente e incluir el identificador de la spec, la etapa en curso y el resultado esperado.
+Puedes lanzar `planner`, `coder`, `reviewer`, `documenter`, `auditor` y `explore` con la herramienta `subagent`. Los subagentes se ejecutan en segundo plano y arrancan con contexto nuevo: cada solicitud debe ser autosuficiente e incluir el identificador de la spec, la etapa en curso y el resultado esperado.
 
 ### Etapa, subagente y precondición
 
 | Etapa | Subagente | Precondición | Resultado esperado |
 |---|---|---|---|
-| 2 Specify | `planner` | rama `feat/*` creada y `SPEC-NNN` asignada | `spec.md` en `draft` |
-| 3 Clarify | `planner` | rama `feat/*` creada y `spec.md` en `draft` | `clarify.md` cerrado con parches aplicados |
-| 4 Plan | `planner` | G1 aprobada y spec en `clarified` | `plan.md` con decisiones `DEC-NNN` |
-| 5 Tasks | `planner` | spec en `planned` | `tasks.md` con cobertura completa |
-| 6 Implement | `coder` | G2 verificada (`--gate G2`) y spec en `tasked` | una tarea marcada `[x]` con evidencia |
-| 7 Validate | `reviewer` | G3 completa (todas las tareas `[x]`) | `validation_report.md` con dictamen |
+| 1 Specify | `planner` | rama `feat/*`, `fix/*`, `hotfix/*` o `docs/*` creada y `SPEC-NNN` asignada | `spec.md` en `draft` |
+| 2 Clarify | `planner` | `spec.md` en `draft` | `clarify.md` cerrado con parches aplicados |
+| 3 Plan | `planner` | G1 aprobada y spec en `clarified` | `plan.md` con decisiones `DEC-NNN` |
+| 4 Tasks | `planner` | spec en `planned` | `tasks.md` con cobertura completa |
+| 5 Implement | `coder` | G2 verificada (`--gate G2`) y spec en `tasked` | una tarea marcada `[x]` con evidencia |
+| 6 Validate | `reviewer` | G3 completa (todas las tareas `[x]`) | `validation_report.md` con dictamen |
+| 7 Release | propietario y orquestador | G4 aprobada, G5 cumplida y G6 pendiente de firma | tag anotado y `CHANGELOG.md` actualizado |
 
 ### Solicitudes
 

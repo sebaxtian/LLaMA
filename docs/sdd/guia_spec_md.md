@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Notación EARS y Gobernanza Funcional de `spec.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El archivo **`spec.md`** (o `PRODUCT-SPEC.md` / `requirements.md`) representa la **especificación funcional y de negocio** de una característica o incremento de software específico dentro de la metodología de **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**.
 
@@ -50,7 +50,7 @@ A diferencia de los documentos de requisitos funcionales tradicionales (PRD en W
 3. **Requisitos Funcionales (Notación EARS \+ IDs únicos):** Lista numerada de requisitos verificables (`RF-001`, `RF-002`, etc.) redactados con las fórmulas sintácticas de EARS.
 4. **Casos Borde y Manejo de Excepciones (`CB-xxx`):** Definición explícita de cómo debe reaccionar el sistema ante datos inválidos, límites numéricos o fallos de entrada.
 5. **Fuera de Alcance (_Out of Scope_):** Declaración explícita de lo que **NO** se construirá en la iteración actual para prevenir la sobreingeniería (_scope creep_).
-6. **Criterios de Aceptación (_Definition of Done_):** Lista de condiciones verificables necesarias para considerar aprobada la especificación.
+6. **Criterio de aceptación (`CA-NNN`):** Lista de condiciones verificables necesarias para considerar aprobada la especificación.
 
 ---
 
@@ -145,7 +145,7 @@ En el ciclo de vida de **7 etapas del SDD puro**, la especificación corresponde
 ## 5. Fuera de Alcance (Out of Scope)
 - [Funcionalidad, formato o integración que explícitamente NO se implementará en esta iteración].
 
-## 6. Criterios de Aceptación (Definition of Done)
+## 6. Criterios de aceptación
 - [ ] Todos los requisitos funcionales (RF-001 a RF-005) cuentan con pruebas automatizadas asociadas.
 - [ ] Se verifica mediante pruebas automatizadas que los casos borde (CB-001 y CB-002) se manejan adecuadamente.
 - [ ] La especificación no entra en contradicción con `docs/constitution.md`.
@@ -183,7 +183,7 @@ Permitir a los administradores del sistema descargar un informe en formato CSV c
 - Exportación en formatos PDF o Excel (.xlsx).
 - Envío automático del archivo CSV generado por correo electrónico.
 
-## 6. Criterios de Aceptación (Definition of Done)
+## 6. Criterios de aceptación
 - [ ] El archivo generado cumple estrictamente con el formato RFC 4180.
 - [ ] Se verifica mediante pruebas unitarias que los usuarios estándar reciben una respuesta de rechazo explícita ante el intento de exportación.
 - [ ] La totalidad de requisitos funcionales (RF-001 a RF-004) y casos borde están cubiertos por pruebas automatizadas.

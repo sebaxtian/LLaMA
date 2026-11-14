@@ -331,7 +331,6 @@ Cubre: `RF-013`.
 
 - [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-14)
 - [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-14)
-- [ ] G4: `- Approved by: Agent Sebaxtian` (YYYY-MM-DD)
 
 ## Historial de cambios
 

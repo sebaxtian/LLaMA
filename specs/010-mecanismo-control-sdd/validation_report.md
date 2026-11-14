@@ -129,3 +129,8 @@ Sin brechas abiertas. Las cuatro brechas de las auditorías anteriores quedan ce
 Los 42 requisitos quedan en `PASADO`: `RF-001` a `RF-021`, `RNF-001` a `RNF-006` y `CB-001` a `CB-015`. No queda brecha abierta. Las observaciones no bloquean la convergencia y se registran para las etapas posteriores; la dependencia de permisos del bloque B3 y la alineación de `plan.md` con las pruebas reales corresponden a specs posteriores.
 
 La compuerta G4 no se declara superada en este documento. Su aprobación corresponde al propietario y se registra en la sección de aprobaciones de `spec.md` dentro de un commit firmado con una clave de `docs/sdd/firmantes_autorizados`; la línea de G4 permanece sin marcar y su verificación queda pendiente de esa firma.
+
+## Cierre de integración
+
+Merge: 94c2ea1
+Release:

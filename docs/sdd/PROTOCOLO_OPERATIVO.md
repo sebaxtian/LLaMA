@@ -123,7 +123,11 @@ Las transiciones hacia `cancelled` y hacia `superseded` no son etapas del ciclo:
 
 Una compuerta no es un estado: la aprobación o verificación se registra entre dos etapas y no forma parte de la definición del estado.
 
-**Escritura de estados.** El `planner` escribe la creación de la spec en `draft` y las transiciones T1, T2 y T3. El orquestador escribe las transiciones T4, T5, T6 y T7. El propietario escribe la cancelación, la reapertura y la sustitución, y el orquestador solo las registra cuando el propietario las autoriza por escrito.
+**Escritura de estados.** La escritura de las transiciones se reparte entre tres roles y ninguna transición se escribe sin la evidencia que la tabla exige:
+
+- El `planner` escribe la creación de la spec en `draft` y las transiciones T1, T2 y T3.
+- El `planner` escribe las transiciones T4, T5, T6 y T7 sobre la verificación registrada por el orquestador; sin esa verificación registrada no escribe la transición e informa la verificación ausente.
+- El propietario escribe la cancelación, la reapertura y la sustitución, y el orquestador solo las registra cuando el propietario las autoriza por escrito.
 
 **Reglas.** Las transiciones avanzan solo por la tabla; una transición no listada es defecto de conformidad. La reapertura exige motivo, incremento de versión y revalidación completa. Una spec en `cancelled` no se reabre: se redacta una spec nueva.
 
@@ -279,17 +283,17 @@ Cada artefacto de una spec declara rango 6. La plantilla de rango 5 fija la form
 
 | Rol | Lectura | Escritura |
 |---|---|---|
-| Orquestador (`sdd`) | base normativa, specs, código y estado Git | ninguna sobre documentos y código; ejecuta el validador, `git add` y `git commit` de artefactos de control, y lanza subagentes |
+| Orquestador (`sdd`) | base normativa, specs, código y estado Git | ninguna sobre documentos y código ni sobre `specs/`; verifica G2, G3 y G5, registra el resultado de cada verificación, ejecuta el validador y `git add` y `git commit` de artefactos de control, lanza subagentes y no redacta artefacto alguno |
 | `planner` | base normativa, specs y código | `specs/**` |
-| `documenter` | base normativa, specs y código | `docs/**` y `AGENTS.md` |
+| `documenter` | base normativa, specs y código | `docs/**`, `AGENTS.md`, `MEMORY.md` y `CHANGELOG.md` |
 | `coder` | base normativa, specs, `src/`, `tests/` y `tools/` | `src/`, `tests/`, `tools/` y el cierre de tareas en `tasks.md` |
 | `reviewer` | base normativa, specs, código y estado Git | `validation_report.md` de la spec en curso |
 | `auditor` | base normativa completa y specs, sin edición de requisitos | el informe de auditoría que produce, conforme a la plantilla de rango 5 |
 | Propietario | base normativa completa | sección de aprobaciones de `spec.md`, entrada del release de `CHANGELOG.md` y `docs/sdd/firmantes_autorizados` |
 
-**Documentos de raíz.** `README.md`, `MEMORY.md` y `CHANGELOG.md` los escribe el propietario o su delegado explícito. El orquestador puede redactarlos como delegado con revisión y aprobación del propietario antes de G4. La formalización de la allowlist de agentes para la raíz corresponde al bloque B3.
+**Documentos de raíz.** `README.md`, `MEMORY.md` y `CHANGELOG.md` los escribe el propietario o su delegado explícito. El `documenter` es el delegado de `MEMORY.md` y de `CHANGELOG.md` en el alcance que declara el contrato de la spec en curso; `README.md` lo escribe el propietario. El orquestador no redacta documento de raíz alguno: verifica, registra y ejecuta `git add` y `git commit` de los artefactos de control. La formalización de la allowlist de agentes para la raíz corresponde al bloque B3.
 
-**Reglas de la matriz.** La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. Un permiso no se extiende por analogía: la ruta no declarada está denegada. Si dos roles necesitan escribir la misma ruta en una etapa, escribe el rol que `tasks.md` declara para esa tarea y el otro reporta el hallazgo. Ninguna concesión de escritura autoriza a declarar una compuerta.
+**Reglas de la matriz.** La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. Un permiso no se extiende por analogía: la ruta no declarada está denegada. Si dos roles necesitan escribir la misma ruta en una etapa, escribe el rol que `tasks.md` declara para esa tarea y el otro reporta el hallazgo. Ninguna concesión de escritura autoriza a declarar una compuerta ni a escribir la sección de aprobaciones de `spec.md`.
 
 **Rol de auditoría.** Se declara en este capítulo, en el rango 1 y en `AGENTS.md`, con lectura sobre la base completa, sin permiso de modificar requisitos y sin permiso de aprobar compuertas. Su implementación en `.opencode/` corresponde al bloque B3; mientras no exista, la escritura del informe de auditoría la ejecuta `documenter` bajo la declaración de este rol.
 
@@ -301,11 +305,11 @@ Cada artefacto de una spec declara rango 6. La plantilla de rango 5 fija la form
 
 **Integración.** `merge --no-ff` es la única forma admitida. Rebase, squash y copia manual están prohibidos. La rama de trabajo se elimina tras confirmar la integración y la eliminación se verifica con `git branch --list <rama>` sin resultado.
 
-**Sincronización.** Antes del empaquetado, `dev` se sincroniza con `main`. La comprobación es `git rev-list --left-right --count dev...main` con salida `0 0`.
+**Sincronización.** Antes del empaquetado se verifica la relación de ancestría: `main` es ancestro de `dev` y el tag del release apunta a un commit alcanzable desde `main`. La comprobación es `git merge-base --is-ancestor main dev` y `git merge-base --is-ancestor vX.Y.Z^{commit} main`. El conteo de commits entre las dos ramas no se exige: `dev` puede estar por delante de `main` con trabajo no publicado sin que ello bloquee el release.
 
 **Tag anotado.** Formato `vMAJOR.MINOR.PATCH` y mensaje `Release vX.Y.Z`. Se crea con `git tag -a vX.Y.Z -m "Release vX.Y.Z" <commit>`. Tres verificaciones: `git cat-file -t vX.Y.Z` devuelve `tag`; `git tag -n vX.Y.Z` muestra el mensaje esperado; `git rev-parse vX.Y.Z^{commit}` devuelve el commit objetivo.
 
-**Verificaciones de release.** Son tres y se declaran con el mismo contenido en este capítulo y en el rango 4: `dev` sincronizada con `main`; tag anotado `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la aprobación de G6.
+**Verificaciones de release.** Son tres y se declaran con el mismo contenido en este capítulo y en el rango 4: `main` ancestro de `dev` y tag del release alcanzable desde `main`; tag anotado `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la aprobación de G6.
 
 **Registro.** El resultado de G5 y de G6 se registra en `validation_report.md` de la spec publicada y en la entrada del release de `CHANGELOG.md`.
 
@@ -325,13 +329,20 @@ El reporte de validación es append-only después de G4: el registro de G5 y G6 
 - `python tools\sdd\validate.py --spec SPEC-NNN --gate G4 --git`: añade las comprobaciones de rama, alcance y cuerpo del commit.
 - `python tools\sdd\validate.py --next-id`: devuelve el siguiente identificador libre.
 
-**Comprobaciones verificadas.** Frontmatter y campos obligatorios; pertenencia del estado al conjunto de §5; secciones obligatorias de cada artefacto; notación EARS y léxico vetado; unicidad de identificadores; cobertura `RF/CB → CA → T`; dependencias acíclicas; estimaciones entre 15 y 30 minutos; ausencia de rutas técnicas en `spec.md`; `clarify.md` cerrado; reporte convergido al 100 %; consistencia con `specs/INDEX.md`; longitud de `AGENTS.md`; y con `--git`, rama de trabajo, cambios dentro del alcance declarado y cuerpo `Spec: SPEC-NNN` en cada commit de implementación.
+**Comprobaciones verificadas.** Frontmatter y campos obligatorios; pertenencia del estado al conjunto de §5; secciones obligatorias de cada artefacto; notación EARS y léxico vetado; unicidad de identificadores; cobertura `RF/CB → CA → T`; dependencias acíclicas; estimaciones entre 15 y 30 minutos; ausencia de rutas técnicas en `spec.md`; `clarify.md` cerrado; reporte convergido al 100 %; consistencia con `specs/INDEX.md`; longitud de `AGENTS.md`; y con `--git`, rama de trabajo, cambios dentro del alcance declarado y cuerpo `Spec: SPEC-NNN` en cada commit de implementación. El validador verifica además la firma criptográfica del commit de aprobación y la pertenencia de la clave firmante a `docs/sdd/firmantes_autorizados`, con el procedimiento de §11.
 
-**Comprobaciones no verificadas.** La firma del commit de aprobación y la pertenencia de la clave a `docs/sdd/firmantes_autorizados`; la veracidad de la evidencia transcrita; la ejecución real de un script `.bat` o de una suite de pruebas; las tres verificaciones de release de §13; la autosuficiencia del protocolo; la conformidad del régimen completo.
+**Ventanas de legado.** El validador declara dos ventanas cerradas. Una spec fuera de la ventana que le corresponde produce error y no se degrada a advertencia; una spec dentro de su ventana produce advertencia.
+
+| Ventana | Specs | Comprobaciones | Motivo | Límite |
+|---|---|---|---|---|
+| Estructural | `SPEC-001` a `SPEC-009` | `C-01` a `C-13` | Specs redactadas y cerradas antes de la base v2, con contrato anterior a las comprobaciones de estructura y aprobación | No admite una spec posterior a `SPEC-009`; su ampliación exige una spec nueva |
+| Trazabilidad | `SPEC-008` a `SPEC-011` | `C-14` a `C-18` | Specs validadas sin release, cuyo cierre de integración y regularización se tramita en una spec posterior | No admite una spec posterior a `SPEC-011`; su ampliación exige una spec nueva |
+
+**Comprobaciones no verificadas.** La veracidad de la evidencia transcrita; la ejecución real de un script `.bat` o de una suite de pruebas; las tres verificaciones de release de §13; la autosuficiencia del protocolo; la conformidad del régimen completo.
 
 **Códigos de salida.** `0` sin hallazgos; `1` error de validación; `2` error de uso del comando.
 
-**Límite.** Un resultado favorable acredita estructura, coherencia interna, trazabilidad declarada y alcance del cambio. No acredita la aprobación de compuerta alguna, la firma del commit ni la conformidad del régimen, y no sustituye la verificación del propietario.
+**Límite.** Un resultado favorable acredita estructura, coherencia interna, trazabilidad declarada y alcance del cambio. No acredita la aprobación de compuerta alguna ni la conformidad del régimen, y no sustituye la verificación del propietario.
 
 ## 15. Excepciones y legado
 
@@ -341,7 +352,7 @@ El reporte de validación es append-only después de G4: el registro de G5 y G6 
 
 **Hotfix.** Exige spec, aunque sea mínima.
 
-**Cláusula de legado.** Las specs publicadas `SPEC-001` a `SPEC-007` conservan su contenido y no se reescriben retroactivamente; su regularización corresponde a una spec posterior y no se ejecuta por edición directa. La base v2 rige para cada spec posterior a `SPEC-007` desde su publicación. Un historial de versiones no derivado de la regla de §9 se conserva y se regulariza en la misma spec de legado.
+**Cláusula de legado.** Las specs publicadas `SPEC-001` a `SPEC-007` conservan su contenido y no se reescriben retroactivamente; su regularización corresponde a una spec posterior y no se ejecuta por edición directa. La base v2 rige para cada spec posterior a `SPEC-007` desde su publicación. Un historial de versiones no derivado de la regla de §9 se conserva y se regulariza en la misma spec de legado. Las dos ventanas de legado de §14 son concesiones cerradas: la estructural alcanza `SPEC-001` a `SPEC-009` y la de trazabilidad alcanza `SPEC-008` a `SPEC-011`, y ninguna se amplía sin una spec posterior.
 
 **Archivo de rama sin integración.** Una rama con commits no integrados puede archivarse. El archivo exige decisión del propietario, registro en `CHANGELOG.md` bajo `Unreleased` y en el Anexo de transición, permanencia local sin publicación, conservación de la referencia y prohibición de integrar sus commits.
 

@@ -192,6 +192,28 @@ def _extract_enabled(val: Any) -> Any:
     return val
 
 
+def _status_contexts(val: Any) -> list[str]:
+    """Contextos de un objeto `required_status_checks`, normalizados al nombre del job.
+
+    GitHub devuelve el contexto como `<flujo> / <job>` y la regla declarada lo nombra
+    con el nombre del job; la comparación toma el segmento posterior a `/ `.
+    """
+    if not isinstance(val, dict):
+        return []
+    contexts: list[str] = []
+    for entry in val.get("checks") or []:
+        if isinstance(entry, dict):
+            contexts.append(str(entry.get("context", "")))
+        elif entry:
+            contexts.append(str(entry))
+    for entry in val.get("contexts") or []:
+        if entry:
+            contexts.append(str(entry))
+    return sorted(
+        context.split("/ ")[-1].strip() for context in contexts if context.split("/ ")[-1].strip()
+    )
+
+
 def compare_protection_dicts(
     actual: dict[str, Any],
     expected: dict[str, Any],
@@ -315,6 +337,20 @@ def compare_protection_dicts(
     elif isinstance(exp_status, dict):
         if act_status is None:
             discrepancies.append("required_status_checks: esperado configurado, actual=None")
+        else:
+            exp_strict = exp_status.get("strict")
+            act_strict = act_status.get("strict") if isinstance(act_status, dict) else None
+            if exp_strict is not None and act_strict != exp_strict:
+                discrepancies.append(
+                    f"required_status_checks.strict: esperado={exp_strict}, actual={act_strict}"
+                )
+            exp_contexts = _status_contexts(exp_status)
+            act_contexts = _status_contexts(act_status)
+            if exp_contexts != act_contexts:
+                discrepancies.append(
+                    f"required_status_checks: contextos esperados {exp_contexts}, "
+                    f"observados {act_contexts}"
+                )
 
     return discrepancies
 

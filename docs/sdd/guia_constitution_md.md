@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Gobernanza e Integración de `constitution.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 En la metodología de **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**, el archivo **`constitution.md`** constituye el documento supremo rector que establece los **principios innegociables**, las **restricciones de arquitectura**, los **estándares de calidad** y los **límites de seguridad (_guardrails_)** que rigen un proyecto.
 

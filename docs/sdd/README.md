@@ -58,7 +58,8 @@ Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la na
 | `comparacion_operativa_sdd_actual_vs_objetivo.md` | `docs/sdd/comparacion_operativa_sdd_actual_vs_objetivo.md` | Informe de análisis | 29 | Sin rango |
 | `plan_cierre_brechas_sdd.md` | `docs/sdd/plan_cierre_brechas_sdd.md` | Informe de análisis | 30 | Sin rango |
 | `auditoria_cumplimiento_sdd.md` | `docs/sdd/auditoria_cumplimiento_sdd.md` | Informe de auditoría | 31 | Sin rango |
-| `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 32 | Sin rango |
+| `auditoria_cierre_v0_7_0.md` | `docs/sdd/auditoria_cierre_v0_7_0.md` | Informe de auditoría de la reauditoría de cierre | 32 | Sin rango |
+| `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 33 | Sin rango |
 
 ## Regla de inventario
 

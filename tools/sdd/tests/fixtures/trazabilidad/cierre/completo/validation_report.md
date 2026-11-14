@@ -18,4 +18,4 @@ Validación del fixture de trazabilidad.
 ## Cierre de integración
 
 Merge: 753c3e5
-Release: v1.1.1
+Release:

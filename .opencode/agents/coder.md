@@ -27,9 +27,6 @@ permissions:
     resource: '.opencode/**'
     effect: deny
   - action: edit
-    resource: '.github/**'
-    effect: deny
-  - action: edit
     resource: '.env'
     effect: deny
   - action: edit
@@ -43,6 +40,9 @@ permissions:
     effect: allow
   - action: edit
     resource: 'tools/**'
+    effect: allow
+  - action: edit
+    resource: '.github/**'
     effect: allow
   - action: edit
     resource: 'specs/*/tasks.md'

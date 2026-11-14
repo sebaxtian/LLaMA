@@ -190,4 +190,17 @@ vMAJOR.MINOR.PATCH
 
 ## Historial de releases
 
-Se publicó `v0.1.0` como primera versión estructural y documental del proyecto.
+Se publicó `v0.1.0` como primera versión estructural y documental del proyecto. Los ocho tags anotados publicados hasta el commit anterior a `v0.7.0` son:
+
+| Versión | Fecha | Tag |
+|---|---|---|
+| `v0.1.0` | 2026-11-10 | `v0.1.0` |
+| `v0.2.0` | 2026-11-12 | `v0.2.0` |
+| `v0.3.0` | 2026-11-13 | `v0.3.0` |
+| `v0.3.1` | 2026-11-13 | `v0.3.1` |
+| `v0.4.0` | 2026-11-13 | `v0.4.0` |
+| `v0.5.0` | 2026-11-13 | `v0.5.0` |
+| `v0.5.1` | 2026-11-13 | `v0.5.1` |
+| `v0.6.0` | 2026-11-13 | `v0.6.0` |
+
+La publicación de `v0.7.0` permanece en `Unreleased` hasta que G6 la autorice con la línea de aprobación firmada del propietario.

@@ -1,6 +1,6 @@
 # **Guía de Referencia: Ciclo de Vida del Desarrollo Basado en Especificaciones (SDD) Puro**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)** es una metodología de ingeniería de software en la que una especificación formal, estructurada y legible por máquina actúa como la guía o fuente única de verdad del sistema antes de escribir código ejecutable.
 

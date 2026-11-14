@@ -26,6 +26,7 @@ Cada rama de trabajo se vincula a una spec: el campo `branch` del frontmatter co
 - `feat/<nombre>`: nueva funcionalidad, creada desde `dev`.
 - `fix/<nombre>`: corrección detectada en `dev`, creada desde `dev`.
 - `hotfix/<nombre>`: corrección detectada en `main`, creada desde `main`.
+- `docs/<nombre>`: cambio exclusivamente documental, creado desde `dev`; no altera requisitos, comportamiento ni configuración y se registra con un commit `docs:` o `chore:`.
 - `release/vX-Y-Z`: rama de empaquetado y publicación de versiones, creada desde `dev`.
 
 Flujos:
@@ -33,6 +34,7 @@ Flujos:
 ```text
 dev  -> feat/<nombre>    -> dev
 dev  -> fix/<nombre>     -> dev
+dev  -> docs/<nombre>    -> dev
 dev  -> release/vX-Y-Z   -> dev & main
 main -> hotfix/<nombre>  -> main -> dev
 ```
@@ -44,15 +46,16 @@ main -> hotfix/<nombre>  -> main -> dev
 El nombre completo debe cumplir esta gramática de caracteres:
 
 ```text
-^(feat|fix|hotfix|release)/(?=[a-z0-9-]{3,63}$)[a-z0-9]+(-[a-z0-9]+)*$
+^(feat|fix|hotfix|docs|release)/(?=[a-z0-9-]{3,63}$)[a-z0-9]+(-[a-z0-9]+)*$
 ```
 
 Reglas:
 
 - Solo se permiten minúsculas, números y guiones.
-- `<nombre>` debe tener entre 3 y 63 caracteres, sin contar el prefijo `feat/`, `fix/`, `hotfix/` o `release/`.
+- `<nombre>` debe tener entre 3 y 63 caracteres, sin contar el prefijo `feat/`, `fix/`, `hotfix/`, `docs/` o `release/`.
 - En ramas de release se utiliza obligatoriamente la convención de guiones `vX-Y-Z` (ej. `release/v0-1-0`), evitando puntos en el nombre de la rama para prevenir colisiones en Git.
 - La longitud se mide sobre `<nombre>` y no sobre la cadena completa.
+- `docs/` se reserva a los cambios exclusivamente documentales y se valida con las mismas reglas de minúsculas, números y guiones y la misma longitud que los demás prefijos.
 - No se permiten espacios, guiones bajos, caracteres especiales ni prefijos alternativos.
 - No se permiten nombres duplicados de ramas activas.
 - Las ramas se eliminan únicamente después de confirmar su integración.
@@ -66,6 +69,7 @@ feat/main-menu
 feat/phi4-script
 fix/model-path
 hotfix/server-startup
+docs/cierre-integracion-spec-012
 release/v0-1-0
 ```
 
@@ -225,7 +229,7 @@ Un release pasa la validación únicamente cuando:
 - El propietario ha autorizado el release.
 - La validación estructural y las validaciones funcionales aplicables han pasado.
 
-No existe una suite automatizada de pruebas para la raíz del repositorio. Su ausencia no elimina las validaciones anteriores.
+La raíz del repositorio cuenta con la suite del mecanismo de control en `tools/sdd/tests/`: las 131 pruebas vigentes en el corte de la auditoría de cierre más las añadidas por las specs posteriores. El job `verify` del flujo `SDD` de `.github/workflows/sdd.yml` la ejecuta con `python -m unittest discover -s tools\sdd\tests -q` en cada Pull Request dirigido a `main` y a `dev`. La suite no sustituye las validaciones anteriores.
 
 ### Condición de cierre de la rama
 
@@ -247,17 +251,17 @@ git branch --list feat/<nombre>
 git branch -r --list origin/feat/<nombre>
 ```
 
-Si el listado local o remoto conserva la rama, la eliminación no está confirmada y G5 no se registra. La misma regla se aplica a `fix/*`, `hotfix/*` y `release/vX-Y-Z`.
+Si el listado local o remoto conserva la rama, la eliminación no está confirmada y G5 no se registra. La misma regla se aplica a `fix/*`, `hotfix/*`, `docs/*` y `release/vX-Y-Z`.
 
 ## Sincronización y tag
 
-**Sincronización previa.** Antes del empaquetado, `dev` se sincroniza con `main` y la comprobación debe devolver dos ceros:
+**Sincronización previa.** Antes del empaquetado se verifica la relación de ancestría entre las dos ramas: `main` debe ser ancestro de `dev`, de modo que cada commit de `main` esté contenido en `dev`:
 
 ```bash
-git rev-list --left-right --count dev...main
+git merge-base --is-ancestor main dev
 ```
 
-Una salida distinta de `0 0` detiene el release: se sincroniza, se resuelven los conflictos en `dev` y se repiten las validaciones. La sincronización se registra como primera verificación de release.
+Un resultado distinto de `0` detiene el empaquetado e informa la relación de ancestría incumplida. El conteo de commits entre las dos ramas no se exige: `dev` puede estar por delante de `main` con trabajo no publicado sin que ese estado bloquee el release. La sincronización se registra como primera verificación de release.
 
 **Tag anotado.** Solo se admiten tags anotados que cumplan esta expresión exacta:
 
@@ -378,7 +382,16 @@ git rev-parse main
 
 Las dos últimas salidas deben ser iguales, `git cat-file -t vX.Y.Z` debe devolver `tag` y el asunto debe ser exactamente `Release vX.Y.Z`.
 
-**Tres verificaciones de release.** Se ejecutan en este orden y las tres deben pasar: `dev` sincronizada con `main`; tag anotado `vX.Y.Z` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la autorización de G6. Una verificación fallida detiene el release y la entrada permanece en `Unreleased`.
+Después se verifica que el tag apunte a un commit alcanzable desde `main`:
+
+```bash
+git switch main
+git merge-base --is-ancestor vX.Y.Z^{commit} main
+```
+
+Un resultado distinto de `0` detiene el release y la sincronización no se declara cumplida.
+
+**Tres verificaciones de release.** Se ejecutan en este orden y las tres deben pasar: `main` ancestro de `dev` y tag del release alcanzable desde `main`; tag anotado `vX.Y.Z` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la autorización de G6. Una verificación fallida detiene el release y la entrada permanece en `Unreleased`.
 
 ## Registro de la verificación
 
@@ -432,7 +445,7 @@ Los cambios históricos se conservan en el historial Git y los cambios relevante
 | `allow_deletions` | `false` | `false` | Impide el borrado de las ramas base. |
 | `required_linear_history` | `false` | `false` | Admite el commit de merge `--no-ff`. |
 | `require_signed_commits` | `false` | `false` | No exige firma en cada commit; la firma se exige en el commit que introduce la línea de aprobación. |
-| `required_status_checks` | `null` | `null` | Diferido hasta el aprovisionamiento de flujos de integración remotos. |
+| `required_status_checks` | `verify` (`strict: true`) | `verify` (`strict: true`) | Exige el check `verify` del flujo `SDD` antes de integrar; su ausencia bloquea G5. |
 
 Ajustes a nivel de repositorio:
 
@@ -445,6 +458,8 @@ Ajustes a nivel de repositorio:
 | `allow_auto_merge` | `false` | Desactiva las fusiones automáticas desatendidas. |
 
 En el repositorio local, las mismas restricciones se respetan mediante el procedimiento de este documento.
+
+**Check exigible.** El check exigible de las dos ramas es el job `verify` del flujo `SDD` de `.github/workflows/sdd.yml`, con `strict: true`: prepara el árbol con `actions/checkout`, instala Python con `actions/setup-python` y ejecuta `python tools/sdd/validate.py --all` y la suite del mecanismo de control en cada Pull Request dirigido a `main` y a `dev`. La exigibilidad se declara en `tools/git/protection_rules/main.json` y `tools/git/protection_rules/dev.json`, se aplica con `python tools/git/configure_branch_protection.py` y se verifica con `python tools/git/verify_branch_protection.py`. Si una de las dos ramas no declara exigible el check `verify`, la verificación de G5 queda bloqueada y el caso se registra como ausencia del check exigible.
 
 **Excepción editorial.** Un cambio exclusivamente editorial —erratas, formato y enlaces— se integra sin spec, siempre que no altere reglas, requisitos, comportamiento, configuración ni scripts, y se registra en un commit `docs:` o `chore:`.
 

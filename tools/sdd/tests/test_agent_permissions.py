@@ -1,8 +1,9 @@
-"""Pruebas no destructivas de la práctica operativa SDD (SPEC-011).
+"""Pruebas no destructivas de la práctica operativa SDD (SPEC-011 y SPEC-013).
 
 Contrastan la matriz de permisos de los seis roles, la configuración global, el flujo de
-integración continua y la documentación operativa. Solo leen texto: no ejecutan el cliente
-de agentes, no escriben archivos, no consultan la red y no importan el validador del corpus.
+integración continua y la documentación operativa. Solo leen texto y las constantes
+declaradas del validador: no ejecutan el cliente de agentes, no escriben archivos, no
+consultan la red y no modifican el corpus.
 
 Cada prueba combina una comprobación positiva sobre los artefactos del repositorio con una
 negativa sobre texto sintético, de modo que el detector demuestre que discrimina.
@@ -10,6 +11,7 @@ negativa sobre texto sintético, de modo que el detector demuestre que discrimin
 
 import hashlib
 import re
+import sys
 import time
 import unittest
 from pathlib import Path
@@ -20,6 +22,9 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 MEMORY_PATH = ROOT / "MEMORY.md"
 CONFIG_PATH = ROOT / "opencode.jsonc"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "sdd.yml"
+
+sys.path.insert(0, str(ROOT / "tools" / "sdd"))
+import validate as validador  # noqa: E402
 
 ROLES = ("sdd", "planner", "coder", "reviewer", "documenter", "auditor")
 MODOS = {
@@ -77,7 +82,7 @@ ESCRITURA = {
         ),
     },
     "coder": {
-        "allow": ("src/**", "tests/**", "tools/**", "specs/*/tasks.md"),
+        "allow": ("src/**", "tests/**", "tools/**", ".github/**", "specs/*/tasks.md"),
         "deny": (
             "specs/**",
             "docs/**",
@@ -85,7 +90,6 @@ ESCRITURA = {
             "MEMORY.md",
             "opencode.jsonc",
             ".opencode/**",
-            ".github/**",
             ".env",
         ),
     },
@@ -106,7 +110,7 @@ ESCRITURA = {
         ),
     },
     "documenter": {
-        "allow": ("docs/**", "AGENTS.md"),
+        "allow": ("docs/**", "AGENTS.md", "MEMORY.md", "CHANGELOG.md"),
         "deny": (
             "specs/**",
             "src/**",
@@ -115,8 +119,6 @@ ESCRITURA = {
             ".opencode/**",
             ".github/**",
             "opencode.jsonc",
-            "MEMORY.md",
-            "CHANGELOG.md",
             ".env",
         ),
     },
@@ -207,6 +209,8 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 5
     steps:
+      - name: Prepara el árbol del repositorio
+        uses: actions/checkout@v4
       - name: Prepara Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -217,6 +221,9 @@ jobs:
         timeout-minutes: 1
         run: python -m unittest discover -s tools\\sdd\\tests -q
 """
+FLUJO_SIN_PREPARACION = FLUJO_VALIDO.replace(
+    "      - name: Prepara el árbol del repositorio\n        uses: actions/checkout@v4\n", ""
+)
 FLUJO_CON_ERROR = FLUJO_VALIDO.replace(
     "        run: python -m unittest discover -s tools\\sdd\\tests -q",
     "        continue-on-error: true\n        run: python -m unittest discover -s tools\\sdd\\tests -q",
@@ -618,6 +625,14 @@ def problemas_del_flujo(texto: str) -> list[str]:
     if not re.search(r"^\s{2,6}timeout-minutes\s*:\s*5\s*$", texto, re.MULTILINE):
         problemas.append("el trabajo no limita su duración a cinco minutos")
     pasos = pasos_del_flujo(texto)
+    if not pasos:
+        problemas.append("el flujo no declara pasos")
+    elif "actions/checkout" not in pasos[0]:
+        problemas.append("la primera preparación del job no usa actions/checkout")
+    if "actions/setup-python" not in texto:
+        problemas.append("el flujo no prepara el entorno con actions/setup-python")
+    if not re.search(r"^\s{2}verify\s*:\s*$", texto, re.MULTILINE):
+        problemas.append("el job no se llama verify")
     ejecuciones = [p for p in pasos if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
     if len(ejecuciones) != 2:
         problemas.append(f"el flujo debe declarar dos pasos de ejecución; declara {len(ejecuciones)}")
@@ -820,14 +835,63 @@ class TestMatrizDePermisos(unittest.TestCase):
     def test_escritura_del_coder(self):
         entradas = leer_permisos("coder")
         for ruta in ("src/app.py", "tests/test_app.py", "tools/sdd/validate.py",
-                     "specs/011-practica-operativa-sdd/tasks.md"):
+                     "specs/011-practica-operativa-sdd/tasks.md", ".github/workflows/sdd.yml"):
             with self.subTest(ruta=ruta):
                 self.assertEqual(resolver(entradas, "edit", ruta), "allow", f"el coder no puede escribir {ruta}")
         for ruta in ("specs/011-practica-operativa-sdd/spec.md", "docs/constitucion.md", "AGENTS.md",
-                     "MEMORY.md", "opencode.jsonc", ".opencode/agents/coder.md",
-                     ".github/workflows/sdd.yml", ".env"):
+                     "MEMORY.md", "opencode.jsonc", ".opencode/agents/coder.md", ".env"):
             with self.subTest(ruta=ruta):
                 self.assertEqual(resolver(entradas, "edit", ruta), "deny", f"el coder no debe escribir {ruta}")
+
+    def test_escritura_del_documenter(self):
+        """RF-014, RF-015, RF-016: el documenter escribe los documentos de raíz delegados."""
+        entradas = leer_permisos("documenter")
+        for ruta in ("docs/sdd/PROTOCOLO_OPERATIVO.md", "AGENTS.md", "MEMORY.md", "CHANGELOG.md"):
+            with self.subTest(ruta=ruta):
+                self.assertEqual(resolver(entradas, "edit", ruta), "allow",
+                                 f"el documenter no puede escribir {ruta}")
+        for ruta in ("specs/011-practica-operativa-sdd/spec.md", "src/app.py", "tools/sdd/validate.py",
+                     "tests/test_app.py", ".opencode/agents/documenter.md",
+                     ".github/workflows/sdd.yml", ".env"):
+            with self.subTest(ruta=ruta):
+                self.assertEqual(resolver(entradas, "edit", ruta), "deny",
+                                 f"el documenter no debe escribir {ruta}")
+
+    def test_escritura_del_orquestador(self):
+        """RF-009, CB-014, CA-009: el orquestador no tiene atribuciones de escritura sobre specs/."""
+        entradas = leer_permisos("sdd")
+        self.assertEqual(atribuciones_de_escritura(entradas), [],
+                         "el orquestador conserva escritura concedida bajo specs/")
+        self.assertTrue(
+            [e for e in entradas if e["action"] == "edit" and e["resource"] == "specs/**"
+             and e["effect"] == "deny"],
+            "la matriz del orquestador no deniega specs/** de forma explícita",
+        )
+        sintetico = (
+            "---\ndescription: rol sintético\nmode: primary\npermissions:\n"
+            "  - action: edit\n    resource: \"*\"\n    effect: deny\n"
+            "  - action: edit\n    resource: \"specs/**\"\n    effect: allow\n---\n"
+        )
+        otorgadas = atribuciones_de_escritura(leer_permisos_texto(sintetico))
+        self.assertTrue(otorgadas, "la comprobación no detecta la concesión sintética sobre specs/")
+        self.assertIn("specs/INDEX.md", otorgadas,
+                      f"el fallo debe nombrar la ruta concedida: {otorgadas}")
+
+    def test_tabla_de_etapas_del_orquestador(self):
+        """RF-002, CA-002: la tabla declara siete etapas de 1 Specify a 7 Release."""
+        texto = texto_de_ruta(ruta_de_rol("sdd"))
+        etapas = etapas_del_orquestador(texto)
+        self.assertEqual(problemas_de_etapas(etapas), [],
+                         f"la tabla de etapas no declara las siete etapas numeradas: {etapas}")
+        anterior = (
+            "| Etapa | Subagente |\n|---|---|\n"
+            "| 2 Clarify | `planner` |\n| 3 Plan | `planner` |\n| 4 Tasks | `planner` |\n"
+            "| 5 Implement | `coder` |\n| 6 Validate | `reviewer` |\n| 7 Validate final | `reviewer` |\n"
+        )
+        self.assertTrue(
+            problemas_de_etapas(etapas_del_orquestador(f"---\ndescription: r\nmode: primary\n---\n{anterior}")),
+            "la comprobación no detecta la tabla de seis etapas que omite Release y comienza en 2",
+        )
 
     def test_escritura_unica_del_reviewer(self):
         texto = texto_de_ruta(ruta_de_rol("reviewer"))
@@ -983,7 +1047,14 @@ class TestFlujoDeIntegracionContinua(unittest.TestCase):
         self.assertEqual(problemas_del_flujo(FLUJO_VALIDO), [],
                          "el flujo sintético válido no debe producir hallazgos")
         self.assertEqual(set(ramas_de_disparo(texto)), {"dev", "main"})
-        ejecuciones = [p for p in pasos_del_flujo(texto) if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
+        pasos = pasos_del_flujo(texto)
+        self.assertTrue(pasos, "el flujo no declara pasos")
+        self.assertIn("actions/checkout", pasos[0],
+                      f"la primera preparación debe ser actions/checkout: {pasos[0]}")
+        self.assertIn("actions/setup-python", texto,
+                      "el flujo debe preparar el entorno con actions/setup-python")
+        self.assertRegex(texto, r"(?m)^\s{2}verify\s*:\s*$")
+        ejecuciones = [p for p in pasos if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
         self.assertEqual(len(ejecuciones), 2)
         self.assertIn("validate.py", ejecuciones[0])
         self.assertIn("--all", ejecuciones[0])
@@ -992,12 +1063,25 @@ class TestFlujoDeIntegracionContinua(unittest.TestCase):
         self.assertRegex(ejecuciones[1], r"timeout-minutes\s*:\s*1")
         self.assertRegex(texto, r"runs-on\s*:\s*windows-latest")
         self.assertRegex(texto, r"python-version\s*:\s*['\"]?3\.12")
+        self.assertEqual(efectos_remotos(texto), [], "el flujo declara efectos sobre el remoto")
         # Casos negativos: continuación en error y disparadores fuera del contrato.
         self.assertTrue(problemas_del_flujo(FLUJO_CON_ERROR),
                         "no detecta la continuación en error")
         self.assertTrue(problemas_del_flujo(FLUJO_CON_PUSH),
                         "no detecta el disparador push ni el paso ajeno")
         self.assertNotEqual(set(ramas_de_disparo(FLUJO_CON_PUSH)), {"dev", "main"})
+
+    def test_flujo_sin_preparacion_del_arbol(self):
+        """CB-009, CA-010: un flujo sin `actions/checkout` no declara la verificación cumplida."""
+        self.assertTrue(problemas_del_flujo(FLUJO_VALIDO) == [],
+                        "el flujo sintético con preparación no debe producir hallazgos")
+        hallazgos = problemas_del_flujo(FLUJO_SIN_PREPARACION)
+        self.assertTrue(hallazgos,
+                        f"el flujo sin preparación del árbol debe producir hallazgo: {hallazgos}")
+        self.assertTrue(any("actions/checkout" in motivo for motivo in hallazgos),
+                        f"el hallazgo debe nombrar la preparación ausente: {hallazgos}")
+        self.assertNotIn("actions/checkout", FLUJO_SIN_PREPARACION,
+                         "el caso negativo conserva la preparación que se retira")
 
     def test_flujo_sin_efectos_remotos(self):
         texto = texto_de_ruta(WORKFLOW_PATH)
@@ -1052,6 +1136,30 @@ class TestDocumentacionOperativa(unittest.TestCase):
                 self.assertTrue(hechos_obsoletos(f"{memory}\n- {hecho}.\n"),
                                 f"no detecta el hecho obsoleto: {hecho}")
 
+    def test_gramatica_de_ramas(self):
+        """RF-013, CB-001, CB-002, CA-013: cinco prefijos con longitud de 3 a 63 caracteres."""
+        texto = texto_de_ruta(FLUJO_GIT_PATH)
+        expresion = gramatica_de_ramas(texto)
+        self.assertTrue(expresion, "la norma de integración no declara la gramática de ramas")
+        self.assertEqual(sorted(prefijos_declarados(expresion)), sorted(PREFIJOS_ADMITIDOS),
+                         f"la lista admitida debe declarar cinco prefijos: {expresion}")
+        patron = re.compile(expresion)
+        for nombre in ("feat/reauditoria-cierre", "docs/cierre-integracion-spec-012",
+                       "release/v0-7-0"):
+            self.assertTrue(patron.fullmatch(nombre), f"la gramática debe admitir {nombre}")
+        for nombre, motivo in (
+            ("docs/Cierre-Integracion", "mayúscula"),
+            ("docs/ab", "longitud menor que 3"),
+            ("docs/uno_dos", "guion bajo"),
+            ("chore/limpieza", "prefijo fuera de la lista de cinco"),
+        ):
+            self.assertFalse(patron.fullmatch(nombre), f"la gramática debe rechazar {nombre} por {motivo}")
+        self.assertTrue(patron.fullmatch("docs/" + "a" * 3), "la longitud mínima es 3 caracteres")
+        self.assertTrue(patron.fullmatch("docs/" + "a" * 63), "la longitud máxima es 63 caracteres")
+        self.assertFalse(patron.fullmatch("docs/" + "a" * 64), "la longitud de 64 caracteres se rechaza")
+        self.assertIn("docs", prefijos_declarados(expresion),
+                      "el conjunto admitido debe informar el prefijo docs/")
+
 
 # ------------------------------------------------- T-001: prueba no destructiva
 
@@ -1090,6 +1198,557 @@ class TestPruebaNoDestructiva(unittest.TestCase):
         # CB-013: sin permiso de lectura el contraste se registra como no verificado.
         estado, motivo = ("verificada", "") if antes else ("no verificada", "sin lectura de los artefactos")
         self.assertEqual(estado, "verificada", f"comprobación no verificada: {motivo}")
+
+
+# ==========================================================================
+# SPEC-013 · cierre de la reauditoría de conformidad
+#
+# Pruebas de las correcciones documentales y de la matriz de agentes, escritas
+# antes de la corrección de los textos (fase roja). Cada comprobación declara
+# un caso positivo sobre el artefacto real y un caso negativo sobre una copia
+# sintética que conserva la afirmación anterior.
+# ==========================================================================
+
+PROTOCOLO_PATH = ROOT / "docs" / "sdd" / "PROTOCOLO_OPERATIVO.md"
+FLUJO_GIT_PATH = ROOT / "docs" / "Flujo_de_Trabajo_Git.md"
+INDEX_PATH = ROOT / "specs" / "INDEX.md"
+CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+CORPUS_DIR = ROOT / "docs" / "sdd"
+INFORME_REAUDITORIA = "docs/sdd/auditoria_cierre_v0_7_0.md"
+PREFIJOS_ADMITIDOS = ("docs", "feat", "fix", "hotfix", "release")
+ETAPAS_DEL_CICLO = ("Specify", "Clarify", "Plan", "Tasks", "Implement", "Validate", "Release")
+# Sinónimos del estado declarado en `MEMORY.md` frente al estado del frontmatter.
+SINONIMOS_ESTADO = {
+    "publicada": "released",
+    "publicadas": "released",
+    "publicado": "released",
+    "validada": "validated",
+    "validadas": "validated",
+    "en curso": "",
+}
+# Rutas representativas del árbol de specs para contar atribuciones de escritura.
+RUTAS_SPECS = (
+    "specs/INDEX.md",
+    "specs/010-mecanismo-control-sdd/spec.md",
+    "specs/010-mecanismo-control-sdd/plan.md",
+    "specs/010-mecanismo-control-sdd/tasks.md",
+    "specs/010-mecanismo-control-sdd/validation_report.md",
+)
+
+
+def seccion(texto: str, patron: str) -> str:
+    """Texto de la sección de nivel 2 cuyo título coincide con el patrón."""
+    for parte in re.split(r"(?m)^## ", texto):
+        if re.match(patron, parte, re.IGNORECASE):
+            return parte
+    return ""
+
+
+# ------------------------------------------------- RF-004: firma verificada
+
+
+def problemas_de_firma_verificada(protocolo: str, agents: str) -> list[str]:
+    """RF-004: la firma del commit de aprobación figura entre las comprobaciones ejecutadas."""
+    problemas: list[str] = []
+    contrato = seccion(protocolo, r"14\.\s*Contrato del validador")
+    if not contrato:
+        problemas.append("el protocolo no declara la sección del contrato del validador")
+    else:
+        corte = re.search(r"(?i)comprobaciones no verificadas", contrato)
+        ejecutadas = contrato[: corte.start()] if corte else contrato
+        no_verificadas = contrato[corte.end():] if corte else ""
+        if not re.search(r"(?i)firma", ejecutadas):
+            problemas.append("§14 no declara la firma del commit de aprobación entre las comprobaciones ejecutadas")
+        if "firmantes_autorizados" not in ejecutadas:
+            problemas.append("§14 no declara la pertenencia de la clave firmante a docs/sdd/firmantes_autorizados")
+        if re.search(r"(?i)firma|firmantes_autorizados", no_verificadas):
+            problemas.append("§14 conserva la firma o los firmantes entre las comprobaciones no verificadas")
+    validacion = seccion(agents, r"validaci") or agents
+    if not re.search(r"(?i)verifica[^\n]{0,80}firma", validacion):
+        problemas.append("AGENTS.md no declara que el validador verifica la firma del commit de aprobación")
+    if "firmantes_autorizados" not in validacion:
+        problemas.append("AGENTS.md no declara la pertenencia de la clave firmante a docs/sdd/firmantes_autorizados")
+    if re.search(r"(?i)no (?:acredita|verifica)[^\n]{0,40}firma", agents):
+        problemas.append("AGENTS.md conserva la afirmación de que la firma no se verifica")
+    return problemas
+
+
+# ------------------------------------------- RF-005: ventanas de legado
+
+
+def _identificadores(celda: str, prefijo: str, ancho: int) -> set[str]:
+    """Identificadores de una celda; un rango «A a B» se expande al conjunto completo."""
+    ids = re.findall(rf"\b{prefijo}-(\d{{{ancho}}})\b", celda)
+    if not ids:
+        return set()
+    if len(ids) == 2 and re.search(r"\ba\b", celda):
+        inicio, fin = sorted(int(valor) for valor in ids)
+        if 0 < fin - inicio <= 60:
+            return {f"{prefijo}-{n:0{ancho}d}" for n in range(inicio, fin + 1)}
+    return {f"{prefijo}-{valor}" for valor in ids}
+
+
+def ventanas_de_legado(protocolo: str) -> list[dict]:
+    """Filas de la tabla de ventanas de legado, con sus conjuntos y su motivo y límite."""
+    filas: list[dict] = []
+    for linea in protocolo.splitlines():
+        if not linea.strip().startswith("|"):
+            continue
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) < 4:
+            continue
+        specs: set[str] = set()
+        comprobaciones: set[str] = set()
+        for celda in celdas:
+            specs |= _identificadores(celda, "SPEC", 3)
+            comprobaciones |= _identificadores(celda, "C", 2)
+        if specs and comprobaciones:
+            filas.append({
+                "specs": specs,
+                "comprobaciones": comprobaciones,
+                "motivo": celdas[-2],
+                "limite": celdas[-1],
+                "linea": linea,
+            })
+    return filas
+
+
+def problemas_de_ventanas_de_legado(protocolo: str, estructural: set[str],
+                                    trazabilidad: set[str]) -> list[str]:
+    """RF-005: dos ventanas cerradas con su conjunto de specs, su motivo y su límite."""
+    filas = ventanas_de_legado(protocolo)
+    if not filas:
+        return ["el protocolo no declara la tabla de ventanas de legado"]
+    problemas: list[str] = []
+    esperadas = (
+        (estructural, {f"C-{n:02d}" for n in range(1, 14)}),
+        (trazabilidad, {f"C-{n:02d}" for n in range(14, 19)}),
+    )
+    for specs, comprobaciones in esperadas:
+        titulo = f"{min(specs)} a {max(specs)}"
+        encontradas = [fila for fila in filas
+                       if fila["specs"] == specs and fila["comprobaciones"] == comprobaciones]
+        if not encontradas:
+            problemas.append(f"falta la ventana de legado de {titulo} con las comprobaciones "
+                             f"{min(comprobaciones)} a {max(comprobaciones)}")
+            continue
+        if not encontradas[0]["motivo"] or not encontradas[0]["limite"]:
+            problemas.append(f"la ventana de {titulo} no declara motivo y límite")
+    return problemas
+
+
+# --------------------------------------- RF-008: escritura de estados
+
+
+def bloque_de_escritura(protocolo: str) -> str:
+    """Texto del bloque «Escritura de estados» de §5."""
+    maquina = seccion(protocolo, r"5\.\s*M[aá]quina de estados")
+    inicio = re.search(r"(?im)^.*escritura de estados.*$", maquina)
+    if not inicio:
+        return ""
+    resto = maquina[inicio.end():]
+    fin = re.search(r"(?m)^#{2,4}\s|^\*\*[A-ZÁÉÍÓÚ]", resto)
+    return resto[: fin.start()] if fin else resto
+
+
+def problemas_de_escritura_de_estados(protocolo: str) -> list[str]:
+    """RF-008, CB-016: T4 a T7 las escribe el planner sobre la verificación registrada."""
+    bloque = bloque_de_escritura(protocolo)
+    if not bloque:
+        return ["§5 no declara el bloque de escritura de estados"]
+    problemas: list[str] = []
+    for transicion in ("T4", "T5", "T6", "T7"):
+        if transicion not in bloque:
+            problemas.append(f"§5 no atribuye la escritura de {transicion}")
+    if "`planner`" not in bloque:
+        problemas.append("§5 no atribuye la escritura de T4 a T7 al planner")
+    if not re.search(r"(?i)verificaci[oó]n registrada por el orquestador", bloque):
+        problemas.append("§5 no declara la verificación registrada por el orquestador")
+    if not re.search(r"(?i)sin esa verificaci|ausencia de (?:esa|la) verificaci", bloque):
+        problemas.append("§5 no informa la verificación ausente como impedimento de la transición")
+    if re.search(r"(?i)orquestador escribe", bloque):
+        problemas.append("§5 atribuye la escritura de las transiciones al orquestador")
+    return problemas
+
+
+# ------------------------------- RF-012: sincronización por ancestría
+
+
+def problemas_de_sincronizacion(texto: str) -> list[str]:
+    """RF-012, CB-003, CB-004: la sincronización se expresa como relación de ancestría."""
+    problemas: list[str] = []
+    if not re.search(r"merge-base --is-ancestor\s+main\s+dev", texto):
+        problemas.append("no exige que main sea ancestro de dev con `git merge-base --is-ancestor main dev`")
+    if not re.search(r"merge-base --is-ancestor\s+v[\w.]+\^\{commit\}\s+main", texto):
+        problemas.append("no exige que el tag del release sea alcanzable desde main")
+    if re.search(r"rev-list\s+--left-right", texto):
+        problemas.append("conserva el conteo simétrico con `git rev-list --left-right`")
+    if re.search(r"salida\s+`?0 0`?", texto):
+        problemas.append("conserva la exigencia de la salida `0 0`")
+    return problemas
+
+
+# ------------------------------------ RF-013: gramática de ramas
+
+
+def gramatica_de_ramas(texto: str) -> str:
+    """Expresión declarada de la gramática de nombres de rama."""
+    for linea in texto.splitlines():
+        candidata = linea.strip().strip("`")
+        if candidata.startswith("^(") and "release" in candidata:
+            return candidata
+    return ""
+
+
+def prefijos_declarados(expresion: str) -> list[str]:
+    """Prefijos admitidos por la expresión declarada."""
+    coincidencia = re.match(r"^\^\(([^)]+)\)", expresion)
+    return coincidencia.group(1).split("|") if coincidencia else []
+
+
+# ---------------------------------------- RF-001: guías del corpus
+
+
+def declaracion_de_rango(texto: str) -> bool:
+    """True si el encabezado declara carácter no normativo y rango «Sin rango»."""
+    encabezado = "\n".join(texto.splitlines()[:12])
+    caracter = re.search(r"(?i)no normativ", encabezado)
+    rango = re.search(r"(?i)sin rango", encabezado)
+    return bool(caracter and rango)
+
+
+def problemas_de_guia(nombre: str, texto: str) -> list[str]:
+    """RF-001, CB-012: una guía declara su carácter y su rango en el encabezado."""
+    if declaracion_de_rango(texto):
+        return []
+    return [f"{nombre} no declara carácter no normativo y rango «Sin rango» en el encabezado"]
+
+
+def documentos_del_corpus() -> list[Path]:
+    """Guías y referencias del corpus que deben declarar su carácter y su rango."""
+    rutas = sorted(CORPUS_DIR.glob("guia_*.md"))
+    rutas += sorted(CORPUS_DIR.glob("referencia_*.md"))
+    rutas.append(CORPUS_DIR / "compendio_sdd.md")
+    return [ruta for ruta in rutas if ruta.exists()]
+
+
+def problemas_de_guias(rutas) -> list[str]:
+    """RF-001: cada documento del corpus declara carácter y rango en el encabezado."""
+    problemas: list[str] = []
+    for ruta in rutas:
+        problemas += problemas_de_guia(ruta.name, ruta.read_text(encoding="utf-8"))
+    return problemas
+
+
+# ------------------------------ RF-014: consistencia del estado de specs
+
+
+def estados_del_indice(texto: str) -> dict[str, str]:
+    """Estado declarado por spec en `specs/INDEX.md`."""
+    estados: dict[str, str] = {}
+    for linea in texto.splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 3 and re.fullmatch(r"SPEC-\d{3}", celdas[0]):
+            estados[celdas[0]] = celdas[2]
+    return estados
+
+
+def estados_de_memoria(memory: str) -> dict[str, str]:
+    """Estado declarado por spec en la línea de estado de `MEMORY.md`.
+
+    El valor vacío declara que el estado lo fija el frontmatter de la spec.
+    """
+    linea = next((l for l in memory.splitlines() if re.search(r"(?i)estado de specs", l)), "")
+    declarados: dict[str, str] = {}
+    for clausula in linea.split(";"):
+        ids = re.findall(r"SPEC-(\d{3})", clausula)
+        if not ids:
+            continue
+        cola = clausula[clausula.rfind(f"SPEC-{ids[-1]}") + len(f"SPEC-{ids[-1]}"):]
+        cola = re.sub(r"[`*_.]", " ", cola)
+        estado = ""
+        for palabra in cola.split():
+            if palabra.lower() in SINONIMOS_ESTADO:
+                estado = SINONIMOS_ESTADO[palabra.lower()]
+                break
+        if len(ids) == 2 and re.search(r"\ba\b", clausula):
+            inicio, fin = sorted(int(valor) for valor in ids)
+            objetivo = [f"SPEC-{n:03d}" for n in range(inicio, fin + 1)]
+        else:
+            objetivo = [f"SPEC-{valor}" for valor in ids]
+        for spec_id in objetivo:
+            declarados[spec_id] = estado
+    return declarados
+
+
+def problemas_de_consistencia_documental(memory: str, index_texto: str,
+                                         frontmatter: dict[str, str]) -> list[str]:
+    """RF-014, CB-013: el estado coincide entre `MEMORY.md`, `INDEX.md` y el frontmatter."""
+    problemas: list[str] = []
+    indice = estados_del_indice(index_texto)
+    declarados = estados_de_memoria(memory)
+    for spec_id, estado_indice in sorted(indice.items()):
+        if spec_id not in declarados:
+            problemas.append(f"MEMORY.md no declara el estado de {spec_id}")
+            continue
+        esperado = declarados[spec_id] or frontmatter.get(spec_id, "")
+        if esperado != estado_indice:
+            problemas.append(f"MEMORY.md declara {spec_id} en «{esperado}» y specs/INDEX.md "
+                             f"declara «{estado_indice}»")
+        del_frontmatter = frontmatter.get(spec_id, "")
+        if del_frontmatter and del_frontmatter != estado_indice:
+            problemas.append(f"specs/INDEX.md declara {spec_id} en «{estado_indice}» y su "
+                             f"frontmatter declara «{del_frontmatter}»")
+    return problemas
+
+
+def estados_del_frontmatter() -> dict[str, str]:
+    """Estado del frontmatter de cada `spec.md` del corpus."""
+    estados: dict[str, str] = {}
+    for ruta in sorted((ROOT / "specs").glob("*/spec.md")):
+        texto = ruta.read_text(encoding="utf-8")
+        identificador = re.search(r"(?m)^id:\s*(SPEC-\d{3})\s*$", texto)
+        estado = re.search(r"(?m)^status:\s*(\w+)\s*$", texto)
+        if identificador and estado:
+            estados[identificador.group(1)] = estado.group(1)
+    return estados
+
+
+# -------------------------------- RF-015: inventario del corpus
+
+
+def archivos_del_corpus() -> list[Path]:
+    """Archivos que la tabla de inventario debe registrar."""
+    rutas = sorted(CORPUS_DIR.glob("*.md"))
+    rutas += sorted((CORPUS_DIR / "plantillas").glob("*.md"))
+    firmantes = CORPUS_DIR / "firmantes_autorizados"
+    if firmantes.exists():
+        rutas.append(firmantes)
+    return rutas
+
+
+def problemas_de_inventario(readme: str) -> list[str]:
+    """RF-015, CB-013: la tabla de inventario registra cada archivo del corpus."""
+    problemas: list[str] = []
+    for ruta in archivos_del_corpus():
+        relativa = ruta.relative_to(ROOT).as_posix()
+        if f"`{relativa}`" not in readme:
+            problemas.append(f"docs/sdd/README.md no registra la fila de {relativa}")
+    if f"`{INFORME_REAUDITORIA}`" not in readme:
+        problemas.append(f"docs/sdd/README.md no registra la fila del informe {INFORME_REAUDITORIA}")
+    return problemas
+
+
+# ------------------------------ RF-016: historial de releases
+
+
+def _version_semver(valor: str) -> tuple[int, int, int]:
+    return tuple(int(parte) for parte in valor.strip("`").lstrip("v").split("."))  # type: ignore[return-value]
+
+
+def releases_publicados(changelog: str) -> list[str]:
+    """Tags de los releases publicados en el registro de cambios."""
+    return re.findall(r"(?m)^## \[(v\d+\.\d+\.\d+)\]", changelog)
+
+
+def problemas_de_historial(changelog: str) -> list[str]:
+    """RF-016: el historial declara una fila por release publicado, en orden ascendente."""
+    publicados = releases_publicados(changelog)
+    if not publicados:
+        return ["el registro de cambios no declara releases publicados"]
+    historial = seccion(changelog, r"(?i)historial de releases")
+    if not historial:
+        return ["el registro de cambios no declara la sección «Historial de releases»"]
+    filas: list[list[str]] = []
+    for linea in historial.splitlines():
+        if not linea.strip().startswith("|"):
+            continue
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 3 and re.fullmatch(r"`?v\d+\.\d+\.\d+`?", celdas[0]):
+            filas.append(celdas)
+    declarados = [celda[0].strip("`") for celda in filas]
+    problemas: list[str] = []
+    if declarados != sorted(declarados, key=_version_semver):
+        problemas.append(f"el historial no está en orden ascendente: {declarados}")
+    for version in sorted(publicados, key=_version_semver):
+        if version not in declarados:
+            problemas.append(f"el historial no registra el release {version}")
+    for celda in filas:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", celda[1]):
+            problemas.append(f"la fila de {celda[0]} no declara la fecha ISO")
+        if celda[0].strip("`") != celda[2].strip("`"):
+            problemas.append(f"la fila de {celda[0]} no declara el tag")
+    return problemas
+
+
+# ------------------------------ RF-002 y RF-009: etapas del orquestador
+
+
+def etapas_del_orquestador(texto: str) -> list[tuple[int, str]]:
+    """Filas numeradas de la tabla de etapas del rol orquestador."""
+    etapas: list[tuple[int, str]] = []
+    for linea in cuerpo(texto).splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) < 2:
+            continue
+        coincidencia = re.fullmatch(r"(\d) (Specify|Clarify|Plan|Tasks|Implement|Validate|Release)",
+                                    celdas[0])
+        if coincidencia:
+            etapas.append((int(coincidencia.group(1)), coincidencia.group(2)))
+    return etapas
+
+
+def problemas_de_etapas(etapas: list[tuple[int, str]]) -> list[str]:
+    """RF-002: siete etapas numeradas de 1 Specify a 7 Release."""
+    problemas: list[str] = []
+    if [numero for numero, _ in etapas] != list(range(1, 8)):
+        problemas.append(f"la tabla no numera siete etapas de 1 a 7: {etapas}")
+    if [nombre for _, nombre in etapas] != list(ETAPAS_DEL_CICLO):
+        problemas.append(f"la tabla no declara las siete etapas del ciclo: {etapas}")
+    return problemas
+
+
+def atribuciones_de_escritura(entradas: list[dict], rutas=RUTAS_SPECS) -> list[str]:
+    """Rutas de `specs/` con escritura concedida por la matriz."""
+    return [ruta for ruta in rutas if resolver(entradas, "edit", ruta) == "allow"]
+
+
+class TestDocumentosNormativos(unittest.TestCase):
+    """RF-004, RF-005, RF-008, RF-012 (T-009): documentos normativos corregidos."""
+
+    def setUp(self):
+        self.protocolo = texto_de_ruta(PROTOCOLO_PATH)
+        self.agents = texto_de_ruta(AGENTS_PATH)
+        self.flujo = texto_de_ruta(FLUJO_GIT_PATH)
+
+    def test_contrato_de_firma_verificada(self):
+        """RF-004, CA-004: la firma del commit de aprobación figura entre las verificadas."""
+        self.assertEqual(problemas_de_firma_verificada(self.protocolo, self.agents), [],
+                         "el contrato del validador y AGENTS.md deben declarar la firma verificada")
+        anterior = (
+            "## 14. Contrato del validador\n\n"
+            "**Comprobaciones verificadas.** Frontmatter, cobertura y consistencia.\n\n"
+            "**Comprobaciones no verificadas.** La firma del commit de aprobación y la "
+            "pertenencia de la clave a `docs/sdd/firmantes_autorizados`.\n"
+        )
+        self.assertTrue(
+            problemas_de_firma_verificada(anterior, self.agents),
+            "la comprobación no detecta la afirmación anterior sobre la firma no verificada",
+        )
+        sintetico_agents = re.sub(r"(?i)verifica(?=[^\n]{0,80}firma)", "no acredita",
+                                  self.agents, count=1)
+        self.assertTrue(
+            problemas_de_firma_verificada(self.protocolo, sintetico_agents),
+            "la comprobación no detecta la negación de la firma en AGENTS.md",
+        )
+
+    def test_ventanas_de_legado(self):
+        """RF-005, CB-011, CA-005: dos ventanas con motivo y límite, contrastadas con el validador."""
+        problemas = problemas_de_ventanas_de_legado(
+            self.protocolo, set(validador.LEGACY_SPECS), set(validador.TRACE_LEGACY_SPECS))
+        self.assertEqual(problemas, [], "las dos ventanas deben coincidir con las constantes del validador")
+        filas = ventanas_de_legado(self.protocolo)
+        self.assertEqual(len(filas), 2, f"el protocolo debe declarar dos ventanas de legado: {filas}")
+        sin_motivo = (
+            "| Ventana | Specs | Comprobaciones | Motivo | Límite |\n"
+            "|---|---|---|---|---|\n"
+            "| Estructural | `SPEC-001` a `SPEC-009` | `C-01` a `C-13` |  | No admite una spec posterior |\n"
+            "| Trazabilidad | `SPEC-008` a `SPEC-011` | `C-14` a `C-18` | Se validaron antes | No se amplía sin una spec nueva |\n"
+        )
+        self.assertTrue(
+            problemas_de_ventanas_de_legado(sin_motivo, set(validador.LEGACY_SPECS),
+                                            set(validador.TRACE_LEGACY_SPECS)),
+            "la comprobación no detecta la ventana sin motivo",
+        )
+
+    def test_tabla_de_escritura_de_estados(self):
+        """RF-008, CB-016, CA-008: T4 a T7 las escribe el planner sobre la verificación."""
+        self.assertEqual(problemas_de_escritura_de_estados(self.protocolo), [],
+                         "§5 debe atribuir T4 a T7 al planner sobre la verificación registrada")
+        anterior = (
+            "**Escritura de estados.** El `planner` escribe la creación de la spec en `draft` y "
+            "las transiciones T1, T2 y T3. El orquestador escribe las transiciones T4, T5, T6 y T7.\n"
+        )
+        self.assertTrue(
+            problemas_de_escritura_de_estados(f"## 5. Máquina de estados\n\n{anterior}"),
+            "la comprobación no detecta la atribución anterior al orquestador",
+        )
+
+    def test_sincronizacion_por_ancestria(self):
+        """RF-012, CB-003, CB-004, CA-012: la sincronización se expresa por ancestría."""
+        self.assertEqual(problemas_de_sincronizacion(self.flujo), [],
+                         "la norma de integración debe expresar la sincronización por ancestría")
+        anterior = (
+            "**Sincronización previa.** Antes del empaquetado, `dev` se sincroniza con `main` y "
+            "la comprobación debe devolver dos ceros:\n\n"
+            "```bash\ngit rev-list --left-right --count dev...main\n```\n"
+        )
+        self.assertTrue(problemas_de_sincronizacion(anterior),
+                        "la comprobación no detecta la exigencia anterior de la salida 0 0")
+
+
+class TestDocumentosSinRango(unittest.TestCase):
+    """RF-001, RF-014, RF-015, RF-016 (T-010): documentos sin rango y registros del corpus."""
+
+    def test_guias_del_corpus(self):
+        """RF-001, CB-012, CA-001: cada guía y referencia declara carácter y rango."""
+        rutas = documentos_del_corpus()
+        self.assertGreaterEqual(len(rutas), 15,
+                                f"el corpus declara guías y referencias: {[r.name for r in rutas]}")
+        self.assertEqual(problemas_de_guias(rutas), [],
+                         "los documentos del corpus deben declarar carácter y rango")
+        cabeza = "> **Documento de referencia (no normativo).** Su rango es «Sin rango».\n"
+        self.assertEqual(problemas_de_guia("guia_maestra_sdd.md", cabeza), [],
+                         "el detector rechaza la declaración correcta")
+        anterior = "> **Documento de referencia (no normativo).**\n"
+        self.assertTrue(problemas_de_guia("guia_maestra_sdd.md", anterior),
+                        "la comprobación no detecta la guía sin declaración de rango")
+
+    def test_consistencia_documental(self):
+        """RF-014, CB-013, CA-014: el estado de specs coincide en los tres soportes."""
+        memory = texto_de_ruta(MEMORY_PATH)
+        indice = texto_de_ruta(INDEX_PATH)
+        frontmatter = estados_del_frontmatter()
+        problemas = problemas_de_consistencia_documental(memory, indice, frontmatter)
+        self.assertEqual(problemas, [], "el estado de las specs debe coincidir en los tres soportes")
+        self.assertTrue(frontmatter, "el corpus no declara el frontmatter de sus specs")
+        anterior = memory.replace("validadas", "publicadas", 1)
+        detectados = problemas_de_consistencia_documental(anterior, indice, frontmatter)
+        self.assertTrue(detectados, "la comprobación no detecta el estado divergente")
+        texto = " ".join(detectados)
+        self.assertIn("MEMORY.md", texto, f"el hallazgo debe nombrar el documento: {detectados}")
+        self.assertIn("SPEC-", texto, f"el hallazgo debe nombrar la spec: {detectados}")
+
+    def test_inventario_del_corpus(self):
+        """RF-015, CB-013, CA-014: la tabla de inventario registra cada archivo del corpus."""
+        readme = texto_de_ruta(CORPUS_DIR / "README.md")
+        self.assertEqual(problemas_de_inventario(readme), [],
+                         "la tabla de inventario debe registrar los archivos del corpus")
+        fila_retirada = next((linea for linea in readme.splitlines()
+                              if "`docs/sdd/evolucion_sdlc_a_sdd.md`" in linea), "")
+        self.assertTrue(fila_retirada, "el índice no registra la referencia de evolución del SDD")
+        copia = readme.replace(fila_retirada + "\n", "")
+        detectados = problemas_de_inventario(copia)
+        self.assertTrue(detectados, "la comprobación no detecta el archivo sin fila")
+        self.assertIn("evolucion_sdlc_a_sdd.md", " ".join(detectados),
+                      f"el hallazgo debe nombrar el archivo sin fila: {detectados}")
+
+    def test_historial_de_releases(self):
+        """RF-016, CB-013, CA-014: el historial registra los ocho releases publicados."""
+        changelog = texto_de_ruta(CHANGELOG_PATH)
+        problemas = problemas_de_historial(changelog)
+        self.assertEqual(problemas, [], "el historial debe registrar los releases publicados")
+        self.assertEqual(len(releases_publicados(changelog)), 8,
+                         "el registro de cambios declara ocho releases publicados")
+        sintetico = (
+            "# Changelog\n\n## [Unreleased]\n\n## [v0.2.0] - 2026-11-12\n\n## [v0.1.0] - 2026-11-10\n\n"
+            "## Historial de releases\n\n| Versión | Fecha | Tag |\n|---|---|---|\n"
+            "| `v0.1.0` | 2026-11-10 | `v0.1.0` |\n"
+        )
+        detectados = problemas_de_historial(sintetico)
+        self.assertTrue(detectados, "la comprobación no detecta el release sin fila")
+        self.assertIn("v0.2.0", " ".join(detectados),
+                      f"el hallazgo debe nombrar el release sin fila: {detectados}")
 
 
 if __name__ == "__main__":

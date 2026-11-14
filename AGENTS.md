@@ -43,6 +43,7 @@ Cada requisito se redacta en notación EARS y mantiene la cadena `RF/CB → CA �
 Un cambio de requisito posterior a Clarify devuelve la spec a `draft` y exige nueva clarificación.
 La numeración de identificadores usa tres dígitos y un identificador no se reutiliza.
 Rol `auditor` (auditoría): lectura de la base completa, sin edición de requisitos y sin aprobación de compuertas; implementado en `.opencode/agents/auditor.md`. Los seis roles de agente son `sdd`, `planner`, `coder`, `reviewer`, `documenter` y `auditor`.
+El orquestador `sdd` verifica G2, G3 y G5, ejecuta el validador y `git add` y `git commit` de los artefactos de control, registra el resultado de cada verificación y no redacta artefacto alguno.
 
 ## Aprobaciones
 
@@ -63,17 +64,17 @@ Un agente que redacta una línea de aprobación produce un registro sin valor y 
 
 ## Git
 
-- Ramas de trabajo `feat/*`, `fix/*` y `hotfix/*`; ramas de empaquetado `release/vX-Y-Z` en minúsculas, números y guiones.
+- Ramas de trabajo `feat/*`, `fix/*`, `hotfix/*` y `docs/*`; ramas de empaquetado `release/vX-Y-Z` en minúsculas, números y guiones.
 - Integración exclusiva por Pull Request con `merge --no-ff`; rebase, squash y copia manual están prohibidos.
 - Tags anotados `vMAJOR.MINOR.PATCH` con mensaje `Release vX.Y.Z` y commit objetivo verificado.
 - `main` y `dev` protegidas: sin commit ni push directos.
-- La rama de trabajo se elimina tras confirmar la integración y `dev` se sincroniza con `main` antes del empaquetado.
+- La rama de trabajo se elimina tras confirmar la integración y `main` es ancestro de `dev` antes del empaquetado.
 
 ## Validación
 
 Antes de integrar: `git diff --check`, `git status --short`, revisión del alcance declarado y `python tools\sdd\validate.py --all`.
 Un script se declara validado solo si se ejecuta con el modelo configurado; `llama-bench` no sustituye la prueba de un servidor con contexto largo.
-El validador comprueba estructura, estados, trazabilidad y alcance declarado; no acredita la firma del commit de aprobación ni la conformidad del régimen.
+El validador verifica la firma criptográfica del commit de aprobación y la pertenencia de la clave firmante a `docs/sdd/firmantes_autorizados`, además de estructura, estados, trazabilidad y alcance declarado; no acredita la conformidad del régimen.
 Un resultado favorable del validador no autoriza compuerta alguna.
 
 ## MCP y secretos

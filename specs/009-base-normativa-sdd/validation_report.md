@@ -120,3 +120,8 @@ Sin brechas abiertas. Las cuatro brechas de las revisiones anteriores están cer
 **Ejecución del validador:** `python tools\sdd\validate.py --spec SPEC-009 --gate G4` devuelve `OK: sin hallazgos.` con código de salida `0`: las 47 filas de la matriz están en PASADO y el dictamen marcado es CONVERGIDO. La ejecución previa a la existencia de este archivo devolvía código `1` por ausencia de `validation_report.md`, como estaba previsto.
 
 **Estado de la compuerta G4:** no aprobada. La aprobación corresponde al propietario, se registra en la sección de aprobaciones de `spec.md` y solo vale dentro de un commit firmado por una clave de `docs/sdd/firmantes_autorizados` (`RF-012`, `CB-004`, `CB-005`). Sí se verificó la firma del commit de G1 `f6faa3b`. Este reporte no declara la compuerta ni la marca.
+
+## Cierre de integración
+
+Merge: 09eaf34
+Release:

@@ -137,3 +137,8 @@ El veredicto global del informe auditado se mantiene en `NO CONFORME`: esta conv
 ## Aprobación
 
 - [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-14)
+
+## Cierre de integración
+
+Merge: 49caac9
+Release:

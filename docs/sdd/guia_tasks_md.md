@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Descomposición Operativa y Secuenciación de `tasks.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El archivo **`tasks.md`** (o plan de ejecución de tareas) representa la **fase de descomposición operativa y secuenciación de trabajo** dentro de la metodología de **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**.
 

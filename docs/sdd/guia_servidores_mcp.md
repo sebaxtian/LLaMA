@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Configuración e Integración de Servidores MCP (Model Context Protocol)**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El **Model Context Protocol (MCP)** es un estándar abierto e interfaz universal impulsada por la industria (creada inicialmente por Anthropic y adoptada ampliamente por plataformas agénticas como **OpenCode**, Claude Code, Cursor, VS Code y OpenAI Codex) que permite conectar a los agentes de Inteligencia Artificial con herramientas externas, bases de datos, APIs y entornos de ejecución en tiempo real de forma segura y estructurada.
 

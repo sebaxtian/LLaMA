@@ -33,12 +33,6 @@ permissions:
     resource: 'opencode.jsonc'
     effect: deny
   - action: edit
-    resource: 'MEMORY.md'
-    effect: deny
-  - action: edit
-    resource: 'CHANGELOG.md'
-    effect: deny
-  - action: edit
     resource: '.env'
     effect: deny
   - action: edit
@@ -46,6 +40,12 @@ permissions:
     effect: allow
   - action: edit
     resource: 'AGENTS.md'
+    effect: allow
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: allow
+  - action: edit
+    resource: 'CHANGELOG.md'
     effect: allow
   - action: shell
     resource: '*'
