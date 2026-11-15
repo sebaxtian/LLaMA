@@ -1,8 +1,8 @@
 ---
 id: SPEC-014
 title: Cierre de las observaciones de la reauditoría final
-status: implemented
-version: 0.6.0
+status: validated
+version: 0.7.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -213,6 +213,7 @@ Cubre: `RNF-004`, `RNF-005`.
 | 0.4.0 | 2026-11-14 | Descomposición en tareas: 13 tareas atómicas con dependencias acíclicas, cobertura completa de `RF`, `RNF` y `CB`, y matriz de tareas y de criterios |
 | 0.5.0 | 2026-11-14 | Implementación del cierre de observaciones finales |
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
+| 0.7.0 | 2026-11-14 | Validación e integración del cierre de observaciones finales |
 
 ### Historial de transiciones
 
@@ -224,3 +225,4 @@ Cubre: `RNF-004`, `RNF-005`.
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 13 tareas atómicas, dependencias acíclicas y cobertura de 5 requisitos funcionales, 5 no funcionales y 7 casos borde |
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, trece tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `cf9caf5` con trece tareas cerradas, 167 pruebas de la suite del mecanismo y 48 de las herramientas de Git en verde |
+| 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `f070cbf`, dictamen `CONVERGIDO` de 17 de 17 filas e integración `b018ab8` con dos padres y rama eliminada |
