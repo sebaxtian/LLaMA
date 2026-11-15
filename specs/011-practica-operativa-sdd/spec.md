@@ -1,13 +1,13 @@
 ---
 id: SPEC-011
 title: Práctica operativa SDD verificable
-status: validated
-version: 0.5.0
+status: released
+version: 0.6.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/practica-operativa-sdd
-release: ""
+release: "v0.7.0"
 supersedes: ""
 superseded_by: ""
 ---
@@ -341,6 +341,7 @@ Cubre: `RF-013`.
 | 0.3.0 | 2026-11-14 | Plan: arquitectura de cinco capas, procedimiento de resolución de permisos, contratos de rol, configuración, flujo y pruebas, diez decisiones técnicas y matriz de cobertura de trece requisitos, ocho no funcionales y diecisiete casos borde |
 | 0.4.0 | 2026-11-14 | Tareas: trece tareas atómicas con dependencias acíclicas, tres escritores declarados, una prueba positiva y un caso negativo por tarea de prueba, y cobertura completa de requisitos y casos borde |
 | 0.5.0 | 2026-11-14 | Práctica operativa implementada con seis agentes, rol `auditor`, CI y 111 pruebas; revisión independiente con cuatro brechas cerradas y dictamen `CONVERGIDO` 38/38; G4 aprobada y estado `validated` |
+| 0.6.0 | 2026-11-14 | Release v0.7.0 |
 
 ### Historial de transiciones
 
@@ -353,3 +354,4 @@ Cubre: `RF-013`.
 | 2026-11-14 | T4 | `tasked` | `implementing` | orquestador | G2 verificada y ejecución agrupada autorizada; trece tareas cerradas con evidencia y 111 pruebas en verde |
 | 2026-11-14 | T5 | `implementing` | `implemented` | orquestador | G3 con `OK: sin hallazgos`, trece tareas cerradas y 111 pruebas en verde |
 | 2026-11-14 | T6 | `implemented` | `validated` | `reviewer` y G4 | `validation_report.md` con dictamen `CONVERGIDO` 38/38 y línea de G4 firmada en `spec.md` |
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 empaquetado con tag anotado pendiente de la firma de G6 |

@@ -89,7 +89,7 @@ Sin brechas abiertas: las 40 filas de la matriz figuran en `PASADO`, las dos eje
 ## Cierre de integración
 
 Merge: e55fca1
-Release:
+Release: v0.7.0
 
 - G5: merge e55fca1 con dos padres; validación posterior a la integración sin hallazgos; rama feat/reauditoria-cierre eliminada en local y en remoto.
 

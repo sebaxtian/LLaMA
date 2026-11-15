@@ -11,13 +11,13 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-005 | Compuertas completas y deuda residual | released | feat/compuertas-completas | v0.5.0 | specs/005-compuertas-completas/ |
 | SPEC-006 | Cierre de observaciones de documentación | released | feat/observaciones-cierre | v0.5.1 | specs/006-observaciones-cierre/ |
 | SPEC-007 | Protección determinista de ramas GitHub | released | feat/branch-protection | v0.6.0 | specs/007-branch-protection/ |
-| SPEC-008 | Auditoría de cumplimiento SDD | validated | feat/auditoria-cumplimiento-sdd | | specs/008-auditoria-cumplimiento-sdd/ |
-| SPEC-009 | Nueva base normativa SDD | validated | feat/base-normativa-sdd-v2 | | specs/009-base-normativa-sdd/ |
-| SPEC-010 | Mecanismo de control SDD verificable | validated | feat/mecanismo-control-sdd | | specs/010-mecanismo-control-sdd/ |
-| SPEC-011 | Práctica operativa SDD verificable | validated | feat/practica-operativa-sdd | | specs/011-practica-operativa-sdd/ |
-| SPEC-012 | Trazabilidad profunda SDD verificable | validated | feat/trazabilidad-profunda-sdd | | specs/012-trazabilidad-profunda-sdd/ |
-| SPEC-013 | Cierre de la reauditoría de conformidad | validated | feat/reauditoria-cierre | | specs/013-cierre-reauditoria-conformidad/ |
-| SPEC-014 | Cierre de las observaciones de la reauditoría final | validated | feat/cierre-observaciones-finales | | specs/014-cierre-observaciones-finales/ |
+| SPEC-008 | Auditoría de cumplimiento SDD | released | feat/auditoria-cumplimiento-sdd | v0.7.0 | specs/008-auditoria-cumplimiento-sdd/ |
+| SPEC-009 | Nueva base normativa SDD | released | feat/base-normativa-sdd-v2 | v0.7.0 | specs/009-base-normativa-sdd/ |
+| SPEC-010 | Mecanismo de control SDD verificable | released | feat/mecanismo-control-sdd | v0.7.0 | specs/010-mecanismo-control-sdd/ |
+| SPEC-011 | Práctica operativa SDD verificable | released | feat/practica-operativa-sdd | v0.7.0 | specs/011-practica-operativa-sdd/ |
+| SPEC-012 | Trazabilidad profunda SDD verificable | released | feat/trazabilidad-profunda-sdd | v0.7.0 | specs/012-trazabilidad-profunda-sdd/ |
+| SPEC-013 | Cierre de la reauditoría de conformidad | released | feat/reauditoria-cierre | v0.7.0 | specs/013-cierre-reauditoria-conformidad/ |
+| SPEC-014 | Cierre de las observaciones de la reauditoría final | released | feat/cierre-observaciones-finales | v0.7.0 | specs/014-cierre-observaciones-finales/ |
 
 ## Reglas
 

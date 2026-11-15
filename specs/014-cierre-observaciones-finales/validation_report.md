@@ -52,6 +52,6 @@ Sin brechas abiertas: las 17 filas de la matriz figuran en `PASADO`, las dos eje
 ## Cierre de integración
 
 Merge: b018ab8
-Release:
+Release: v0.7.0
 
 - G5: merge b018ab8 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-observaciones-finales eliminada en local y en remoto.

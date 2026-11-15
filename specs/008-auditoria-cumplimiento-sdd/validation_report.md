@@ -141,4 +141,4 @@ El veredicto global del informe auditado se mantiene en `NO CONFORME`: esta conv
 ## Cierre de integración
 
 Merge: 49caac9
-Release:
+Release: v0.7.0
