@@ -46,13 +46,13 @@ permissions:
     effect: allow
   - action: edit
     resource: '.github/**'
-    effect: allow
+    effect: deny
   - action: edit
     resource: 'opencode.jsonc'
-    effect: allow
+    effect: deny
   - action: edit
     resource: 'MEMORY.md'
-    effect: allow
+    effect: deny
   - action: edit
     resource: 'specs/**'
     effect: deny

@@ -92,3 +92,23 @@ Merge: e55fca1
 Release:
 
 - G5: merge e55fca1 con dos padres; validación posterior a la integración sin hallazgos; rama feat/reauditoria-cierre eliminada en local y en remoto.
+
+## Nota de cierre de la reauditoría final
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-014` por delegación escrita del propietario, a continuación de la sección de cierre de integración y sin alterar la matriz de trazabilidad, las brechas, el dictamen ni esa sección. El informe `docs/sdd/auditoria_final_v0_7_0.md`, sobre el commit auditado `d490190`, emite el veredicto global `CONFORME CON OBSERVACIONES`, equivalente a `PARCIAL` en la escala de `docs/sdd/plantillas/informe_auditoria.md`: quince observaciones cerradas con artefacto y evidencia, una cerrada por exención declarada —`AUD-037`— y cero vigentes de las dieciséis de la reauditoría previa. Las siete observaciones nuevas de ese informe se atienden en `SPEC-014` y en el PR #13: `AUD-038`, `AUD-067` y `AUD-098` quedaron cerradas en el PR #13, y `AUD-066`, `AUD-075`, `AUD-101` y `AUD-102` se cierran en `SPEC-014` con el artefacto y la evidencia que declara su paquete de cierre. La evidencia diferida de `RNF-001` y de `CA-015` queda resuelta por ese informe: la evidencia existe, se transcribe en la nota inferior y acredita la cláusula de cero observaciones abiertas de las dieciséis; no acredita el valor literal `CONFORME` ni la cláusula de diez de diez dimensiones sin observación vigente, porque cinco de las once dimensiones de ese corte conservan observación de las siete nuevas, y esa diferencia es `AUD-075`, cerrada por esta nota sin reabrir el requisito publicado y sin alterar la fila de la matriz ni el dictamen. El cierre transcrito y sus artefactos constan a continuación.
+
+- Veredicto del informe final: `CONFORME CON OBSERVACIONES`, equivalente a `PARCIAL` en la escala de la plantilla de auditoría.
+- Commit auditado: `d490190`.
+- Cierre previo: 16 observaciones de la reauditoría previa.
+- Artefactos previos: 15 observaciones con artefacto y evidencia.
+- Exenciones declaradas: 1 observación por exención (`AUD-037`).
+- Observaciones vigentes de las dieciséis: 0.
+- Causa del veredicto: 7 observaciones nuevas del informe final, 5 de severidad Media y 2 de Baja.
+- `AUD-038`, `AUD-067` y `AUD-098`: cerradas en el PR #13.
+- `AUD-066`: cerrada por `.opencode/agents/sdd.md` con `.opencode/**` como única concesión de escritura del orquestador.
+- `AUD-075`: cerrada por `specs/013-cierre-reauditoria-conformidad/validation_report.md` con esta nota de cierre.
+- `AUD-101`: cerrada por `.github/workflows/sdd.yml` con `fetch-depth: 0` y `fetch-tags: true`.
+- `AUD-102`: cerrada por `.github/workflows/sdd.yml` con el paso nombrado de `tools/git/tests`.
+- Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+
+Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.
