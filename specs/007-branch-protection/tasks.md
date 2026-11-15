@@ -21,6 +21,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-001`, `CB-009`, `RNF-001`, `CA-009`.
+- **Criterio de aceptación:** `CA-001`, `CA-009`.
 - **Archivos permitidos:** `docs/Flujo_de_Trabajo_Git.md`, `docs/sdd/PROTOCOLO_OPERATIVO.md`.
 - **Estimación:** 25 min.
 - **Validación:**
@@ -28,7 +29,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
   2. `Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern "release/vX-Y-Z"` confirma la exención formal de spec en §8.
   3. `python tools/sdd/validate.py --all` devuelve código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-001, CB-009 y RNF-001: «Reglas de protección activas e independientes verificadas en main y dev contra API GitHub con 0 discrepancias», «Admisión formal de ramas transitorias de empaquetado release/vX-Y-Z exentas de spec en §8» y «Concordancia total entre reglas GitHub aplicadas y políticas en docs/Flujo_de_Trabajo_Git.md»; dictamen CONVERGIDO.
   1. `Select-String -Path docs/Flujo_de_Trabajo_Git.md -Pattern "release/vX-Y-Z"` confirmó 8 coincidencias normativas incluyendo la definición formal en §Ramas, la gramática en §Nombres de ramas (`^(feat|fix|hotfix|release)/(?=[a-z0-9-]{3,63}$)[a-z0-9]+(-[a-z0-9]+)*$`), la eliminación del push directo en `dev` y el nuevo flujo de empaquetado e integración por Pull Request.
   2. `Select-String -Path docs/sdd/PROTOCOLO_OPERATIVO.md -Pattern "release/vX-Y-Z"` confirmó la exención formal de spec SDD previa para ramas operativas de empaquetado en §8.
   3. `python tools/sdd/validate.py --all` finalizó con código de salida `0` sin errores.
@@ -40,6 +41,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-001`.
 - **Requisitos cubiertos:** `RF-001`, `RF-002`, `RNF-001`, `CB-005`.
+- **Criterio de aceptación:** `CA-001`.
 - **Archivos permitidos:** `AGENTS.md`, `MEMORY.md`.
 - **Estimación:** 20 min.
 - **Validación:**
@@ -48,7 +50,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
   3. `Select-String -Path MEMORY.md -Pattern "protección de ramas"` confirma el registro de las reglas remotas activas en GitHub y la desactivación de fusiones squash y rebase.
   4. `python tools/sdd/validate.py --all` devuelve código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-001, RF-002, RNF-001 y CB-005: «Reglas de protección activas e independientes verificadas en main y dev contra API GitHub con 0 discrepancias», «Rechazo remoto determinista de push directo fuera de PR con error GH006» y «Intento de push directo a dev con commit chore: prepare release v0.1.0 rechazado con código 1 (GH006)»; dictamen CONVERGIDO.
   1. `python -c "lines = [l for l in open('AGENTS.md', encoding='utf-8').read().splitlines() if l.strip()]; assert 30 <= len(lines) <= 70..." ejecutó con código `0` (42 líneas útiles comprobadas, dentro del rango estricto 30–70).
   2. `Select-String -Path AGENTS.md -Pattern "release/vX-Y-Z"` confirmó la incorporación de ramas de empaquetado `release/vX-Y-Z` junto a `feat/*`, `fix/*` y `hotfix/*`, además de la restricción explícita de ramas protegidas `dev` y `main` canalizadas exclusivamente mediante Pull Request.
   3. `Select-String -Path MEMORY.md -Pattern "protección de ramas"` confirmó el registro de protección de ramas formal (política local y GitHub), la admisión de ramas `release/vX-Y-Z` y la desactivación de squash y rebase en favor exclusivo de `merge --no-ff`.
@@ -61,13 +63,14 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** ninguna.
 - **Requisitos cubiertos:** `RF-001`, `RF-005`, `RF-008`, `RF-009`, `RF-010`, `CB-004`, `CB-010`, `CB-011`, `RNF-005`, `CA-004`, `CA-010`, `CA-011`.
+- **Criterio de aceptación:** `CA-001`, `CA-004`, `CA-008`, `CA-010`, `CA-011`.
 - **Archivos permitidos:** `tools/git/protection_rules/repo_settings.json`, `tools/git/protection_rules/main.json`, `tools/git/protection_rules/dev.json`.
 - **Estimación:** 20 min.
 - **Validación:**
   1. `python -m json.tool tools/git/protection_rules/repo_settings.json`, `python -m json.tool tools/git/protection_rules/main.json` y `python -m json.tool tools/git/protection_rules/dev.json` ejecutan con código `0`.
   2. `python -c "import json; r=json.load(open('tools/git/protection_rules/repo_settings.json')); assert r['allow_merge_commit'] is True and r['allow_squash_merge'] is False and r['allow_rebase_merge'] is False; m=json.load(open('tools/git/protection_rules/main.json')); assert m['enforce_admins'] is True and m['allow_force_pushes'] is False and m['allow_deletions'] is False and m['required_pull_request_reviews']['required_approving_review_count'] == 0"` devuelve código `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-001, RF-005, RF-008, RF-009, RF-010, CB-004, CB-010, CB-011 y RNF-005: «Verificación de ajustes de repositorio en API GitHub: allow_merge_commit: true, allow_squash_merge: false, allow_rebase_merge: false», «enforce_admins: true y restrictions», «required_approving_review_count: 0 activo y verificado en GitHub para fase unipersonal» y «Sin exigencia de firmas criptográficas (required_signatures ausente)»; dictamen CONVERGIDO.
   1. `python -m json.tool` validó la sintaxis JSON correcta en `tools/git/protection_rules/repo_settings.json`, `tools/git/protection_rules/main.json` y `tools/git/protection_rules/dev.json` devolviendo código `0`.
   2. La aserción de configuración confirmó `allow_merge_commit: true`, `allow_squash_merge: false`, `allow_rebase_merge: false`, `delete_branch_on_merge: true` en `repo_settings.json`, y en `main.json` / `dev.json` confirmó `enforce_admins: true`, `allow_force_pushes: false`, `allow_deletions: false`, `required_approving_review_count: 0`, `dismiss_stale_reviews: true`, `restrictions: {users: [], teams: [], apps: []}` y `required_conversation_resolution: true`, finalizando con código `0`.
 
@@ -78,13 +81,14 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-003`.
 - **Requisitos cubiertos:** `RF-001`, `RF-005`, `RF-006`, `RF-008`, `RF-009`, `RF-010`, `CB-010`, `CB-011`, `RNF-004`, `RNF-005`, `CA-004`, `CA-005`, `CA-008`, `CA-010`, `CA-011`.
+- **Criterio de aceptación:** `CA-001`, `CA-004`, `CA-005`, `CA-008`, `CA-010`, `CA-011`.
 - **Archivos permitidos:** `tools/git/configure_branch_protection.py`, `tools/git/verify_branch_protection.py`.
 - **Estimación:** 30 min.
 - **Validación:**
   1. `python -m py_compile tools/git/configure_branch_protection.py tools/git/verify_branch_protection.py` compila sin errores devolviendo código `0`.
   2. `python tools/git/configure_branch_protection.py --help` y `python tools/git/verify_branch_protection.py --help` devuelven la ayuda CLI con código `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-005, RF-006, RF-008, RF-009, RF-010, RNF-004 y RNF-005: «Verificación de ajustes de repositorio en API GitHub», «Verificación de esquema canónico de protección con soporte de comprobaciones y validación diferida sin status checks espurios», «enforce_admins: true y restrictions» y «Mensajes remotos descriptivos de error emitidos por GitHub»; dictamen CONVERGIDO.
   1. `python -m py_compile tools/git/configure_branch_protection.py tools/git/verify_branch_protection.py` compiló sin errores devolviendo código de salida `0`.
   2. `python tools/git/configure_branch_protection.py --help` y `python tools/git/verify_branch_protection.py --help` desplegaron la ayuda CLI interactiva con código `0`, exponiendo los subcomandos `repo-settings`, `branch`, `all` y los argumentos de auditoría y comparación.
   3. La ejecución preliminar de `python tools/git/verify_branch_protection.py --repo-only` confirmó la detección determinista de discrepancias contra los ajustes del repositorio en GitHub (`allow_squash_merge`, `allow_rebase_merge` y `delete_branch_on_merge`), retornando código de salida `1` tal como exige la especificación.
@@ -96,11 +100,12 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-004`.
 - **Requisitos cubiertos:** `RF-001`, `RF-005`, `RF-006`, `RF-008`, `RF-009`, `RF-010`, `RNF-005`, `CB-004`.
+- **Criterio de aceptación:** `CA-001`, `CA-004`, `CA-005`, `CA-008`, `CA-010`, `CA-011`.
 - **Archivos permitidos:** `tools/git/tests/test_verify_branch_protection.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest discover -s tools/git/tests` ejecuta los casos de prueba unitarios (comparación de configuración canónica, detección de desvíos en métodos de fusión, validación de parámetros de protección y manejo de errores) finalizando con resultado `OK` y código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-001, RF-006, CB-004 y RNF-005: «verificadas en main y dev contra API GitHub con 0 discrepancias», «Verificación de esquema canónico de protección», «allow_squash_merge: false y allow_rebase_merge: false impiden cualquier fusión squash o rebase» y «Especificación determinista declarativa versionada en JSON y verificable de forma automatizada»; dictamen CONVERGIDO.
   1. `python -m unittest discover -s tools/git/tests` ejecutó 37 pruebas unitarias completas basadas en el módulo estándar `unittest` (sin dependencias externas), finalizando con resultado `OK` y código de salida `0`.
   2. Pruebas de ajustes de repositorio (`TestCompareRepoSettings`): validación de caso idéntico (0 diferencias), detección precisa de desvíos en `allow_squash_merge`, `allow_rebase_merge` y `allow_merge_commit`, manejo de campos faltantes y campos opcionales (`delete_branch_on_merge`, `allow_auto_merge`).
   3. Pruebas de reglas de protección (`TestCompareProtectionDicts`): validación de caso idéntico con formato booleano directo y con payload anidado `{"enabled": bool}` devuelto por la API de GitHub; detección determinista de desvíos en `enforce_admins`, `allow_force_pushes`, `allow_deletions`, `required_approving_review_count`, `required_conversation_resolution`, estado nulo de `required_pull_request_reviews`, discrepancias en listas de `restrictions` (`users`, `teams`, `apps`) y presencia indebida de `required_status_checks`.
@@ -115,11 +120,12 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-003`, `T-004`, `T-005`.
 - **Requisitos cubiertos:** `RF-005`, `CB-004`, `CA-004`, `RNF-003`.
+- **Criterio de aceptación:** `CA-004`.
 - **Archivos permitidos:** `tools/git/configure_branch_protection.py`, `tools/git/verify_branch_protection.py`.
 - **Estimación:** 20 min.
 - **Validación:** `gh api repos/:owner/:repo --jq "{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}"` devuelve exactamente `{"merge": true, "squash": false, "rebase": false}` con código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-005, CB-004 y RNF-003: «Verificación de ajustes de repositorio en API GitHub» y «allow_squash_merge: false y allow_rebase_merge: false impiden cualquier fusión squash o rebase»; dictamen CONVERGIDO.
   1. `python tools/git/configure_branch_protection.py repo-settings` ejecutado exitosamente contra el repositorio remoto `sebaxtian/LLaMA`, aplicando `allow_merge_commit: true`, `allow_squash_merge: false`, `allow_rebase_merge: false` y `delete_branch_on_merge: true` desde `tools/git/protection_rules/repo_settings.json` con código de salida `0`.
   2. `python tools/git/verify_branch_protection.py --repo-only` confirmó convergencia plena (`PASS`, 0 discrepancias) con código de salida `0`.
   3. Formato JSON estructurado `python tools/git/verify_branch_protection.py --repo-only --json` verificó `{"status": "PASS", "discrepancies": {"repo_settings": []}}`.
@@ -132,13 +138,14 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-006`.
 - **Requisitos cubiertos:** `RF-001`, `RF-002`, `RF-003`, `RF-004`, `RF-008`, `RF-009`, `RF-010`, `CB-010`, `CB-011`, `RNF-002`, `RNF-003`, `RNF-006`, `RNF-007`, `CA-001`, `CA-002`, `CA-003`, `CA-008`, `CA-010`, `CA-011`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-008`, `CA-010`, `CA-011`.
 - **Archivos permitidos:** `tools/git/configure_branch_protection.py`, `tools/git/verify_branch_protection.py`.
 - **Estimación:** 20 min.
 - **Validación:**
   1. `gh api repos/:owner/:repo/branches/main/protection --jq "{force: .allow_force_pushes.enabled, delete: .allow_deletions.enabled, admins: .enforce_admins.enabled, reviews: .required_pull_request_reviews.required_approving_review_count, restrictions: (.restrictions != null)}"` devuelve exactamente `{"force": false, "delete": false, "admins": true, "reviews": 0, "restrictions": true}` con código `0`.
   2. `python tools/git/verify_branch_protection.py --branch main` devuelve código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-002, RF-003, RF-004, RF-008, RNF-002 y RNF-006: «Rechazo remoto determinista de push directo fuera de PR con error GH006», «Envío forzado rechazado de manera irrevocable por servidor remoto GitHub», «Eliminación remota de ramas dev y main rechazada por el servidor», «enforce_admins: true y restrictions», «Latencia media de respuesta en rechazos remotos de ~2.2 s» y «Acceso administrativo restringido al Propietario»; dictamen CONVERGIDO.
   1. `python tools/git/configure_branch_protection.py branch --branch main --rule-file tools/git/protection_rules/main.json` ejecutado exitosamente contra el repositorio remoto `sebaxtian/LLaMA`, aprovisionando las reglas de protección clásica para la rama `main` desde `tools/git/protection_rules/main.json` con código de salida `0`.
   2. `python tools/git/verify_branch_protection.py --branch main` confirmó convergencia plena (`PASS`, 0 discrepancias) con código de salida `0`.
   3. Formato JSON estructurado `python tools/git/verify_branch_protection.py --branch main --json` verificó `{"status": "PASS", "discrepancies": {"repo_settings": [], "branch_main": []}}`.
@@ -151,13 +158,14 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-006`.
 - **Requisitos cubiertos:** `RF-001`, `RF-002`, `RF-003`, `RF-004`, `RF-007`, `RF-008`, `RF-009`, `RF-010`, `CB-002`, `CB-005`, `CB-010`, `CB-011`, `RNF-002`, `RNF-006`, `RNF-007`, `CA-001`, `CA-002`, `CA-003`, `CA-006`, `CA-008`, `CA-010`, `CA-011`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-006`, `CA-008`, `CA-010`, `CA-011`.
 - **Archivos permitidos:** `tools/git/configure_branch_protection.py`, `tools/git/verify_branch_protection.py`.
 - **Estimación:** 20 min.
 - **Validación:**
   1. `gh api repos/:owner/:repo/branches/dev/protection --jq "{force: .allow_force_pushes.enabled, delete: .allow_deletions.enabled, admins: .enforce_admins.enabled, reviews: .required_pull_request_reviews.required_approving_review_count, restrictions: (.restrictions != null)}"` devuelve exactamente `{"force": false, "delete": false, "admins": true, "reviews": 0, "restrictions": true}` con código `0`.
   2. `python tools/git/verify_branch_protection.py --branch dev` devuelve código de salida `0`.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-004, RF-007, CB-002 y CB-005: «Eliminación remota de ramas dev y main rechazada por el servidor», «dismiss_stale_reviews: true y required_conversation_resolution: true activos en main y dev, exigiendo actualización de rama», «Reglas de protección invalidan estado ante nuevos commits en rama base y exigen actualización» y «Intento de push directo a dev con commit chore: prepare release v0.1.0 rechazado con código 1 (GH006)»; dictamen CONVERGIDO.
   1. `python tools/git/configure_branch_protection.py branch --branch dev --rule-file tools/git/protection_rules/dev.json` ejecutado exitosamente contra el repositorio remoto `sebaxtian/LLaMA`, aprovisionando las reglas de protección clásica para la rama `dev` desde `tools/git/protection_rules/dev.json` con código de salida `0`.
   2. `python tools/git/verify_branch_protection.py --branch dev` confirmó convergencia plena (`PASS`, 0 discrepancias) con código de salida `0`.
   3. Formato JSON estructurado `python tools/git/verify_branch_protection.py --branch dev --json` verificó `{"status": "PASS", "discrepancies": {"repo_settings": [], "branch_dev": []}}`.
@@ -170,6 +178,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-007`, `T-008`.
 - **Requisitos cubiertos:** `RF-002`, `RF-003`, `RF-004`, `RF-006`, `RF-007`, `RNF-002`, `RNF-004`, `CB-001`, `CB-002`, `CB-003`, `CB-005`, `CB-006`, `CB-007`, `CB-008`, `CA-001`, `CA-002`, `CA-003`, `CA-005`, `CA-006`, `CA-007`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-005`, `CA-006`, `CA-007`.
 - **Archivos permitidos:** `tools/git/tests/test_remote_rejection.py`.
 - **Estimación:** 30 min.
 - **Validación:**
@@ -178,7 +187,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
   3. Intento de supresión de rama `git push origin --delete dev` falla devolviendo error GH006 y código distinto de cero (`!= 0`).
   4. Tiempo de respuesta del servidor remoto verificado inferior a 5 segundos (RNF-002).
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RF-002, RF-003, RF-004, RF-006, RF-007, RNF-002, RNF-004 y CB-001: «Rechazo remoto determinista de push directo fuera de PR con error GH006», «Envío forzado rechazado de manera irrevocable por servidor remoto GitHub», «Eliminación remota de ramas dev y main rechazada por el servidor», «Envío forzado mediante --force-with-lease rechazado deterministamente con código 1 en dev y main» y «Latencia media de respuesta en rechazos remotos de ~2.2 s»; dictamen CONVERGIDO.
   1. `python -m unittest tools/git/tests/test_remote_rejection.py` ejecutó 9 pruebas unitarias deterministas contra el remoto `origin` (`sebaxtian/LLaMA`), finalizando con resultado `OK` y código de salida `0`.
   2. `python -m unittest discover -s tools/git/tests` ejecutó 46 pruebas en total (`test_verify_branch_protection` + `test_remote_rejection`) con resultado `OK` y código de salida `0`.
   3. Prueba de rechazo de push directo (`test_direct_push_to_dev_rejected`, `test_direct_push_to_main_rejected`): intento de push directo sin Pull Request a `dev` y `main` falló con código de salida `1` devolviendo `remote: error: GH006: Protected branch update failed for refs/heads/{dev,main}` y `remote: - Changes must be made through a pull request`.
@@ -195,6 +204,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
 - **Estado:** [x]
 - **Dependencias:** `T-001`, `T-002`, `T-005`, `T-007`, `T-008`, `T-009`.
 - **Requisitos cubiertos:** `RNF-001`, `RNF-003`, `RNF-005`, `RNF-006`, `RNF-007`.
+- **Criterio de aceptación:** `CA-001`, `CA-002`, `CA-003`, `CA-004`, `CA-005`, `CA-008`, `CA-009`.
 - **Archivos permitidos:** `specs/007-branch-protection/validation_report.md`, `CHANGELOG.md`.
 - **Estimación:** 25 min.
 - **Validación:**
@@ -203,7 +213,7 @@ El grafo de dependencias es estrictamente acíclico (DAG).
   3. `git diff --check` devuelve código `0`.
   4. `specs/007-branch-protection/validation_report.md` contiene la matriz de pruebas con todos los estados en PASADO, dictamen CONVERGIDO y firma de Agent Sebaxtian en G4.
 - [x] Completada.
-- **Evidencia:**
+- **Evidencia:** Reporte de validación de SPEC-007, matriz de trazabilidad, filas RNF-001, RNF-003, RNF-005, RNF-006 y RNF-007: «Concordancia total entre reglas GitHub aplicadas y políticas en docs/Flujo_de_Trabajo_Git.md», «Inmutabilidad de historial y merges garantizada», «Especificación determinista declarativa versionada en JSON y verificable de forma automatizada», «Acceso administrativo restringido al Propietario» y «Disponibilidad ininterrumpida 24/7 provista por la infraestructura nativa de GitHub»; dictamen CONVERGIDO.
   1. Registro en `CHANGELOG.md` bajo `## [Unreleased]` de las secciones `### Added` (herramientas deterministas de aprovisionamiento y verificación en `tools/git/` y suite completa de pruebas unitarias y de rechazo remoto) y `### Changed` (configuración remota de GitHub en `sebaxtian/LLaMA` y actualización normativa en `docs/Flujo_de_Trabajo_Git.md`, `docs/sdd/PROTOCOLO_OPERATIVO.md`, `AGENTS.md` y `MEMORY.md`).
   2. Actualización de `specs/007-branch-protection/tasks.md` marcando `T-010` como completada (`- **Estado:** [x]`, `- [x] Completada.`) y alcanzando 10 de 10 tareas completadas (100% compuerta G3 alcanzada).
   3. Ejecución de `python tools/sdd/validate.py --all` con código de salida `0` y `git diff --check` sin discrepancias.

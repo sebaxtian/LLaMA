@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Gobernanza e Integración de `AGENTS.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 `AGENTS.md` es un estándar abierto, determinista y ligero diseñado para actuar como la **guía contextual de entrada (_System Prompt_ de repositorio)** para los agentes de Inteligencia Artificial que inspeccionan, refactorizan o generan código dentro de un proyecto.
 

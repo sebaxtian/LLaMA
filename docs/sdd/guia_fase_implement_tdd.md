@@ -1,6 +1,6 @@
 # **Guía Integral: Ejecución, Protocolo TDD y Gobernanza de la Fase `Implement`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 La **fase de Implementación (`Implement`)** constituye la **Etapa 6** del ciclo de vida del **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**. Es el momento operativo en el que los requisitos funcionales (`spec.md`), la arquitectura técnica (`plan.md`) y el desglose de tareas (`tasks.md`) se transforman en **código fuente ejecutable y suites de prueba automatizadas**.
 

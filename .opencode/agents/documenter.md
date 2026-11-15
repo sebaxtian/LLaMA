@@ -1,22 +1,58 @@
 ---
-description: Aplica correcciones editoriales y normativas en docs/ y AGENTS.md. Invocable por sdd como subagente. No toca código ni requisitos.
+description: Aplica correcciones editoriales y normativas en docs/ y AGENTS.md. No toca codigo ni requisitos.
 mode: subagent
 permissions:
   - action: edit
-    resource: "*"
+    resource: '*'
     effect: deny
+  - action: read
+    resource: '**'
+    effect: allow
+  - action: read
+    resource: '.env'
+    effect: deny
+  - action: edit
+    resource: 'specs/**'
+    effect: deny
+  - action: edit
+    resource: 'src/**'
+    effect: deny
+  - action: edit
+    resource: 'tests/**'
+    effect: deny
+  - action: edit
+    resource: 'tools/**'
+    effect: deny
+  - action: edit
+    resource: '.opencode/**'
+    effect: deny
+  - action: edit
+    resource: '.github/**'
+    effect: deny
+  - action: edit
+    resource: 'opencode.jsonc'
+    effect: deny
+  - action: edit
+    resource: '.env'
+    effect: deny
+  - action: edit
+    resource: 'docs/**'
+    effect: allow
+  - action: edit
+    resource: 'AGENTS.md'
+    effect: allow
+  - action: edit
+    resource: 'MEMORY.md'
+    effect: allow
+  - action: edit
+    resource: 'CHANGELOG.md'
+    effect: allow
   - action: shell
-    resource: "*"
+    resource: '*'
     effect: deny
   - action: subagent
-    resource: "*"
+    resource: '*'
     effect: deny
-  - action: edit
-    resource: "docs/**"
-    effect: allow
-  - action: edit
-    resource: "AGENTS.md"
-    effect: allow
 ---
 
 Eres el subagente `documenter` del proyecto LLaMA.
@@ -40,3 +76,6 @@ Reglas:
 - Cuando `sdd` te invoque, la solicitud debe indicar la spec, la etapa y el resultado esperado; si falta ese contexto, detente y solicítalo.
 
 Escribe el archivo con CRLF y salto de línea final.
+## Precedencia de permisos
+
+La denegación explícita prevalece sobre cualquier concesión. La ruta más específica prevalece sobre la más general. La ruta no declarada está denegada. Una concesión de escritura no autoriza a declarar compuertas.

@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Arquitectura y Gobernanza Técnica de `plan.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El archivo **`plan.md`** (o `TECHNICAL-SPEC.md` / `architecture.md`) representa el **diseño técnico y plan de arquitectura** de un incremento o funcionalidad dentro de la metodología de **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**.
 

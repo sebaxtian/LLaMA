@@ -10,6 +10,38 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.7.0] - 2026-11-14
+
+### Added
+
+- Informe de auditoría de cumplimiento SDD en `docs/sdd/auditoria_cumplimiento_sdd.md`: diez dimensiones evaluadas, 41 hallazgos con identificador `AUD-NNN`, hoja de ruta organizada en los bloques B1 a B4 y veredicto global `NO CONFORME` sobre el periodo de `SPEC-001` a `SPEC-007` (`SPEC-008`).
+- Base normativa v2 (`SPEC-009`): mapa único de siete rangos, protocolo operativo redactado desde cero con sus dieciséis secciones, plantillas reconocidas como norma, contratos de informe analítico y de informe de auditoría, regla de versionado de specs, índice completo del corpus y lista `docs/sdd/firmantes_autorizados`. Fecha de corte `2026-11-14`.
+- Rol `auditor` con lectura de la base completa y escritura limitada al informe que produce, implementado en `.opencode/agents/auditor.md` (`SPEC-011`).
+- Integración continua en `.github/workflows/sdd.yml`: job `verify` que ejecuta la validación agregada y las dos suites de pruebas en cada Pull Request hacia `dev` y hacia `main`, con permiso de solo lectura y sin push, tag ni operación sobre el remoto (`SPEC-011`, `SPEC-014`).
+- Comprobaciones nuevas del validador determinista: aprobación de G1, G4 y G6 contra `docs/sdd/firmantes_autorizados` y la firma del commit, cobertura de requisitos como error desde G2, detección de tareas abiertas en la ejecución agregada, G5 y G6 con lógica propia, transiciones e historial de transiciones, relación de sucesión y alcance exacto impreso en cada ejecución (`SPEC-010`).
+- Trazabilidad profunda (`SPEC-012`): criterio de aceptación y evidencia obligatoria por tarea, sección de cierre de integración en el reporte de validación con el commit de integración y el tag del release, y regularización de `SPEC-001` a `SPEC-007` con esos campos.
+- Informes `docs/sdd/auditoria_cierre_v0_7_0.md` y `docs/sdd/auditoria_final_v0_7_0.md`, con veredicto global `NO CONFORME` y `CONFORME CON OBSERVACIONES` respectivamente, y cierre registrado de las dieciséis observaciones de la reauditoría de cierre y de las cuatro observaciones que permanecían abiertas del informe final (`SPEC-013`, `SPEC-014`).
+
+### Changed
+
+- Registro único de aprobaciones: G1 y G4 en `spec.md` y G6 en este archivo; el reporte de validación no porta casilla de aprobación y la aprobación se acredita por commit firmado con una clave de `docs/sdd/firmantes_autorizados` (`SPEC-009`).
+- Ciclo de siete etapas con máquina de estados, escritor y evidencia por transición, y compuertas con una sola condición de entrada, una sola evidencia, un solo declarante y una sola verificación (`SPEC-010`).
+- Matriz de permisos de los seis roles con tres reglas de precedencia declaradas; el orquestador queda con escritura en `.opencode/**` como única concesión, sin contradicción con §12 del protocolo operativo (`SPEC-011`, `SPEC-014`).
+- Flujo Git alineado con la base v2: compuertas G5 y G6, eliminación de la rama de trabajo tras la integración, check `verify` exigible con `strict: true` en `main` y en `dev`, verificación de ancestría entre `main` y `dev` en lugar del conteo de commits y gramática de ramas que admite `docs/` (`SPEC-009`, `SPEC-013`).
+- Documentos de la base sustituidos en sus mismas rutas: `docs/constitution.md`, `AGENTS.md`, `docs/sdd/PROTOCOLO_OPERATIVO.md`, `docs/Flujo_de_Trabajo_Git.md`, `README.md`, `MEMORY.md`, `docs/sdd/README.md` y `docs/sdd/plantillas/`; las versiones anteriores permanecen en el historial Git y el detalle consta en el Anexo de transición del protocolo (`SPEC-009`).
+- Se archiva la rama `feat/gemma-4-26b-a4b-it-qat-gguf` sin integrarla: dos commits no integrados, permanece local, no se publica y no se fusiona (`SPEC-009`).
+- Guías, informes de análisis e informes de auditoría declaran su carácter de referencia no normativa; el índice `docs/sdd/README.md` cubre la raíz del corpus, las plantillas y los informes, y el inventario de documentos normativos se calcula desde ese índice (`SPEC-009`, `SPEC-013`).
+
+### Fixed
+
+- El mecanismo de control deja de repartir el registro de G4 entre dos artefactos y de evaluar G4 antes de existir el reporte que la propia compuerta exige; los estados `implementing`, `implemented` y `validated` quedan con escritor declarado (`SPEC-010`).
+- La cobertura `RF/CB → CA` deja de producir solo advertencia y pasa a error desde G2, y G5 y G6 dejan de compartir la verificación de G4 (`SPEC-010`).
+- El job `verify` deja de ejecutar una sola suite: prepara el árbol con historial completo y con las etiquetas del repositorio y ejecuta `tools/sdd/tests` y `tools/git/tests` (`SPEC-014`).
+- Se cierran las observaciones de la reauditoría de cierre: flujo con `actions/checkout` y `actions/setup-python`, comprobación de sincronización de release expresada como ancestría verificable, gramática de ramas que admite `docs/`, dos ventanas de legado declaradas y atribución corregida de la escritura de transiciones (`SPEC-013`).
+- Se registran como cerradas las cuatro observaciones finales, con nota de cierre append-only en el reporte de `SPEC-013` que transcribe el veredicto del informe final sin alterar la matriz ni el dictamen (`SPEC-014`).
+
+- Approved by: Agent Sebaxtian
+
 ## [v0.6.0] - 2026-11-13
 
 ### Added
@@ -175,4 +207,18 @@ vMAJOR.MINOR.PATCH
 
 ## Historial de releases
 
-Se publicó `v0.1.0` como primera versión estructural y documental del proyecto.
+Se publicó `v0.1.0` como primera versión estructural y documental del proyecto. El historial de releases con su fecha UTC y su tag anotado es:
+
+| Versión | Fecha | Tag |
+|---|---|---|
+| `v0.1.0` | 2026-11-10 | `v0.1.0` |
+| `v0.2.0` | 2026-11-12 | `v0.2.0` |
+| `v0.3.0` | 2026-11-13 | `v0.3.0` |
+| `v0.3.1` | 2026-11-13 | `v0.3.1` |
+| `v0.4.0` | 2026-11-13 | `v0.4.0` |
+| `v0.5.0` | 2026-11-13 | `v0.5.0` |
+| `v0.5.1` | 2026-11-13 | `v0.5.1` |
+| `v0.6.0` | 2026-11-13 | `v0.6.0` |
+| `v0.7.0` | 2026-11-14 | `v0.7.0` |
+
+El empaquetado de `v0.7.0` queda registrado en su entrada y en la tabla anterior; G6 permanece pendiente de la línea `- Approved by: Agent Sebaxtian` que el propietario introducirá en un commit firmado al publicar, y el tag `v0.7.0` se crea sobre el commit publicado.

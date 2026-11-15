@@ -1,6 +1,6 @@
 # **Guía Integral: Definición, Control de Calidad e Integración de `clarify.md`**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El archivo **`clarify.md`** (o proceso de **Clarificación**) representa la **fase de inspección, control de calidad y resolución de ambigüedades** siendo determinista dentro de la metodología de **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)**.
 
@@ -123,13 +123,13 @@ Para mantener la claridad del proceso, `clarify.md` se gestiona siguiendo estas 
 ---
 
 ## 4. Nuevos Casos Borde Identificados
-- **CB-NUEVO-01:** Si [condición límite o fallo imprevisto], entonces el [sistema] debe [respuesta del sistema].
+- **CB-001:** Si [condición límite o fallo imprevisto], entonces el [sistema] debe [respuesta del sistema].
 
 ---
 
 ## 5. Lista de Parches Aplicados a `spec.md`
 - [ ] Actualizar **RF-00X** en `spec.md` incorporando la decisión tomada en la Pregunta 1.
-- [ ] Agregar **CB-NUEVO-01** a la sección de Casos Borde de `spec.md`.
+- [ ] Agregar **CB-001** a la sección de Casos Borde de `spec.md`.
 - [ ] Confirmar que no existen contradicciones con `docs/constitution.md`.
 ```
 

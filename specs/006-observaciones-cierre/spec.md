@@ -2,9 +2,9 @@
 id: SPEC-006
 title: Cierre de observaciones de documentación
 status: released
-version: 0.6.0
+version: 0.6.1
 created: 2026-11-13
-updated: 2026-11-13
+updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/observaciones-cierre
 release: "v0.5.1"
@@ -141,3 +141,4 @@ Cubre: `CB-001`, `RNF-001`, `RNF-002`, `RNF-003`.
 | 0.4.0 | 2026-11-13 | Implementación de cierre de observaciones |
 | 0.5.0 | 2026-11-13 | G4 aprobada con dictamen CONVERGIDO |
 | 0.6.0 | 2026-11-13 | Release v0.5.1 autorizado por el propietario |
+| 0.6.1 | 2026-11-14 | Regularización de la trazabilidad de tareas y del cierre de integración |

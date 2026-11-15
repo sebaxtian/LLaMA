@@ -1,6 +1,6 @@
 # **Guía Integral: Método EARS (_Easy Approach to Requirements Syntax_) en el Desarrollo Basado en Especificaciones (SDD)**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El método **EARS (_Easy Approach to Requirements Syntax_)** es un marco estructurado de ingeniería de requisitos diseñado para redactar especificaciones en lenguaje natural mediante un conjunto reducido de palabras clave y patrones sintácticos estandarizados deterministas.
 

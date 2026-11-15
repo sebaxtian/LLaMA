@@ -1,6 +1,6 @@
 # **Guía de Referencia: Las 7 Etapas del Ciclo de Vida del Desarrollo Basado en Especificaciones (SDD Puro)**
 
-> **Documento de referencia (no normativo).** Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
+> **Documento de referencia (no normativo).** Su rango es «Sin rango» y no fija reglas. Ante contradicción prevalece `PROTOCOLO_OPERATIVO.md`, y por encima `AGENTS.md` y `docs/constitution.md`.
 
 El **Desarrollo Basado en Especificaciones (SDD, _Spec-Driven Development_)** puro es una metodología de ingeniería de software donde una especificación formal, estructurada y legible por máquina actúa como la **única fuente de verdad** del sistema. En el SDD puro (independiente de herramientas o _frameworks_ específicos como Spec Kit, OpenSpec o Kiro), el desarrollo sigue un ciclo de vida riguroso de **7 etapas secuenciales** donde se separa estrictamente el **QUÉ** se construye del **CÓMO** se implementa.
 
@@ -132,9 +132,14 @@ Los 5 patrones sintácticos de EARS aplicados aquí son:
 - **RF-002 (Evento):** Cuando [Evento], el [Sistema] debe [Respuesta].
 - **RF-003 (Excepción):** Si [Condición de Error], entonces el [Sistema] debe [Respuesta].
 
-## Casos Límite y Fueras de Alcance
-- **Casos Borde:** [Lista de situaciones extremas]
-- **Fuera de Alcance:** [Lo que explícitamente NO se construirá en esta iteración]
+## Casos borde
+- [Lista de situaciones extremas]
+
+## Fuera de alcance
+- [Lo que explícitamente NO se construirá en esta iteración]
+
+## Criterios de aceptación
+- **CA-001:** [Resultado observable que cierra el requisito].
 ```
 
 #### **Ejemplo Práctico (`specs/NNN-slug/spec.md`)**

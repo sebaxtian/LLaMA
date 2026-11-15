@@ -133,6 +133,11 @@ código de salida: 0
 
 Suite tras escribir el reporte: `python -m unittest discover -s tools\sdd\tests` → `Ran 34 tests`, `OK`, código 0.
 
+## Cierre de integración
+
+Merge: 39b27a2
+Release: v0.3.1
+
 ## Aprobación
 
 - [ ] G4: `- Approved by: Agent Sebaxtian` (pendiente; solo el propietario puede aprobar).
