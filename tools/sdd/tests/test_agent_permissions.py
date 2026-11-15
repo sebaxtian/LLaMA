@@ -43,16 +43,12 @@ SUBAGENTES_DE_SDD = ("planner", "coder", "reviewer", "documenter", "auditor", "e
 # Matriz de escritura del plan: rutas concedidas y denegaciones explícitas por rol.
 ESCRITURA = {
     "sdd": {
-        "allow": (
-            ".opencode/**",
+        "allow": (".opencode/**",),
+        "deny": (
             ".github/**",
             "opencode.jsonc",
             "MEMORY.md",
-            "specs/INDEX.md",
-            "specs/*/spec.md",
-            "specs/*/validation_report.md",
-        ),
-        "deny": (
+            "specs/**",
             "src/**",
             "tests/**",
             "tools/**",
@@ -195,6 +191,12 @@ PATRONES_OBSOLETOS = (
 )
 
 # Flujo de integración continua sintético, base de las comprobaciones negativas.
+SUITE_SDD = "tools\\sdd\\tests"
+SUITE_GIT = "tools\\git\\tests"
+SUITE_SDD_LEGIBLE = "tools/sdd/tests"
+SUITE_GIT_LEGIBLE = "tools/git/tests"
+# Historial sintético de implementación: 3 commits que el alcance puede enumerar.
+HISTORIAL_DE_IMPLEMENTACION = ("a" * 40, "b" * 40, "c" * 40)
 FLUJO_VALIDO = """name: SDD
 
 on:
@@ -211,6 +213,9 @@ jobs:
     steps:
       - name: Prepara el árbol del repositorio
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Prepara Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -220,9 +225,13 @@ jobs:
       - name: Suite del mecanismo de control
         timeout-minutes: 1
         run: python -m unittest discover -s tools\\sdd\\tests -q
+      - name: Suite de la protección de ramas
+        timeout-minutes: 1
+        run: python -m unittest discover -s tools\\git\\tests -q
 """
 FLUJO_SIN_PREPARACION = FLUJO_VALIDO.replace(
-    "      - name: Prepara el árbol del repositorio\n        uses: actions/checkout@v4\n", ""
+    "      - name: Prepara el árbol del repositorio\n        uses: actions/checkout@v4\n"
+    "        with:\n          fetch-depth: 0\n          fetch-tags: true\n", ""
 )
 FLUJO_CON_ERROR = FLUJO_VALIDO.replace(
     "        run: python -m unittest discover -s tools\\sdd\\tests -q",
@@ -235,6 +244,14 @@ FLUJO_CON_PUSH = FLUJO_VALIDO.replace(
     "      - name: Validación agregada del corpus",
     "      - name: Publica la rama\n        run: git push origin dev\n"
     "      - name: Validación agregada del corpus",
+)
+# CB-001: profundidad completa y omisión de la descarga de etiquetas.
+FLUJO_SIN_ETIQUETAS = FLUJO_VALIDO.replace("          fetch-tags: true\n", "")
+# CB-003: el job ejecuta una sola de las 2 suites.
+FLUJO_CON_UNA_SUITE = FLUJO_VALIDO.replace(
+    "      - name: Suite de la protección de ramas\n"
+    "        timeout-minutes: 1\n"
+    "        run: python -m unittest discover -s tools\\git\\tests -q\n", ""
 )
 
 
@@ -602,6 +619,55 @@ def efectos_remotos(texto: str) -> list[str]:
     return [motivo for patron, motivo in PATRONES_REMOTOS if re.search(patron, limpio, re.IGNORECASE)]
 
 
+def parametros_de_preparacion(texto: str) -> dict[str, str]:
+    """Pares `clave: valor` del bloque `with:` del paso que usa `actions/checkout`."""
+    pasos = pasos_del_flujo(texto)
+    preparacion = next((paso for paso in pasos if "actions/checkout" in paso), "")
+    parametros: dict[str, str] = {}
+    dentro = False
+    for linea in preparacion.splitlines():
+        if re.match(r"^\s*with\s*:\s*$", linea):
+            dentro = True
+            continue
+        if not dentro:
+            continue
+        coincidencia = re.match(r"^\s*([\w-]+)\s*:\s*(.+?)\s*$", linea)
+        if not coincidencia:
+            dentro = False
+            continue
+        parametros[coincidencia.group(1)] = coincidencia.group(2).strip("'\"")
+    return parametros
+
+
+def alcance_de_la_referencia(texto: str, historial=HISTORIAL_DE_IMPLEMENTACION) -> dict:
+    """Commits que la comprobación de la referencia enumera según la preparación del árbol.
+
+    Modela la semántica de `actions/checkout`: la profundidad predeterminada es 1, la
+    profundidad 0 descarga el historial completo y sin las etiquetas el rango no se acota.
+    """
+    parametros = parametros_de_preparacion(texto)
+    declarada = parametros.get("fetch-depth", "")
+    try:
+        profundidad = int(declarada) if declarada else 1
+    except ValueError:
+        profundidad = 1
+    etiquetas = parametros.get("fetch-tags", "").lower() == "true"
+    examinados = len(historial) if profundidad == 0 else min(profundidad, len(historial))
+    errores: list[str] = []
+    if not etiquetas:
+        errores.append(
+            "la preparación omite la descarga de etiquetas con fetch-tags: "
+            "las etiquetas del repositorio no se descargan"
+        )
+        examinados = 0
+    return {
+        "commits": examinados,
+        "etiquetas": etiquetas,
+        "errores": errores,
+        "verificado": examinados >= 1,
+    }
+
+
 def problemas_del_flujo(texto: str) -> list[str]:
     problemas: list[str] = []
     disparadores = bloque_disparadores(texto)
@@ -629,21 +695,47 @@ def problemas_del_flujo(texto: str) -> list[str]:
         problemas.append("el flujo no declara pasos")
     elif "actions/checkout" not in pasos[0]:
         problemas.append("la primera preparación del job no usa actions/checkout")
+    if pasos and "actions/checkout" in pasos[0]:
+        parametros = parametros_de_preparacion(texto)
+        if parametros.get("fetch-depth") != "0":
+            problemas.append(
+                "la preparación del árbol no declara la profundidad completa con fetch-depth: 0: "
+                f"{parametros.get('fetch-depth', 'ausente')}"
+            )
+        if parametros.get("fetch-tags", "").lower() != "true":
+            problemas.append(
+                "la preparación del árbol omite la descarga de etiquetas con fetch-tags: true"
+            )
     if "actions/setup-python" not in texto:
         problemas.append("el flujo no prepara el entorno con actions/setup-python")
     if not re.search(r"^\s{2}verify\s*:\s*$", texto, re.MULTILINE):
         problemas.append("el job no se llama verify")
     ejecuciones = [p for p in pasos if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
-    if len(ejecuciones) != 2:
-        problemas.append(f"el flujo debe declarar dos pasos de ejecución; declara {len(ejecuciones)}")
-    else:
-        primero, segundo = ejecuciones
-        if "validate.py" not in primero or "--all" not in primero:
-            problemas.append("el primer paso no ejecuta la validación agregada")
-        if "unittest" not in segundo or "discover" not in segundo:
-            problemas.append("el segundo paso no ejecuta la suite")
-        if not re.search(r"timeout-minutes\s*:\s*1\s*$", segundo, re.MULTILINE):
-            problemas.append("el paso de la suite no limita su duración a un minuto")
+    if len(ejecuciones) != 3:
+        problemas.append(f"el flujo debe declarar tres pasos de ejecución; declara {len(ejecuciones)}")
+    validacion = next((p for p in ejecuciones if "validate.py" in p), None)
+    if validacion is None or "--all" not in validacion:
+        problemas.append("el primer paso no ejecuta la validación agregada")
+    suite_sdd = next((p for p in ejecuciones if SUITE_SDD in p), None)
+    if suite_sdd is None:
+        problemas.append(
+            f"el flujo no ejecuta la suite de {SUITE_SDD_LEGIBLE}: "
+            "falta el paso nombrado con su descubrimiento"
+        )
+    elif "unittest" not in suite_sdd or "discover" not in suite_sdd:
+        problemas.append(f"el paso de la suite de {SUITE_SDD_LEGIBLE} no ejecuta el descubrimiento")
+    elif not re.search(r"timeout-minutes\s*:\s*1\s*$", suite_sdd, re.MULTILINE):
+        problemas.append(f"el paso de la suite de {SUITE_SDD_LEGIBLE} no limita su duración a un minuto")
+    suite_git = next((p for p in ejecuciones if SUITE_GIT in p), None)
+    if suite_git is None:
+        problemas.append(
+            f"el flujo no ejecuta la suite de {SUITE_GIT_LEGIBLE}: "
+            "falta el paso nombrado con su descubrimiento"
+        )
+    elif "unittest" not in suite_git or "discover" not in suite_git:
+        problemas.append(f"el paso de la suite de {SUITE_GIT_LEGIBLE} no ejecuta el descubrimiento")
+    elif not re.search(r"timeout-minutes\s*:\s*1\s*$", suite_git, re.MULTILINE):
+        problemas.append(f"el paso de la suite de {SUITE_GIT_LEGIBLE} no limita su duración a un minuto")
     for paso in ejecuciones:
         if "name:" not in paso:
             problemas.append("un paso de ejecución no declara nombre")
@@ -877,6 +969,58 @@ class TestMatrizDePermisos(unittest.TestCase):
         self.assertIn("specs/INDEX.md", otorgadas,
                       f"el fallo debe nombrar la ruta concedida: {otorgadas}")
 
+    def test_escritura_unica_del_orquestador(self):
+        """RF-003, CB-004, CA-003: `.opencode/**` es la única concesión de escritura."""
+        entradas = leer_permisos("sdd")
+        self.assertEqual(problemas_del_orquestador(entradas), [],
+                         "la matriz del orquestador debe limitarse a `.opencode/**`")
+        concedidas = concesiones_de_escritura(entradas)
+        self.assertEqual(tuple(concedidas), ESCRITURA["sdd"]["allow"],
+                         f"la matriz de pruebas y el artefacto deben coincidir: {concedidas}")
+        self.assertEqual(len(concedidas), 1,
+                         f"la matriz declara una sola ruta con `edit` y efecto `allow`: {concedidas}")
+        self.assertEqual(concedidas[0], ".opencode/**")
+        denegadas = [e["resource"] for e in entradas
+                     if e["action"] == "edit" and e["effect"] == "deny"]
+        for ruta in (".github/**", "opencode.jsonc", "MEMORY.md"):
+            self.assertIn(ruta, denegadas,
+                          f"la matriz debe denegar de forma explícita {ruta}")
+        self.assertEqual(atribuciones_fuera_de_opencode(entradas), [],
+                         "el orquestador conserva atribuciones de escritura fuera de `.opencode/**`")
+        # CB-004: la escritura intentada queda denegada y el artefacto se atribuye al rol
+        # que `tasks.md` declara como escritor de la ruta.
+        self.assertEqual(resolver(entradas, "edit", ".github/workflows/sdd.yml"), "deny")
+        escritores = escritores_declarados(texto_de_ruta(TASKS_014))
+        self.assertEqual(escritores.get(".github/workflows/sdd.yml"), "coder",
+                         "tasks.md debe atribuir `.github/workflows/sdd.yml` al rol que lo escribe")
+        self.assertNotIn("opencode.jsonc", escritores,
+                         "opencode.jsonc no tiene rol concesionario entre los agentes")
+
+    def test_concesion_fuera_de_opencode_es_error(self):
+        """CB-004: una concesión sintética fuera de `.opencode/**` produce fallo con la ruta."""
+        sintetico = (
+            "---\ndescription: rol sintético\nmode: primary\npermissions:\n"
+            "  - action: edit\n    resource: \"*\"\n    effect: deny\n"
+            "  - action: edit\n    resource: \".opencode/**\"\n    effect: allow\n"
+            "  - action: edit\n    resource: \".github/**\"\n    effect: allow\n---\n"
+        )
+        concesion = leer_permisos_texto(sintetico)
+        self.assertEqual(resolver(concesion, "edit", ".github/workflows/sdd.yml"), "allow",
+                         "el caso sintético debe conceder la escritura que se detecta")
+        problemas = problemas_del_orquestador(concesion)
+        self.assertTrue(problemas, "no detecta la concesión sintética fuera de `.opencode/**`")
+        self.assertIn(".github/**", " ".join(problemas),
+                      f"el fallo debe nombrar la ruta concedida: {problemas}")
+        # La escritura intentada sobre la matriz real queda denegada y el artefacto se
+        # atribuye al rol que este archivo declara como escritor.
+        real = leer_permisos("sdd")
+        self.assertEqual(resolver(real, "edit", ".github/workflows/sdd.yml"), "deny")
+        self.assertEqual(resolver(real, "edit", "opencode.jsonc"), "deny")
+        self.assertEqual(resolver(real, "edit", "MEMORY.md"), "deny")
+        escritores = escritores_declarados(texto_de_ruta(TASKS_014))
+        self.assertEqual(escritores.get(".github/workflows/sdd.yml"), "coder",
+                         "tasks.md debe atribuir `.github/workflows/sdd.yml` al rol que lo escribe")
+
     def test_tabla_de_etapas_del_orquestador(self):
         """RF-002, CA-002: la tabla declara siete etapas de 1 Specify a 7 Release."""
         texto = texto_de_ruta(ruta_de_rol("sdd"))
@@ -1055,12 +1199,16 @@ class TestFlujoDeIntegracionContinua(unittest.TestCase):
                       "el flujo debe preparar el entorno con actions/setup-python")
         self.assertRegex(texto, r"(?m)^\s{2}verify\s*:\s*$")
         ejecuciones = [p for p in pasos if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
-        self.assertEqual(len(ejecuciones), 2)
+        self.assertEqual(len(ejecuciones), 3)
         self.assertIn("validate.py", ejecuciones[0])
         self.assertIn("--all", ejecuciones[0])
         self.assertIn("unittest", ejecuciones[1])
         self.assertIn("discover", ejecuciones[1])
+        self.assertIn(SUITE_SDD, ejecuciones[1])
         self.assertRegex(ejecuciones[1], r"timeout-minutes\s*:\s*1")
+        self.assertIn("unittest", ejecuciones[2])
+        self.assertIn(SUITE_GIT, ejecuciones[2])
+        self.assertRegex(ejecuciones[2], r"timeout-minutes\s*:\s*1")
         self.assertRegex(texto, r"runs-on\s*:\s*windows-latest")
         self.assertRegex(texto, r"python-version\s*:\s*['\"]?3\.12")
         self.assertEqual(efectos_remotos(texto), [], "el flujo declara efectos sobre el remoto")
@@ -1070,6 +1218,93 @@ class TestFlujoDeIntegracionContinua(unittest.TestCase):
         self.assertTrue(problemas_del_flujo(FLUJO_CON_PUSH),
                         "no detecta el disparador push ni el paso ajeno")
         self.assertNotEqual(set(ramas_de_disparo(FLUJO_CON_PUSH)), {"dev", "main"})
+
+    def test_preparacion_completa_del_arbol(self):
+        """RF-001, CB-002, CA-001: profundidad completa y etiquetas en la preparación."""
+        texto = texto_de_ruta(WORKFLOW_PATH)
+        parametros = parametros_de_preparacion(texto)
+        self.assertEqual(parametros.get("fetch-depth"), "0",
+                         f"la preparación debe declarar fetch-depth: 0: {parametros}")
+        self.assertEqual(parametros.get("fetch-tags"), "true",
+                         f"la preparación debe declarar fetch-tags: true: {parametros}")
+        self.assertIn("actions/checkout", pasos_del_flujo(texto)[0],
+                      "la primera preparación del job debe seguir siendo actions/checkout")
+        alcance = alcance_de_la_referencia(texto)
+        self.assertEqual(alcance["errores"], [], f"la preparación produce errores: {alcance['errores']}")
+        self.assertTrue(alcance["verificado"], "el alcance de la referencia no queda verificado")
+        self.assertGreaterEqual(alcance["commits"], 1,
+                                f"el alcance debe enumerar al menos 1 commit: {alcance}")
+        self.assertEqual(alcance["commits"], len(HISTORIAL_DE_IMPLEMENTACION),
+                         "la profundidad completa enumera el historial declarado")
+        self.assertEqual(problemas_del_flujo(texto), [],
+                         "el flujo del repositorio debe producir 0 hallazgos")
+        self.assertEqual(problemas_del_flujo(FLUJO_VALIDO), [],
+                         "el fixture sintético válido debe producir 0 hallazgos")
+
+    def test_flujo_sin_etiquetas_es_error(self):
+        """CB-001: la profundidad completa sin `fetch-tags` no declara verificado el alcance."""
+        self.assertIn("fetch-depth: 0", FLUJO_SIN_ETIQUETAS,
+                      "el caso negativo conserva la profundidad completa que se contrasta")
+        self.assertNotIn("fetch-tags", FLUJO_SIN_ETIQUETAS,
+                         "el caso negativo retira la descarga de etiquetas")
+        hallazgos = problemas_del_flujo(FLUJO_SIN_ETIQUETAS)
+        self.assertTrue(hallazgos, "la omisión de las etiquetas debe producir un hallazgo")
+        self.assertIn("fetch-tags", " ".join(hallazgos),
+                      f"el hallazgo debe nombrar las etiquetas ausentes: {hallazgos}")
+        alcance = alcance_de_la_referencia(FLUJO_SIN_ETIQUETAS)
+        self.assertTrue(alcance["errores"], "la omisión de las etiquetas debe registrar un error")
+        self.assertIn("etiquetas", " ".join(alcance["errores"]),
+                      f"el error debe nombrar las etiquetas: {alcance['errores']}")
+        self.assertFalse(alcance["verificado"],
+                         "la omisión de las etiquetas no declara verificado el alcance")
+        self.assertEqual(alcance["commits"], 0,
+                         "sin etiquetas el alcance no enumera commit alguno")
+
+    def test_alcance_de_la_referencia_examina_commit(self):
+        """RF-001, CA-001: con el rango no vacío el alcance enumera al menos 1 commit."""
+        alcance = alcance_de_la_referencia(texto_de_ruta(WORKFLOW_PATH))
+        self.assertEqual(alcance["errores"], [])
+        self.assertGreaterEqual(alcance["commits"], 1)
+        self.assertTrue(alcance["etiquetas"], "la preparación debe descargar las etiquetas")
+        # Caso negativo: la profundidad predeterminada recorta el historial a un commit.
+        superficial = FLUJO_VALIDO.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n")
+        recortado = alcance_de_la_referencia(superficial)
+        self.assertEqual(recortado["commits"], 1,
+                         "la profundidad acotada enumera solo los commits descargados")
+        self.assertLess(recortado["commits"], alcance["commits"],
+                        "la preparación superficial enumera menos commits que la completa")
+        self.assertTrue(problemas_del_flujo(superficial),
+                        "la profundidad distinta de 0 debe producir un hallazgo")
+
+    def test_job_ejecuta_las_dos_suites(self):
+        """RF-002, RNF-002, CA-002: 2 suites nombradas con su límite propio de 1 minuto."""
+        texto = texto_de_ruta(WORKFLOW_PATH)
+        pasos = pasos_del_flujo(texto)
+        ejecuciones = [p for p in pasos if re.search(r"^\s*run\s*:", p, re.MULTILINE)]
+        self.assertEqual(len(ejecuciones), 3,
+                         f"el job declara 3 pasos de ejecución con nombre: {len(ejecuciones)}")
+        for posicion in (1, 2):
+            self.assertIn("name:", ejecuciones[posicion],
+                          "cada paso de suite declara nombre")
+            self.assertRegex(ejecuciones[posicion], r"timeout-minutes\s*:\s*1",
+                             "cada paso de suite limita su duración a un minuto")
+        self.assertIn(SUITE_SDD, ejecuciones[1])
+        self.assertIn(SUITE_GIT, ejecuciones[2])
+        self.assertEqual(problemas_del_flujo(texto), [],
+                         "el flujo del repositorio debe producir 0 hallazgos")
+        self.assertEqual(problemas_del_flujo(FLUJO_VALIDO), [],
+                         "el fixture sintético con las 2 suites debe producir 0 hallazgos")
+
+    def test_flujo_con_una_suite_es_error(self):
+        """CB-003: una suite fuera del job deja el check sin el alcance exigible."""
+        self.assertNotIn(SUITE_GIT, FLUJO_CON_UNA_SUITE,
+                         "el caso negativo retira el paso de la suite de tools/git/tests")
+        hallazgos = problemas_del_flujo(FLUJO_CON_UNA_SUITE)
+        self.assertTrue(hallazgos, "la suite ausente debe producir un hallazgo")
+        self.assertIn(SUITE_GIT_LEGIBLE, " ".join(hallazgos),
+                      f"el hallazgo debe nombrar la suite ausente: {hallazgos}")
+        self.assertNotEqual(problemas_del_flujo(FLUJO_CON_UNA_SUITE), [],
+                            "un flujo con una sola suite no declara el check conforme")
 
     def test_flujo_sin_preparacion_del_arbol(self):
         """CB-009, CA-010: un flujo sin `actions/checkout` no declara la verificación cumplida."""
@@ -1749,6 +1984,444 @@ class TestDocumentosSinRango(unittest.TestCase):
         self.assertTrue(detectados, "la comprobación no detecta el release sin fila")
         self.assertIn("v0.2.0", " ".join(detectados),
                       f"el hallazgo debe nombrar el release sin fila: {detectados}")
+
+
+# ==========================================================================
+# SPEC-014 · cierre de las observaciones de la reauditoría final
+#
+# Pruebas de la preparación del árbol, del alcance del job, de la matriz del
+# orquestador, de la nota de cierre append-only y del paquete de cierre de las
+# 4 observaciones. Cada comprobación declara un caso positivo sobre el
+# artefacto del repositorio y un caso negativo sobre texto sintético que
+# conserva el defecto.
+# ==========================================================================
+
+TASKS_014 = ROOT / "specs" / "014-cierre-observaciones-finales" / "tasks.md"
+REPORTE_SPEC_013 = ROOT / "specs" / "013-cierre-reauditoria-conformidad" / "validation_report.md"
+SPEC_013_PATH = ROOT / "specs" / "013-cierre-reauditoria-conformidad" / "spec.md"
+RUTA_UNICA_DEL_ORQUESTADOR = ".opencode/**"
+RUTAS_FUERA_DE_OPENCODE = (
+    ".github/workflows/sdd.yml",
+    "opencode.jsonc",
+    "MEMORY.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "docs/constitution.md",
+    "src/main.bat",
+    "specs/014-cierre-observaciones-finales/spec.md",
+    ".env",
+)
+OBSERVACIONES_DE_ESTA_SPEC = ("AUD-066", "AUD-075", "AUD-101", "AUD-102")
+RECUENTO_PREVIO = 16
+ARTEFACTOS_PREVIOS = 15
+EXENCIONES_PREVIAS = 1
+OBSERVACIONES_NUEVAS = 7
+FILAS_DE_LA_MATRIZ = 40
+CELDAS_SIN_VALOR = ("", "-", "—", "`-`", "`—`")
+
+
+def concesiones_de_escritura(entradas: list[dict]) -> list[str]:
+    """Rutas con `edit` y efecto `allow`, en el orden declarado por la matriz."""
+    return [e["resource"] for e in entradas if e["action"] == "edit" and e["effect"] == "allow"]
+
+
+def atribuciones_fuera_de_opencode(entradas: list[dict], rutas=RUTAS_FUERA_DE_OPENCODE) -> list[str]:
+    """Rutas fuera de `.opencode/**` sobre las que la matriz concede escritura."""
+    return [ruta for ruta in rutas if resolver(entradas, "edit", ruta) == "allow"]
+
+
+def problemas_del_orquestador(entradas: list[dict]) -> list[str]:
+    """RF-003, CB-004: una sola concesión de escritura y 3 denegaciones explícitas."""
+    problemas: list[str] = []
+    concedidas = concesiones_de_escritura(entradas)
+    if concedidas != [RUTA_UNICA_DEL_ORQUESTADOR]:
+        problemas.append(
+            f"la matriz del orquestador concede escritura sobre {concedidas} "
+            f"y la única ruta admitida es {RUTA_UNICA_DEL_ORQUESTADOR}"
+        )
+    for ruta in (".github/**", "opencode.jsonc", "MEMORY.md"):
+        explicita = any(
+            e["action"] == "edit" and e["resource"] == ruta and e["effect"] == "deny"
+            for e in entradas
+        )
+        if not explicita:
+            problemas.append(f"la matriz del orquestador no deniega de forma explícita {ruta}")
+    fuera = atribuciones_fuera_de_opencode(entradas)
+    if fuera:
+        problemas.append(
+            f"el orquestador conserva escritura fuera de {RUTA_UNICA_DEL_ORQUESTADOR}: {fuera}"
+        )
+    return problemas
+
+
+def escritores_declarados(tasks: str) -> dict[str, str]:
+    """Ruta → rol escritor declarado en la tabla «Archivos de la etapa y escritor»."""
+    escritores: dict[str, str] = {}
+    for linea in seccion(tasks, r"Archivos de la etapa y escritor").splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) < 4 or not celdas[0].isdigit():
+            continue
+        rol = re.search(r"`([a-z]+)`", celdas[3])
+        if not rol:
+            continue
+        for ruta in re.findall(r"`([^`]+)`", celdas[1]):
+            escritores[ruta] = rol.group(1)
+    return escritores
+
+
+def estado_de_spec(ruta: Path) -> str:
+    """Valor de `status:` del frontmatter de una spec."""
+    encontrado = re.search(r"(?m)^status:\s*(\w+)\s*$", texto_de_ruta(ruta))
+    return encontrado.group(1) if encontrado else ""
+
+
+def valores_de_la_matriz(reporte: str) -> list[str]:
+    """Valores de la columna de estado de la matriz de trazabilidad del reporte."""
+    valores: list[str] = []
+    for linea in seccion(reporte, r"Matriz de trazabilidad").splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 5 and re.fullmatch(r"`?(?:RF|RNF|CB)-\d{3}`?", celdas[0]):
+            valores.append(celdas[-1])
+    return valores
+
+
+def notas_de_cierre(reporte: str) -> list[str]:
+    """Bloques «### Nota de cierre» del reporte, en orden de aparición."""
+    notas: list[str] = []
+    actual: list[str] | None = None
+    for linea in reporte.splitlines():
+        if re.match(r"^###\s+Nota de cierre", linea):
+            if actual is not None:
+                notas.append("\n".join(actual))
+            actual = [linea]
+        elif actual is not None and re.match(r"^#{1,3}\s+", linea):
+            notas.append("\n".join(actual))
+            actual = None
+        elif actual is not None:
+            actual.append(linea)
+    if actual is not None:
+        notas.append("\n".join(actual))
+    return notas
+
+
+def _entero_en_linea(texto: str, patron: str) -> int | None:
+    """Primer entero de la primera línea que coincide con el patrón."""
+    for linea in texto.splitlines():
+        if re.search(patron, linea, re.IGNORECASE):
+            encontrado = re.search(r"\d+", linea)
+            if encontrado:
+                return int(encontrado.group(0))
+    return None
+
+
+def artefacto_en_linea(linea: str) -> bool:
+    """True si la línea nombra una ruta o un archivo entre comillas invertidas."""
+    return re.search(r"`[^`]*[./][^`]*`", linea) is not None
+
+
+def problemas_de_conservacion(reporte: str, estado_spec: str = "") -> list[str]:
+    """RF-004, RNF-004: la matriz, el dictamen y el estado de `SPEC-013` no cambian."""
+    problemas: list[str] = []
+    valores = valores_de_la_matriz(reporte)
+    if len(valores) != FILAS_DE_LA_MATRIZ:
+        problemas.append(
+            f"la matriz declara {len(valores)} filas y el contrato exige {FILAS_DE_LA_MATRIZ}"
+        )
+    ajenos = sorted({valor for valor in valores if valor != "PASADO"})
+    if ajenos:
+        problemas.append(f"la matriz conserva valores distintos de PASADO: {ajenos}")
+    if not re.search(r"(?m)^-\s*\[x\]\s*CONVERGIDO", reporte):
+        problemas.append("el dictamen no conserva CONVERGIDO")
+    if re.search(r"(?m)^-\s*\[x\]\s*NO CONVERGIDO", reporte):
+        problemas.append("el dictamen marca NO CONVERGIDO")
+    if estado_spec and estado_spec != "validated":
+        problemas.append(f"el estado de SPEC-013 es {estado_spec} y el contrato exige validated")
+    return problemas
+
+
+def problemas_de_nota_de_cierre(reporte: str, estado_spec: str = "") -> list[str]:
+    """RF-004, CB-005, CB-006: nota append-only con el veredicto y el cierre transcritos."""
+    problemas = problemas_de_conservacion(reporte, estado_spec)
+    notas = notas_de_cierre(reporte)
+    if not notas:
+        problemas.append("el reporte no declara la nota de cierre de SPEC-014")
+        return problemas
+    cierre = reporte.find("## Cierre de integración")
+    ultima = reporte.rfind("### Nota de cierre")
+    if cierre == -1 or ultima < cierre:
+        problemas.append("la nota de cierre no figura a continuación de las secciones precedentes")
+    nota = notas[-1]
+    if not re.search(r"SPEC-014", nota):
+        problemas.append("la nota de cierre no referencia a SPEC-014")
+    if "CONFORME CON OBSERVACIONES" not in nota:
+        problemas.append("la nota no transcribe el veredicto CONFORME CON OBSERVACIONES")
+    if "PARCIAL" not in nota:
+        problemas.append("la nota no declara la equivalencia del veredicto a PARCIAL")
+    previas = _entero_en_linea(nota, r"observaciones de la reauditor[ií]a previa")
+    if previas != RECUENTO_PREVIO:
+        problemas.append(
+            f"la nota transcribe {previas} observaciones previas y el informe final "
+            f"declara {RECUENTO_PREVIO}"
+        )
+    artefactos = _entero_en_linea(nota, r"observaciones con artefacto")
+    if artefactos != ARTEFACTOS_PREVIOS:
+        problemas.append(
+            f"la nota transcribe {artefactos} observaciones con artefacto y el informe final "
+            f"declara {ARTEFACTOS_PREVIOS}"
+        )
+    exenciones = _entero_en_linea(nota, r"observaci[oó]n por exenci[oó]n")
+    if exenciones != EXENCIONES_PREVIAS:
+        problemas.append(
+            f"la nota transcribe {exenciones} observaciones por exención y el informe final "
+            f"declara {EXENCIONES_PREVIAS}"
+        )
+    nuevas = _entero_en_linea(nota, r"observaciones nuevas")
+    if nuevas != OBSERVACIONES_NUEVAS:
+        problemas.append(
+            f"la nota transcribe {nuevas} observaciones nuevas y el informe final "
+            f"declara {OBSERVACIONES_NUEVAS}"
+        )
+    for observacion in OBSERVACIONES_DE_ESTA_SPEC:
+        declarada = any(
+            observacion in linea and artefacto_en_linea(linea)
+            for linea in nota.splitlines()
+        )
+        if not declarada:
+            problemas.append(f"la nota no declara el artefacto de cierre de {observacion}")
+    return problemas
+
+
+def seccion_del_cierre(texto: str) -> str:
+    """Sección que declara el paquete de cierre de las 4 observaciones de la spec."""
+    lineas = texto.splitlines()
+    inicio = next(
+        (i for i, linea in enumerate(lineas)
+         if re.match(r"^#{2,3}\s+.*cierre de las cuatro observaciones", linea, re.IGNORECASE)),
+        None,
+    )
+    if inicio is None:
+        return ""
+    bloque: list[str] = []
+    for linea in lineas[inicio:]:
+        if bloque and re.match(r"^#{1,3}\s+", linea):
+            break
+        bloque.append(linea)
+    return "\n".join(bloque)
+
+
+def filas_del_cierre(texto: str) -> list[list[str]]:
+    """Filas de la tabla del paquete de cierre, una por observación."""
+    filas: list[list[str]] = []
+    for linea in seccion_del_cierre(texto).splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 4 and re.fullmatch(r"`?AUD-\d{3}`?", celdas[0]):
+            filas.append(celdas)
+    return filas
+
+
+def estado_del_cierre(texto: str) -> dict[str, dict]:
+    """Estado por observación: artefacto, evidencia, requisito, cierre y causa."""
+    estado: dict[str, dict] = {}
+    for celdas in filas_del_cierre(texto):
+        identificador = celdas[0].strip("`")
+        artefacto = celdas[1]
+        evidencia = celdas[2]
+        requisito = celdas[3].strip("`")
+        if artefacto in CELDAS_SIN_VALOR:
+            causa = "sin artefacto de cierre declarado"
+        elif evidencia in CELDAS_SIN_VALOR:
+            causa = "sin evidencia transcrita"
+        elif not re.fullmatch(r"RF-\d{3}", requisito):
+            causa = f"sin requisito que la cubra: {requisito or 'ausente'}"
+        else:
+            causa = ""
+        estado[identificador] = {
+            "artefacto": artefacto,
+            "evidencia": evidencia,
+            "requisito": requisito,
+            "cerrada": not causa,
+            "causa": causa,
+        }
+    return estado
+
+
+def recuento_del_cierre(texto: str) -> tuple[int, int] | None:
+    """Recuento declarado «Cerradas: N de M» de la sección del paquete."""
+    encontrado = re.search(r"Cerradas:\s*(\d+)\s+de\s+(\d+)", seccion_del_cierre(texto))
+    return (int(encontrado.group(1)), int(encontrado.group(2))) if encontrado else None
+
+
+def observaciones_cerradas(texto: str) -> int:
+    """Número de observaciones con artefacto y evidencia transcritos."""
+    return sum(1 for datos in estado_del_cierre(texto).values() if datos["cerrada"])
+
+
+def problemas_del_cierre(texto: str) -> list[str]:
+    """RF-005, CB-007: 4 de 4 cerradas y ninguna observación vigente declarada cerrada."""
+    if not seccion_del_cierre(texto):
+        return ["tasks.md no declara la sección del paquete de cierre"]
+    problemas: list[str] = []
+    estado = estado_del_cierre(texto)
+    for observacion in OBSERVACIONES_DE_ESTA_SPEC:
+        datos = estado.get(observacion)
+        if datos is None:
+            problemas.append(f"el paquete de cierre no registra {observacion}")
+        elif not datos["cerrada"]:
+            problemas.append(f"{observacion} sigue vigente: {datos['causa']}")
+    declarado = recuento_del_cierre(texto)
+    total = len(OBSERVACIONES_DE_ESTA_SPEC)
+    if declarado is None:
+        problemas.append("el paquete de cierre no declara el recuento «Cerradas: 4 de 4»")
+    elif declarado != (total, total):
+        problemas.append(
+            f"el paquete de cierre declara {declarado[0]} de {declarado[1]} cerradas "
+            f"y el contrato exige {total} de {total}"
+        )
+    cerradas = observaciones_cerradas(texto)
+    if cerradas != total:
+        problemas.append(
+            f"el paquete de cierre registra {cerradas} observaciones con artefacto y "
+            f"evidencia, y el contrato exige {total}"
+        )
+    return problemas
+
+
+def sin_artefacto(texto: str, observacion: str) -> str:
+    """Copia del paquete con el artefacto de cierre de la observación retirado."""
+    salida: list[str] = []
+    for linea in texto.splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 4 and celdas[0].strip("`") == observacion:
+            salida.append("| " + " | ".join([celdas[0], "—", celdas[2], celdas[3]]) + " |")
+        else:
+            salida.append(linea)
+    return "\n".join(salida)
+
+
+NOTA_DE_CIERRE = """
+### Nota de cierre de las observaciones de SPEC-014
+
+La nota de `SPEC-014` se añade a continuación de las secciones precedentes y no altera la matriz ni el dictamen del reporte.
+
+- Veredicto del informe final: `CONFORME CON OBSERVACIONES`, equivalente a `PARCIAL` en la escala de la plantilla de auditoría.
+- Cierre previo: 16 observaciones de la reauditoría previa.
+- Artefactos previos: 15 observaciones con artefacto y evidencia.
+- Exenciones declaradas: 1 observación por exención.
+- Causa del veredicto: 7 observaciones nuevas del informe final, 5 de severidad Media y 2 de Baja.
+- `AUD-066`: cerrada por `.opencode/agents/sdd.md` con la matriz del orquestador limitada a `.opencode/**`.
+- `AUD-075`: cerrada por `specs/013-cierre-reauditoria-conformidad/validation_report.md` con esta nota.
+- `AUD-101`: cerrada por `.github/workflows/sdd.yml` con `fetch-depth: 0` y `fetch-tags: true`.
+- `AUD-102`: cerrada por `.github/workflows/sdd.yml` con el paso nombrado de `tools/git/tests`.
+- Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+"""
+
+NOTA_DE_CIERRE_POSTERIOR = """
+### Nota de cierre posterior de SPEC-014
+
+- Veredicto del informe final: `CONFORME CON OBSERVACIONES`, equivalente a `PARCIAL`.
+- Cierre previo: 16 observaciones de la reauditoría previa.
+- Artefactos previos: 15 observaciones con artefacto y evidencia.
+- Exenciones declaradas: 1 observación por exención.
+- Causa del veredicto: 7 observaciones nuevas del informe final.
+- `AUD-066`: cerrada por `.opencode/agents/sdd.md`.
+- `AUD-075`: cerrada por `specs/013-cierre-reauditoria-conformidad/validation_report.md`.
+- `AUD-101`: cerrada por `.github/workflows/sdd.yml`.
+- `AUD-102`: cerrada por `.github/workflows/sdd.yml`.
+"""
+
+
+class TestNotaDeCierre(unittest.TestCase):
+    """RF-004, CB-005, CB-006: nota append-only del reporte de `SPEC-013`."""
+
+    def setUp(self):
+        self.reporte = texto_de_ruta(REPORTE_SPEC_013)
+        self.estado = estado_de_spec(SPEC_013_PATH)
+
+    def test_nota_de_cierre_append_only(self):
+        """CA-004: la nota se añade sin alterar la matriz de 40 filas ni el dictamen."""
+        self.assertEqual(self.estado, "validated",
+                         "SPEC-013 debe conservar el estado validated")
+        self.assertEqual(problemas_de_conservacion(self.reporte, self.estado), [],
+                         "el reporte real debe conservar matriz, dictamen y estado")
+        self.assertEqual(len(valores_de_la_matriz(self.reporte)), FILAS_DE_LA_MATRIZ)
+        con_nota = self.reporte + NOTA_DE_CIERRE
+        self.assertEqual(problemas_de_nota_de_cierre(con_nota, self.estado), [],
+                         "la nota canónica debe aceptarse sobre el reporte real")
+        nota = notas_de_cierre(con_nota)[-1]
+        self.assertIn("CONFORME CON OBSERVACIONES", nota)
+        self.assertIn("PARCIAL", nota)
+        for observacion in OBSERVACIONES_DE_ESTA_SPEC:
+            self.assertIn(observacion, nota,
+                          f"la nota debe declarar el estado de {observacion}")
+        self.assertEqual(len(valores_de_la_matriz(con_nota)), FILAS_DE_LA_MATRIZ,
+                         "la nota no altera el número de filas de la matriz")
+        self.assertRegex(con_nota, r"(?m)^-\s*\[x\]\s*CONVERGIDO")
+        # Complementaria: dos notas consecutivas conservan la precedente.
+        con_dos = con_nota + NOTA_DE_CIERRE_POSTERIOR
+        self.assertEqual(problemas_de_nota_de_cierre(con_dos, self.estado), [],
+                         "la segunda nota debe añadirse sin alterar la precedente")
+        self.assertEqual(len(notas_de_cierre(con_dos)), 2,
+                         "la segunda nota no debe eliminar la primera")
+        self.assertIn("Nota de cierre de las observaciones", con_dos)
+        self.assertIn("Nota de cierre posterior", con_dos)
+        # Caso negativo de posición: la nota antepuesta no figura a continuación.
+        antepuesta = NOTA_DE_CIERRE + self.reporte
+        self.assertTrue(problemas_de_nota_de_cierre(antepuesta, self.estado),
+                        "la nota debe rechazarse si no figura a continuación de las precedentes")
+
+    def test_nota_con_recuento_divergente_es_error(self):
+        """CB-006: un recuento distinto del informe final produce error con el valor."""
+        divergente = NOTA_DE_CIERRE.replace(
+            "16 observaciones de la reauditoría previa",
+            "15 observaciones de la reauditoría previa",
+        )
+        self.assertNotEqual(divergente, NOTA_DE_CIERRE, "el caso negativo retira un valor")
+        problemas = problemas_de_nota_de_cierre(self.reporte + divergente, self.estado)
+        self.assertTrue(problemas, "el recuento divergente debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("15", texto, f"el error debe nombrar el valor transcrito: {problemas}")
+        self.assertIn(str(RECUENTO_PREVIO), texto,
+                      f"el error debe nombrar el valor del informe final: {problemas}")
+        self.assertNotEqual(problemas_de_nota_de_cierre(self.reporte + divergente, self.estado), [],
+                            "la nota con recuento divergente no se declara conforme")
+
+
+class TestCierreDeObservaciones(unittest.TestCase):
+    """RF-005, CB-007: paquete de cierre de las 4 observaciones en `tasks.md`."""
+
+    def test_cierre_de_las_cuatro_observaciones(self):
+        """CA-005: las 4 observaciones cuentan con artefacto y evidencia, 4 de 4."""
+        texto = texto_de_ruta(TASKS_014)
+        self.assertEqual(problemas_del_cierre(texto), [],
+                         "el paquete de cierre debe declarar 4 de 4 con artefacto y evidencia")
+        estado = estado_del_cierre(texto)
+        self.assertEqual(sorted(estado), sorted(OBSERVACIONES_DE_ESTA_SPEC),
+                         f"el paquete declara una fila por observación: {sorted(estado)}")
+        for observacion, datos in estado.items():
+            with self.subTest(observacion=observacion):
+                self.assertTrue(datos["cerrada"], f"{observacion} debe quedar cerrada: {datos['causa']}")
+                self.assertTrue(datos["artefacto"], f"{observacion} sin artefacto de cierre")
+                self.assertTrue(datos["evidencia"], f"{observacion} sin evidencia transcrita")
+                self.assertRegex(datos["requisito"], r"^RF-\d{3}$")
+        self.assertEqual(recuento_del_cierre(texto), (4, 4),
+                         "el recuento declarado debe ser 4 de 4")
+        self.assertEqual(observaciones_cerradas(texto), 4,
+                         "las 4 observaciones cuentan con artefacto y evidencia")
+
+    def test_observacion_sin_artefacto_sigue_vigente(self):
+        """CB-007: sin artefacto de cierre la observación queda vigente con su causa."""
+        texto = texto_de_ruta(TASKS_014)
+        sin_cierre = sin_artefacto(texto, "AUD-075")
+        self.assertNotEqual(sin_cierre, texto, "el caso negativo retira un artefacto de cierre")
+        datos = estado_del_cierre(sin_cierre)["AUD-075"]
+        self.assertFalse(datos["cerrada"], "la observación sin artefacto no se declara cerrada")
+        self.assertEqual(datos["causa"], "sin artefacto de cierre declarado")
+        problemas = problemas_del_cierre(sin_cierre)
+        self.assertTrue(problemas, "la observación vigente debe producir un hallazgo")
+        self.assertIn("AUD-075", " ".join(problemas),
+                      f"el hallazgo debe nombrar la observación vigente: {problemas}")
+        self.assertEqual(observaciones_cerradas(sin_cierre), 3,
+                         "la observación sin artefacto no se cuenta como cerrada")
 
 
 if __name__ == "__main__":
