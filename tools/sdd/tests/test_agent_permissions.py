@@ -1786,6 +1786,18 @@ def releases_publicados(changelog: str) -> list[str]:
     return re.findall(r"(?m)^## \[(v\d+\.\d+\.\d+)\]", changelog)
 
 
+def filas_de_releases(changelog: str) -> list[list[str]]:
+    """Filas de la sección «Historial de releases» con versión, fecha y tag."""
+    filas: list[list[str]] = []
+    for linea in seccion(changelog, r"(?i)historial de releases").splitlines():
+        if not linea.strip().startswith("|"):
+            continue
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 3 and re.fullmatch(r"`?v\d+\.\d+\.\d+`?", celdas[0]):
+            filas.append(celdas)
+    return filas
+
+
 def problemas_de_historial(changelog: str) -> list[str]:
     """RF-016: el historial declara una fila por release publicado, en orden ascendente."""
     publicados = releases_publicados(changelog)
@@ -1794,13 +1806,7 @@ def problemas_de_historial(changelog: str) -> list[str]:
     historial = seccion(changelog, r"(?i)historial de releases")
     if not historial:
         return ["el registro de cambios no declara la sección «Historial de releases»"]
-    filas: list[list[str]] = []
-    for linea in historial.splitlines():
-        if not linea.strip().startswith("|"):
-            continue
-        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
-        if len(celdas) >= 3 and re.fullmatch(r"`?v\d+\.\d+\.\d+`?", celdas[0]):
-            filas.append(celdas)
+    filas = filas_de_releases(changelog)
     declarados = [celda[0].strip("`") for celda in filas]
     problemas: list[str] = []
     if declarados != sorted(declarados, key=_version_semver):
@@ -1947,12 +1953,24 @@ class TestDocumentosSinRango(unittest.TestCase):
         problemas = problemas_de_consistencia_documental(memory, indice, frontmatter)
         self.assertEqual(problemas, [], "el estado de las specs debe coincidir en los tres soportes")
         self.assertTrue(frontmatter, "el corpus no declara el frontmatter de sus specs")
-        anterior = memory.replace("validadas", "publicadas", 1)
-        detectados = problemas_de_consistencia_documental(anterior, indice, frontmatter)
+        # Caso negativo determinista: texto sintético mínimo de `MEMORY.md` que reproduce
+        # un estado equivocado para una spec publicada. `SPEC-008` queda declarada en
+        # «validadas» cuando `specs/INDEX.md` y su frontmatter la declaran «released».
+        declarados = estados_del_indice(indice)
+        self.assertEqual(declarados.get("SPEC-008"), "released",
+                         "el índice no declara SPEC-008 publicada")
+        sinonimo = {"released": "publicadas", "validated": "validadas"}
+        sintetica = "- Estado de specs: " + "; ".join(
+            f"`{spec_id}` " + ("validadas" if spec_id == "SPEC-008"
+                               else sinonimo.get(estado, estado))
+            for spec_id, estado in sorted(declarados.items())
+        ) + ".\n"
+        detectados = problemas_de_consistencia_documental(sintetica, indice, frontmatter)
         self.assertTrue(detectados, "la comprobación no detecta el estado divergente")
         texto = " ".join(detectados)
         self.assertIn("MEMORY.md", texto, f"el hallazgo debe nombrar el documento: {detectados}")
         self.assertIn("SPEC-", texto, f"el hallazgo debe nombrar la spec: {detectados}")
+        self.assertIn("SPEC-008", texto, f"el hallazgo debe nombrar la spec divergente: {detectados}")
 
     def test_inventario_del_corpus(self):
         """RF-015, CB-013, CA-014: la tabla de inventario registra cada archivo del corpus."""
@@ -1969,12 +1987,16 @@ class TestDocumentosSinRango(unittest.TestCase):
                       f"el hallazgo debe nombrar el archivo sin fila: {detectados}")
 
     def test_historial_de_releases(self):
-        """RF-016, CB-013, CA-014: el historial registra los ocho releases publicados."""
+        """RF-016, CB-013, CA-014: el historial registra una fila por release publicado."""
         changelog = texto_de_ruta(CHANGELOG_PATH)
         problemas = problemas_de_historial(changelog)
         self.assertEqual(problemas, [], "el historial debe registrar los releases publicados")
-        self.assertEqual(len(releases_publicados(changelog)), 8,
-                         "el registro de cambios declara ocho releases publicados")
+        encabezados = releases_publicados(changelog)
+        filas = filas_de_releases(changelog)
+        self.assertTrue(encabezados, "el registro de cambios no declara releases publicados")
+        self.assertEqual(len(filas), len(encabezados),
+                         "el historial declara una fila por cada encabezado de release "
+                         f"y cuenta {len(filas)} filas para {len(encabezados)} encabezados")
         sintetico = (
             "# Changelog\n\n## [Unreleased]\n\n## [v0.2.0] - 2026-11-12\n\n## [v0.1.0] - 2026-11-10\n\n"
             "## Historial de releases\n\n| Versión | Fecha | Tag |\n|---|---|---|\n"
@@ -2018,6 +2040,8 @@ EXENCIONES_PREVIAS = 1
 OBSERVACIONES_NUEVAS = 7
 FILAS_DE_LA_MATRIZ = 40
 CELDAS_SIN_VALOR = ("", "-", "—", "`-`", "`—`")
+# Estados alcanzados al cerrar la validación: el reporte conserva matriz y dictamen.
+ESTADOS_POSTERIORES_A_LA_VALIDACION = ("validated", "released")
 
 
 def concesiones_de_escritura(entradas: list[dict]) -> list[str]:
@@ -2134,8 +2158,11 @@ def problemas_de_conservacion(reporte: str, estado_spec: str = "") -> list[str]:
         problemas.append("el dictamen no conserva CONVERGIDO")
     if re.search(r"(?m)^-\s*\[x\]\s*NO CONVERGIDO", reporte):
         problemas.append("el dictamen marca NO CONVERGIDO")
-    if estado_spec and estado_spec != "validated":
-        problemas.append(f"el estado de SPEC-013 es {estado_spec} y el contrato exige validated")
+    if estado_spec and estado_spec not in ESTADOS_POSTERIORES_A_LA_VALIDACION:
+        problemas.append(
+            f"el estado de SPEC-013 es {estado_spec} y el contrato exige un estado "
+            f"posterior a la validación: {' o '.join(ESTADOS_POSTERIORES_A_LA_VALIDACION)}"
+        )
     return problemas
 
 
@@ -2339,10 +2366,13 @@ class TestNotaDeCierre(unittest.TestCase):
 
     def test_nota_de_cierre_append_only(self):
         """CA-004: la nota se añade sin alterar la matriz de 40 filas ni el dictamen."""
-        self.assertEqual(self.estado, "validated",
-                         "SPEC-013 debe conservar el estado validated")
+        self.assertIn(self.estado, ESTADOS_POSTERIORES_A_LA_VALIDACION,
+                      "SPEC-013 debe conservar un estado posterior a la validación: "
+                      f"{self.estado}")
         self.assertEqual(problemas_de_conservacion(self.reporte, self.estado), [],
                          "el reporte real debe conservar matriz, dictamen y estado")
+        self.assertTrue(problemas_de_conservacion(self.reporte, "implemented"),
+                        "un estado previo a la validación debe rechazarse")
         self.assertEqual(len(valores_de_la_matriz(self.reporte)), FILAS_DE_LA_MATRIZ)
         con_nota = self.reporte + NOTA_DE_CIERRE
         self.assertEqual(problemas_de_nota_de_cierre(con_nota, self.estado), [],

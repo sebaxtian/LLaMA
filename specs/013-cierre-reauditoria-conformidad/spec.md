@@ -1,13 +1,13 @@
 ---
 id: SPEC-013
 title: Cierre de la reauditoría de conformidad
-status: validated
-version: 0.7.0
+status: released
+version: 0.8.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/reauditoria-cierre
-release: ""
+release: "v0.7.0"
 supersedes: ""
 superseded_by: ""
 ---
@@ -372,6 +372,7 @@ Cubre: `RNF-007`, `RNF-008`.
 | 0.5.0 | 2026-11-14 | Implementación del cierre de la reauditoría |
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
 | 0.7.0 | 2026-11-14 | Validación e integración del cierre de la reauditoría |
+| 0.8.0 | 2026-11-14 | Release v0.7.0 |
 
 ### Historial de transiciones
 
@@ -384,3 +385,4 @@ Cubre: `RNF-007`, `RNF-008`.
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | verificación de G2 registrada por el orquestador, cuarenta y tres tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `80e589b` con cuarenta y cuatro tareas cerradas, 156 pruebas en verde y `--all` con código 0 |
 | 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `b8ea2d9`, dictamen `CONVERGIDO` de 40 de 40 filas e integración `e55fca1` con dos padres y rama eliminada |
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 empaquetado con tag anotado pendiente de la firma de G6 |

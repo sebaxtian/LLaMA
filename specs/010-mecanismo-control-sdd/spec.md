@@ -1,13 +1,13 @@
 ---
 id: SPEC-010
 title: Mecanismo de control SDD verificable
-status: validated
-version: 0.5.0
+status: released
+version: 0.6.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/mecanismo-control-sdd
-release: ""
+release: "v0.7.0"
 supersedes: ""
 superseded_by: ""
 ---
@@ -379,6 +379,7 @@ Cubre: `CB-014`, `RNF-006`.
 | 0.3.0 | 2026-11-14 | Plan: arquitectura del validador y de los comandos, trece comprobaciones nuevas, once decisiones técnicas, estrategia TDD y matriz de cobertura de veintiún requisitos, seis no funcionales y quince casos borde |
 | 0.4.0 | 2026-11-14 | Tareas: quince tareas atómicas con dependencias acíclicas, treinta y nueve pruebas nuevas, dos escritores declarados por allowlist y traspaso al `reviewer` |
 | 0.5.0 | 2026-11-14 | Mecanismo implementado con trece comprobaciones y noventa y cuatro pruebas; revisión independiente con cinco brechas cerradas y dictamen `CONVERGIDO` 42/42; G4 aprobada y estado `validated` |
+| 0.6.0 | 2026-11-14 | Release v0.7.0 |
 
 ### Historial de transiciones
 
@@ -391,3 +392,4 @@ Cubre: `CB-014`, `RNF-006`.
 | 2026-11-14 | T4 | `tasked` | `implementing` | orquestador | G2 verificada y ejecución agrupada autorizada; quince tareas cerradas con evidencia y 86 pruebas en verde |
 | 2026-11-14 | T5 | `implementing` | `implemented` | orquestador | G3 con `OK: sin hallazgos`, quince tareas cerradas y 86 pruebas en verde |
 | 2026-11-14 | T6 | `implemented` | `validated` | `reviewer` y G4 | `validation_report.md` con dictamen `CONVERGIDO` 42/42 y línea de G4 firmada en `spec.md` |
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 empaquetado con tag anotado pendiente de la firma de G6 |

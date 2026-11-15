@@ -133,4 +133,4 @@ La compuerta G4 no se declara superada en este documento. Su aprobación corresp
 ## Cierre de integración
 
 Merge: 94c2ea1
-Release:
+Release: v0.7.0

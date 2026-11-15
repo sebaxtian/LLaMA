@@ -83,6 +83,6 @@ Sin brechas abiertas: las 35 filas de la matriz figuran en `PASADO` y las dos ej
 ## Cierre de integración
 
 Merge: b87e32c
-Release:
+Release: v0.7.0
 
 - G5: merge b87e32c con dos padres; validación posterior a la integración sin hallazgos; rama feat/trazabilidad-profunda-sdd eliminada en local y en remoto.

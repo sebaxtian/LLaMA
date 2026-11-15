@@ -92,4 +92,4 @@ Sin entradas: el conjunto de los 38 requisitos y casos borde queda con evidencia
 ## Cierre de integración
 
 Merge: 9df8446
-Release:
+Release: v0.7.0

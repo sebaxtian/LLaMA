@@ -124,4 +124,4 @@ Sin brechas abiertas. Las cuatro brechas de las revisiones anteriores están cer
 ## Cierre de integración
 
 Merge: 09eaf34
-Release:
+Release: v0.7.0

@@ -1,13 +1,13 @@
 ---
 id: SPEC-012
 title: Trazabilidad profunda SDD verificable
-status: validated
-version: 0.7.0
+status: released
+version: 0.8.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
 branch: feat/trazabilidad-profunda-sdd
-release: ""
+release: "v0.7.0"
 supersedes: ""
 superseded_by: ""
 ---
@@ -327,6 +327,7 @@ Cubre: `RNF-005`.
 | 0.5.0 | 2026-11-14 | Implementación de la trazabilidad profunda |
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
 | 0.7.0 | 2026-11-14 | Validación e integración de la trazabilidad profunda |
+| 0.8.0 | 2026-11-14 | Release v0.7.0 |
 
 ### Historial de transiciones
 
@@ -339,3 +340,4 @@ Cubre: `RNF-005`.
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | dieciocho tareas cerradas con criterio de aceptación y evidencia, ventana de legado limitada a `SPEC-008` a `SPEC-011` y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `a3a2794` con dieciocho tareas cerradas, 131 pruebas en verde y `--all` con código 0 |
 | 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `6fade8e`, dictamen `CONVERGIDO` de 35 de 35 filas e integración `b87e32c` con dos padres y rama eliminada |
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 empaquetado con tag anotado pendiente de la firma de G6 |
