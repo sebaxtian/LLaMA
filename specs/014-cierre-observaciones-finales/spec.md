@@ -1,8 +1,8 @@
 ---
 id: SPEC-014
 title: Cierre de las observaciones de la reauditoría final
-status: implementing
-version: 0.5.0
+status: implemented
+version: 0.6.0
 created: 2026-11-14
 updated: 2026-11-14
 owner: Agent Sebaxtian
@@ -212,6 +212,7 @@ Cubre: `RNF-004`, `RNF-005`.
 | 0.3.0 | 2026-11-14 | Plan técnico redactado: 6 decisiones `DEC-001` a `DEC-006`, 6 contratos `C-1` a `C-6`, estrategia de testing y matriz de cobertura de 17 filas |
 | 0.4.0 | 2026-11-14 | Descomposición en tareas: 13 tareas atómicas con dependencias acíclicas, cobertura completa de `RF`, `RNF` y `CB`, y matriz de tareas y de criterios |
 | 0.5.0 | 2026-11-14 | Implementación del cierre de observaciones finales |
+| 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
 
 ### Historial de transiciones
 
@@ -222,3 +223,4 @@ Cubre: `RNF-004`, `RNF-005`.
 | 2026-11-14 | T2 | `clarified` | `planned` | `planner` | `plan.md` redactado con 6 decisiones `DEC-001` a `DEC-006`, 6 contratos, estrategia de testing y matriz de cobertura de 17 filas |
 | 2026-11-14 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 13 tareas atómicas, dependencias acíclicas y cobertura de 5 requisitos funcionales, 5 no funcionales y 7 casos borde |
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, trece tareas cerradas con evidencia y `--all` con código 0 |
+| 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `cf9caf5` con trece tareas cerradas, 167 pruebas de la suite del mecanismo y 48 de las herramientas de Git en verde |

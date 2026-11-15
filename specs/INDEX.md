@@ -17,7 +17,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-011 | Práctica operativa SDD verificable | validated | feat/practica-operativa-sdd | | specs/011-practica-operativa-sdd/ |
 | SPEC-012 | Trazabilidad profunda SDD verificable | validated | feat/trazabilidad-profunda-sdd | | specs/012-trazabilidad-profunda-sdd/ |
 | SPEC-013 | Cierre de la reauditoría de conformidad | validated | feat/reauditoria-cierre | | specs/013-cierre-reauditoria-conformidad/ |
-| SPEC-014 | Cierre de las observaciones de la reauditoría final | implementing | feat/cierre-observaciones-finales | | specs/014-cierre-observaciones-finales/ |
+| SPEC-014 | Cierre de las observaciones de la reauditoría final | implemented | feat/cierre-observaciones-finales | | specs/014-cierre-observaciones-finales/ |
 
 ## Reglas
 
