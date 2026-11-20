@@ -1,8 +1,8 @@
 ---
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
-status: implementing
-version: 0.9.1
+status: implemented
+version: 0.9.2
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
@@ -452,6 +452,7 @@ Cubre: `RF-017`.
 | 0.8.0 | 2026-11-21 | Validación e integración del cierre de la auditoría de v0.7.1 |
 | 0.9.0 | 2026-11-21 | Reapertura: corrección de la autorreferencia de RF-015 y CA-016, del alcance del inventario a la totalidad de los informes, del permiso del reviewer para notas en specs publicadas y de las cuatro observaciones OBS-001 a OBS-004 |
 | 0.9.1 | 2026-11-21 | Corrección de MEMORY.md para declarar el estado implementing de SPEC-016 conforme al índice |
+| 0.9.2 | 2026-11-21 | Cierre de la implementación de la reapertura |
 
 ### Historial de transiciones
 
@@ -465,5 +466,6 @@ Cubre: `RF-017`.
 | 2026-11-21 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `e2ede7a` con treinta y cuatro tareas cerradas, 222 pruebas en la suite del mecanismo y 48 en las herramientas de Git |
 | 2026-11-21 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `3704b33`, dictamen `CONVERGIDO` de 37 de 37 filas |
 | 2026-11-21 | T9 | `validated` | `implementing` | propietario | reapertura autorizada por el propietario por los hallazgos H-01, H-02 y H-03 de docs/sdd/auditoria_previa_v0_7_2.md |
+| 2026-11-21 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `58d67d5` con treinta y seis tareas cerradas y 222 pruebas en verde |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones son documentales y se declaran en UTC con la forma `YYYY-MM-DD`.
