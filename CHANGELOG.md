@@ -10,6 +10,18 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- Inventario único de hallazgos en `docs/sdd/inventario_hallazgos.md`: 82 filas `AUD-NNN` con los ocho campos de `RF-011`, la cita normativa por ruta, capítulo y línea, el estado que declara el informe más reciente y la tabla de cierre de los dieciséis hallazgos del corte (`SPEC-016`).
+- Conjunto único de seis artefactos de empaquetado declarado con las claves `A1` a `A6` en §15 de `docs/sdd/PROTOCOLO_OPERATIVO.md` y en el paso 3 de `docs/Flujo_de_Trabajo_Git.md`, con su modificación admitida y la exigencia de spec previa o fix previo para cualquier otra ruta (`SPEC-016`, `AUD-103`).
+- Fila de orden de lectura 36 en la tabla de inventario de `docs/sdd/README.md` para `docs/sdd/inventario_hallazgos.md`, con rango «Sin rango» y el cauce de escritura del `documenter` antes de integrar un informe de auditoría (`SPEC-016`).
+
+### Changed
+
+- Regularización de la comprobación del historial de releases: exige una fila por release publicado, admite las filas de historial de cambios y de transición que el empaquetado escribe y la constante de estados que admite `released` (`SPEC-016`, `AUD-088`).
+- §16 de `docs/sdd/PROTOCOLO_OPERATIVO.md` y la lista de prohibiciones de `docs/sdd/plantillas/spec.md` declaran que ninguna spec fija el veredicto, el recuento de hallazgos ni el conjunto de dimensiones de un informe posterior a su aprobación (`SPEC-016`).
+- Ratificación firmada del propietario sobre las modificaciones del commit `564bac4` en artefactos publicados: 3 rutas afectadas (`CHANGELOG.md`, `specs/014-cierre-observaciones-finales/spec.md` y `specs/013-cierre-reauditoria-conformidad/validation_report.md`), junto con el caso `494db2e`; efecto declarativo: el contenido publicado se conserva y la autoría queda acreditada por el acta de `docs/sdd/ratificacion_historica.md`, firmada en `9042ae6` con estado `G` (`SPEC-016`, `RF-004`, `AUD-090`, `AUD-104`).
+
 ## [v0.7.1] - 2026-11-21
 
 ### Added
@@ -25,6 +37,14 @@ vMAJOR.MINOR.PATCH
 - La fila T7 del historial de transiciones de `SPEC-014` declara el release publicado `v0.7.0` con el tag anotado verificado y la línea de G6 firmada, en lugar del tag pendiente de la firma; la spec pasa a la versión 0.8.1 con una fila de motivo de regularización y conserva `status: released`, el campo `release: "v0.7.0"`, sus requisitos y sus criterios de aceptación (`SPEC-015`, `AUD-057`).
 - §12 de `docs/sdd/PROTOCOLO_OPERATIVO.md` retira del bloque de documentos de raíz la remisión al bloque B3 y declara ejecutada la formalización de la allowlist de agentes, con referencia a la matriz de permisos vigente de los seis roles (`SPEC-015`, `AUD-068`).
 - El párrafo posterior al historial de releases de `CHANGELOG.md` declara en tiempo pasado la línea de G6 registrada en la entrada del release y la creación del tag `v0.7.0`, y la viñeta de la entrada del release enumera los 16 identificadores asignados en lugar del rango que incluía números no asignados (`SPEC-015`, `AUD-100`).
+
+### Registro del release
+
+- G5: merge `4dd07f5` con dos padres; validación posterior a la integración sin hallazgos; rama `feat/cierre-auditoria-posterior` eliminada en local y en remoto.
+- G6: resultado registrado en esta entrada con la línea de aprobación del propietario; las 3 verificaciones de release quedaron cumplidas sobre el estado publicado.
+- Ancestría: `git merge-base --is-ancestor main dev` devuelve código 0 con `main` en `da30c86` y `dev` en `fbc6031`.
+- Actualización documental: `specs/INDEX.md` y `CHANGELOG.md` actualizados con el release `v0.7.1` y con la línea de G6 firmada; la fila 21 de `specs/INDEX.md` declara el estado `released`.
+- Tag anotado: el objeto del tag `v0.7.1` es un objeto de tipo `tag` con el identificador `4d0473b`, el mensaje `Release v0.7.1` y el commit objetivo `da30c86`, que coincide con `main`.
 
 - Approved by: Agent Sebaxtian
 

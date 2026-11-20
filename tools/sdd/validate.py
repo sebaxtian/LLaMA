@@ -19,6 +19,12 @@ import sys
 from datetime import date
 from pathlib import Path
 
+try:
+    import hallazgos as mecanismo_hallazgos
+except ImportError:  # pragma: no cover
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import hallazgos as mecanismo_hallazgos
+
 ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = ROOT / "specs"
 INDEX_PATH = SPECS_DIR / "INDEX.md"
@@ -1075,6 +1081,10 @@ def executed_scope(gate: str | None, aggregate: bool, with_git: bool) -> list[st
         checks.append("historial de commits y cadena «Spec: SPEC-NNN»")
     checks.append("enlace CA → T y evidencia de las tareas")
     checks.append("cierre de integración y versionado de la regularización")
+    checks.append("inventario de hallazgos: compleción, regla citada y veredicto")
+    checks.append("conjunto de 6 artefactos de empaquetado y destino del tag")
+    checks.append("prohibición de autorreferencia y cierre de los dieciséis hallazgos")
+    checks.append("historial de releases y constante de estados de la nota de cierre")
     return checks
 
 
@@ -1304,6 +1314,137 @@ def check_commit_references(rep: Reporter) -> None:
         message = (body.stdout or "") if body is not None and body.returncode == 0 else ""
         if not SPEC_CHAIN_RE.search(message):
             rep.error("git", f"C-16: el commit {sha[:7]} no declara la cadena «Spec: SPEC-NNN»")
+
+
+# ------------------------------------------------- C-19 a C-26 / SPEC-016
+
+# RF-006: las 2 filas T7 que esta spec corrige son las de SPEC-014 y SPEC-015.
+SPECS_CON_ROW_T7_CORREGIDA = {"SPEC-014", "SPEC-015"}
+# RF-002: las 2 specs publicadas que reciben la nota de autorreferencia.
+SPECS_DE_LA_REGULARIZACION = {"SPEC-013", "SPEC-015"}
+
+
+def _texto_del_arbol(base: Path, ruta: str) -> str:
+    """Texto relativo a la raíz indicada; cadena vacía si el archivo no existe."""
+    archivo = base / ruta
+    return read_text(archivo) if archivo.exists() else ""
+
+
+def veredicto_declarado(texto: str) -> str | None:
+    """Veredicto que el inventario declara junto a su recuento de hallazgos abiertos."""
+    for linea in texto.splitlines():
+        if not re.search(r"veredicto", linea, re.IGNORECASE):
+            continue
+        for valor in mecanismo_hallazgos.VEREDICTOS:
+            if re.search(rf"\b{re.escape(valor)}\b", linea):
+                return valor
+    return None
+
+
+def validate_mecanismo_de_hallazgos(rep: Reporter, root: Path | None = None) -> None:
+    """C-19 a C-26: inventario, veredicto, empaquetado, tag, autorreferencia, cierre e historial.
+
+    Las comprobaciones estrictas rigen desde que el artefacto declara la forma regularizada;
+    mientras la etapa que lo escribe no lo haya hecho, el hallazgo consta como advertencia y
+    nombra la tarea que lo corrige, conforme al orden de las correcciones del plan.
+    """
+    base = Path(root) if root is not None else ROOT
+    sdd = base / "docs" / "sdd"
+    rel_inventario = "docs/sdd/inventario_hallazgos.md"
+    rel_readme = "docs/sdd/README.md"
+    rel_protocolo = "docs/sdd/PROTOCOLO_OPERATIVO.md"
+    rel_acta = "docs/sdd/ratificacion_historica.md"
+
+    textos = {ruta: _texto_del_arbol(base, ruta) for ruta in mecanismo_hallazgos.INFORMES_DE_ORIGEN}
+
+    inventario = sdd / "inventario_hallazgos.md"
+    if not inventario.exists():
+        rep.warn(rel_inventario,
+                 "C-19: el inventario de hallazgos no consta todavía; lo escribe la etapa de "
+                 "documentación en las tareas T-020 a T-025")
+    else:
+        contenido = read_text(inventario)
+        for problema in mecanismo_hallazgos.problemas_de_complecion(
+                contenido, textos, _texto_del_arbol(base, rel_readme)):
+            rep.error(rel_inventario, f"C-19: {problema}")
+        for problema in mecanismo_hallazgos.problemas_de_regla_citada(contenido):
+            rep.error(rel_inventario, f"C-20: {problema}")
+        declarado = veredicto_declarado(contenido)
+        filas = mecanismo_hallazgos.filas_del_inventario(contenido)
+        if declarado is None:
+            rep.warn(rel_inventario,
+                     "C-21: el inventario no declara el veredicto calculado; la tarea T-025 lo "
+                     "registra con su recuento de abiertos")
+        else:
+            for problema in mecanismo_hallazgos.problemas_del_veredicto(declarado, filas):
+                rep.error(rel_inventario, f"C-21: {problema}")
+        if mecanismo_hallazgos.filas_del_cierre(contenido):
+            for problema in mecanismo_hallazgos.cierre_de_los_dieciseis(contenido):
+                rep.error(rel_inventario, f"C-25: {problema}")
+        else:
+            rep.warn(rel_inventario,
+                     "C-25: la tabla de cierre de las dieciséis observaciones no consta todavía; "
+                     "la tarea T-024 la escribe")
+
+    acta = sdd / "ratificacion_historica.md"
+    if not acta.exists():
+        rep.warn(rel_acta,
+                 "C-25: el acta de ratificación no consta todavía; la tarea T-028 la publica con "
+                 "firma verificable")
+    else:
+        for problema in mecanismo_hallazgos.problemas_del_acta(read_text(acta)):
+            rep.error(rel_acta, f"C-25: {problema}")
+
+    protocolo = _texto_del_arbol(base, rel_protocolo)
+    flujo = _texto_del_arbol(base, "docs/Flujo_de_Trabajo_Git.md")
+    if mecanismo_hallazgos.claves_declaradas(protocolo) and mecanismo_hallazgos.claves_declaradas(flujo):
+        for problema in mecanismo_hallazgos.seis_artefactos(protocolo, flujo):
+            rep.error(rel_protocolo, f"C-22: {problema}")
+    else:
+        rep.warn(rel_protocolo,
+                 "C-22: la enumeración de los 6 artefactos con las claves A1 a A6 no consta "
+                 "todavía; la escriben las tareas T-015 y T-018")
+
+    for ruta_spec in sorted((base / "specs").glob("*/spec.md")):
+        frontmatter, _, _ = parse_frontmatter(read_text(ruta_spec))
+        if frontmatter is None:
+            continue
+        relativa = ruta_spec.relative_to(base).as_posix()
+        estado = frontmatter.get("status", "")
+        identificador = frontmatter.get("id", "")
+        texto_spec = read_text(ruta_spec)
+        if identificador in SPECS_CON_ROW_T7_CORREGIDA and mecanismo_hallazgos.fila_t7(texto_spec) is not None:
+            problemas = mecanismo_hallazgos.destino_del_tag(texto_spec)
+            antigua = any("commit de empaquetado como destino" in problema for problema in problemas)
+            for problema in problemas:
+                if antigua:
+                    rep.warn(relativa,
+                             f"C-23: {problema} (corrección de la fila T7 en la tarea T-030)")
+                else:
+                    rep.error(relativa, f"C-23: {problema}")
+        if estado in {"released", "superseded"} and identificador not in SPECS_DE_LA_REGULARIZACION:
+            continue
+        reporte = ruta_spec.parent / "validation_report.md"
+        tareas = ruta_spec.parent / "tasks.md"
+        texto_reporte = read_text(reporte) if reporte.exists() else ""
+        texto_tareas = read_text(tareas) if tareas.exists() else ""
+        rel_tareas = tareas.relative_to(base).as_posix()
+        comprobaciones = [(relativa, mecanismo_hallazgos.autorreferencia(
+            texto_spec, texto_reporte, ""))]
+        comprobaciones.append((rel_tareas, mecanismo_hallazgos.autorreferencia(
+            "", texto_reporte, texto_tareas)))
+        for ruta, problemas in comprobaciones:
+            for problema in problemas:
+                if estado in {"released", "superseded"}:
+                    rep.warn(ruta,
+                             f"C-24: {problema} (nota de autorreferencia en las tareas T-031 y "
+                             "T-032)")
+                else:
+                    rep.error(ruta, f"C-24: {problema}")
+
+    changelog = _texto_del_arbol(base, "CHANGELOG.md")
+    for problema in mecanismo_hallazgos.problemas_de_historial_de_releases(changelog):
+        rep.error("CHANGELOG.md", f"C-26: {problema}")
 
 
 # ------------------------------------------------------------------ validators
@@ -1536,6 +1677,9 @@ def validate_report(spec_id: str, spec_dir: Path, rep: Reporter, gate: str | Non
 
 
 def validate_global(rep: Reporter) -> None:
+    # C-19 a C-26: mecanismo de cierre de hallazgos (SPEC-016).
+    validate_mecanismo_de_hallazgos(rep)
+
     # AGENTS.md entre 30 y 70 líneas
     if AGENTS_PATH.exists():
         lines = read_text(AGENTS_PATH).splitlines()

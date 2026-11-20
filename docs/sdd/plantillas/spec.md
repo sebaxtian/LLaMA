@@ -77,4 +77,4 @@ Cubre: `RF-002`.
 |---|---|---|
 | 0.1.0 | YYYY-MM-DD | Redacción inicial |
 
-<!-- Prohibiciones de esta plantilla: rutas de código, clases, SQL y comandos técnicos; casilla de G6; dos formas para un mismo campo. -->
+<!-- Prohibiciones de esta plantilla: rutas de código, clases, SQL y comandos técnicos; casilla de G6; dos formas para un mismo campo; requisito, criterio de aceptación o tarea que fija el veredicto, el recuento de hallazgos o el conjunto de dimensiones de un informe de auditoría posterior a la aprobación de la spec, porque esa materia corresponde al rol de auditoría y el criterio que invoca una auditoría se limita a exigir la existencia del artefacto y la evidencia transcrita. -->

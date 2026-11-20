@@ -2,9 +2,9 @@
 id: SPEC-014
 title: Cierre de las observaciones de la reauditoría final
 status: released
-version: 0.8.1
+version: 0.8.2
 created: 2026-11-14
-updated: 2026-11-20
+updated: 2026-11-21
 owner: Agent Sebaxtian
 branch: feat/cierre-observaciones-finales
 release: "v0.7.0"
@@ -216,6 +216,7 @@ Cubre: `RNF-004`, `RNF-005`.
 | 0.7.0 | 2026-11-14 | Validación e integración del cierre de observaciones finales |
 | 0.8.0 | 2026-11-14 | Release v0.7.0 |
 | 0.8.1 | 2026-11-20 | Corrección de la fila T7: release v0.7.0 publicado |
+| 0.8.2 | 2026-11-21 | Corrección de la fila T7: el tag anotado `v0.7.0` apunta al commit de merge `5a3af48` publicado en `main`, con el commit de empaquetado `5da6df6` como ancestro de ese merge |
 
 ### Historial de transiciones
 
@@ -228,4 +229,4 @@ Cubre: `RNF-004`, `RNF-005`.
 | 2026-11-14 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, trece tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-14 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `cf9caf5` con trece tareas cerradas, 167 pruebas de la suite del mecanismo y 48 de las herramientas de Git en verde |
 | 2026-11-14 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `f070cbf`, dictamen `CONVERGIDO` de 17 de 17 filas e integración `b018ab8` con dos padres y rama eliminada |
-| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 publicado con tag anotado `v0.7.0` verificado sobre el commit de empaquetado y G6 firmada |
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 publicado con tag anotado `v0.7.0` sobre el commit de merge `5a3af48` publicado en `main`, con el destino `released` conservado, con el commit de empaquetado `5da6df6` como ancestro de ese merge y con la línea de G6 firmada |
