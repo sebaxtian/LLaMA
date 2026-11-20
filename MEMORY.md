@@ -10,7 +10,7 @@
 - Caso de uso principal: programación en Python, análisis de datos y arquitectura de software.
 - Base normativa vigente: v2, con constitución, `AGENTS.md`, protocolo operativo, flujo Git, plantillas e índice del corpus.
 - Repositorio Git inicializado. `main` y `dev` protegidas; cada cambio entra por Pull Request con `merge --no-ff`.
-- Estado de specs: `SPEC-001` a `SPEC-007` publicadas con sus releases anteriores; `SPEC-008` a `SPEC-014` publicadas con el release v0.7.0; `SPEC-015` publicada con el release v0.7.1; `SPEC-016` consta en estado `tasked`, con rama `feat/cierre-auditoria-v0-7-1` y con el contrato de cierre de la auditoría de v0.7.1, sin tag de release, conforme a `specs/INDEX.md`.
+- Estado de specs: `SPEC-001` a `SPEC-007` publicadas con sus releases anteriores; `SPEC-008` a `SPEC-014` publicadas con el release v0.7.0; `SPEC-015` publicada con el release v0.7.1; `SPEC-016` consta en estado `implementing`, con release pendiente y sin tag de release, conforme a `specs/INDEX.md:22`.
 
 ## 2. Hardware objetivo
 

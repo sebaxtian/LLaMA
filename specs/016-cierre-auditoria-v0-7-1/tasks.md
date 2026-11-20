@@ -33,8 +33,8 @@ Reglas adicionales:
 
 ## Progreso
 
-- Cerradas: 34 de 36 tareas (`T-001` a `T-034`).
-- Abiertas: 2 de 36 tareas (`T-035` y `T-036`), que ejecuta la etapa Implement de la reapertura 0.9.0 por los hallazgos H-02 y H-03 del informe previo al release v0.7.2.
+- Cerradas: 36 de 36 tareas (`T-001` a `T-036`).
+- Abiertas: 0 de 36 tareas, tras el cierre de `T-035` y `T-036` en la etapa Implement de la reapertura 0.9.0 por los hallazgos H-02 y H-03 del informe previo al release v0.7.2.
 
 ## Archivos de la etapa y escritor
 
@@ -441,8 +441,8 @@ Reglas adicionales:
 - **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`, `.opencode/agents/reviewer.md`.
 - **Estimación:** 25 min.
 - **Validación:** `§12` del protocolo y la configuración del rol declaran que la nota append-only de un reporte publicado la escribe el `documenter` y la firma el propietario, y que el `reviewer` escribe solo el reporte de la spec en curso; la matriz de permisos no concede `specs/*/validation_report.md` sin límite de spec.
-- **Evidencia:** se transcribirá la línea de `§12` que declara la autoría del `documenter` y la firma del propietario sobre la nota de un reporte publicado, la línea de `.opencode/agents/reviewer.md` que limita la escritura al reporte de la spec en curso y el resultado de la suite de permisos del rol.
-- [ ] Completada.
+- **Evidencia:** `docs/sdd/PROTOCOLO_OPERATIVO.md:296` declara la regla de la matriz: «La nota que requiere el reporte de validación de una spec publicada se añade al final de ese reporte, la redacta el `documenter` y la firma el propietario en 1 commit firmado con una clave de `docs/sdd/firmantes_autorizados`; el `reviewer` escribe solo el reporte de validación de la spec en curso, no escribe la nota de un reporte publicado ni el reporte de una spec ajena, y su concesión no alcanza `specs/*/validation_report.md` sin límite de spec.» La descripción de `.opencode/agents/reviewer.md:2` declara «Solo lectura; escribe unicamente el validation_report.md de la spec en curso» y la prosa de `:104` limita la escritura a «`specs/NNN-slug/validation_report.md` de la spec en curso»; `:109` atribuye la nota de un reporte publicado al `documenter` y su firma al propietario. Suite de permisos: `python -m unittest tools.sdd.tests.test_agent_permissions -q` devuelve «Ran 61 tests in 0.122s» y «OK», con `test_escritura_unica_del_reviewer` en verde.
+- [x] Completada.
 
 ### T-036
 
@@ -452,5 +452,5 @@ Reglas adicionales:
 - **Archivos:** `MEMORY.md`.
 - **Estimación:** 20 min.
 - **Validación:** `MEMORY.md` declara el estado `implementing` de `SPEC-016` con su release pendiente, cita `specs/INDEX.md` como fuente del estado y no conserva el estado `tasked` ni la atribución de ese estado al índice.
-- **Evidencia:** se transcribirá la línea de `MEMORY.md` que declara el estado vigente de `SPEC-016` con la cita de `specs/INDEX.md`, junto con el contraste de esa línea con el frontmatter de `spec.md` y con la fila 22 del índice.
-- [ ] Completada.
+- **Evidencia:** `MEMORY.md:13` declara: «Estado de specs: `SPEC-001` a `SPEC-007` publicadas con sus releases anteriores; `SPEC-008` a `SPEC-014` publicadas con el release v0.7.0; `SPEC-015` publicada con el release v0.7.1; `SPEC-016` consta en estado `implementing`, con release pendiente y sin tag de release, conforme a `specs/INDEX.md:22`.» El contraste con el frontmatter de `spec.md` devuelve `status: implementing` en `:4` y `release: ""` en `:10`; `specs/INDEX.md:22` declara el estado `implementing` y el guion en la columna del release. `spec.md:454` registra la corrección en la fila 0.9.1: «Corrección de MEMORY.md para declarar el estado implementing de SPEC-016 conforme al índice». La línea no conserva el estado `tasked` ni la atribución de ese estado al índice.
+- [x] Completada.

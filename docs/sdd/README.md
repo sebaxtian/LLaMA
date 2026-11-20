@@ -66,6 +66,7 @@ Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la na
 | `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 37 | Sin rango |
 | `ratificacion_historica.md` | `docs/sdd/ratificacion_historica.md` | Acta de ratificación histórica del propietario | 38 | Sin rango |
 | `auditoria_previa_v0_7_2.md` | `docs/sdd/auditoria_previa_v0_7_2.md` | Informe de auditoría previa al release v0.7.2 | 39 | Sin rango |
+| `ratificacion_interpretacion.md` | `docs/sdd/ratificacion_interpretacion.md` | Acta de interpretación normativa del propietario | 40 | Sin rango |
 
 ## Regla de inventario
 

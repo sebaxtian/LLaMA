@@ -2,11 +2,11 @@
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
 status: implementing
-version: 0.9.0
+version: 0.9.1
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
-branch: feat/cierre-auditoria-v0-7-1
+branch: feat/reapertura-spec-016
 release: ""
 supersedes: ""
 superseded_by: ""
@@ -451,6 +451,7 @@ Cubre: `RF-017`.
 | 0.7.0 | 2026-11-21 | Cierre de la implementación y verificación G3 |
 | 0.8.0 | 2026-11-21 | Validación e integración del cierre de la auditoría de v0.7.1 |
 | 0.9.0 | 2026-11-21 | Reapertura: corrección de la autorreferencia de RF-015 y CA-016, del alcance del inventario a la totalidad de los informes, del permiso del reviewer para notas en specs publicadas y de las cuatro observaciones OBS-001 a OBS-004 |
+| 0.9.1 | 2026-11-21 | Corrección de MEMORY.md para declarar el estado implementing de SPEC-016 conforme al índice |
 
 ### Historial de transiciones
 

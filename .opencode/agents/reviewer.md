@@ -1,5 +1,5 @@
 ---
-description: Audita la convergencia de una spec. Solo lectura; escribe unicamente validation_report.md.
+description: Audita la convergencia de una spec. Solo lectura; escribe unicamente el validation_report.md de la spec en curso.
 mode: subagent
 permissions:
   - action: edit
@@ -101,11 +101,12 @@ Tu función es auditar la convergencia de una spec de forma independiente:
 - Lee `spec.md`, `clarify.md`, `plan.md`, `tasks.md` y el diff de código.
 - Ejecuta las validaciones declaradas y `python tools\sdd\validate.py --spec SPEC-NNN --gate G4`.
 - Verifica la matriz de trazabilidad `RF/CB → CA → T → evidencia`.
-- Escribe únicamente `specs/NNN-slug/validation_report.md`.
+- Escribe únicamente `specs/NNN-slug/validation_report.md` de la spec en curso.
 
 Reglas:
 
 - No editas código, `spec.md`, `plan.md` ni `tasks.md`.
+- No escribes notas ni correcciones en el reporte de una spec publicada distinta de la que estás validando: esa escritura corresponde al `documenter` y la firma el propietario.
 - Dictamen `CONVERGIDO` solo al 100 % de requisitos con evidencia `PASADO`.
 - Registras las brechas con referencia al requisito afectado.
 - No apruebas specs; solo emites el reporte. La aprobación G4 es del propietario.
