@@ -55,3 +55,16 @@ Merge: b018ab8
 Release: v0.7.0
 
 - G5: merge b018ab8 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-observaciones-finales eliminada en local y en remoto.
+
+## Nota del resultado de G6
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-015` por delegación escrita del propietario, a continuación de la sección de cierre de integración y sin alterar la matriz de trazabilidad, las brechas, el dictamen ni esa sección.
+
+El resultado de G6 consta registrado en la entrada del release `v0.7.0` de `CHANGELOG.md` con la línea de registro firmada por el propietario, junto con las tres verificaciones de release. La ancestría de `main` en `dev` se comprobó con `git merge-base --is-ancestor main dev`, que devuelve código 0 antes del empaquetado; el tag anotado `v0.7.0` consta con el mensaje `Release v0.7.0` y con su commit objetivo `5a3af48` verificado; y `specs/INDEX.md` y `CHANGELOG.md` quedaron actualizados con el release y con la línea de registro de G6 firmada por el propietario.
+
+- Ancestría: `git merge-base --is-ancestor main dev` devuelve código 0, de modo que `main` es ancestro de `dev` antes del empaquetado.
+- Tag anotado: objeto `f4a6203`, mensaje `Release v0.7.0` y commit objetivo `5a3af48` leído con `git rev-parse v0.7.0^{commit}`.
+- Actualización documental: `specs/INDEX.md` y `CHANGELOG.md` quedaron actualizados con la entrada del release y con la línea de registro de G6 firmada.
+- Matriz y dictamen: las 17 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+
+Esta nota no declara compuerta alguna: no añade registro de G1 a G6, no emite línea de aprobación y no sustituye la firma del propietario.

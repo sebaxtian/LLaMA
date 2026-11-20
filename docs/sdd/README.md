@@ -60,7 +60,8 @@ Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la na
 | `auditoria_cumplimiento_sdd.md` | `docs/sdd/auditoria_cumplimiento_sdd.md` | Informe de auditoría | 31 | Sin rango |
 | `auditoria_cierre_v0_7_0.md` | `docs/sdd/auditoria_cierre_v0_7_0.md` | Informe de auditoría de la reauditoría de cierre | 32 | Sin rango |
 | `auditoria_final_v0_7_0.md` | `docs/sdd/auditoria_final_v0_7_0.md` | Informe de auditoría de la reauditoría final | 33 | Sin rango |
-| `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 34 | Sin rango |
+| `auditoria_posterior_v0_7_0.md` | `docs/sdd/auditoria_posterior_v0_7_0.md` | Informe de auditoría posterior al release v0.7.0 | 34 | Sin rango |
+| `firmantes_autorizados` | `docs/sdd/firmantes_autorizados` | Registro de datos con las claves públicas de los firmantes autorizados | 35 | Sin rango |
 
 ## Regla de inventario
 

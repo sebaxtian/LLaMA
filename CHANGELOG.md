@@ -10,10 +10,29 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.7.1] - 2026-11-21
+
+### Added
+
+- Procedimiento de corrección de un tag publicado en `docs/Flujo_de_Trabajo_Git.md`: exige de forma simultánea la autorización escrita del propietario, el registro del identificador del tag anterior y del destino nuevo, y la ausencia de consumidores que dependan del tag; desplaza la corrección a un release PATCH nuevo cuando existe consumidor y conserva la prohibición de mover, eliminar o reutilizar un tag publicado, con el caso `v0.7.0` registrado como deuda aceptada entre el tag anterior `ad739a0` y el destino vigente `5a3af48` (`SPEC-015`, `AUD-087`).
+- Alcance cerrado de la rama `release/vX-Y-Z` en el paso 3 del procedimiento de release y en la excepción de ramas de release de `docs/Flujo_de_Trabajo_Git.md`: cuatro artefactos admitidos —`CHANGELOG.md`, `specs/INDEX.md`, el frontmatter de las specs publicadas y la línea `Release:` de los reportes publicados—, exigencia de spec previa o fix previo para cualquier otra ruta y detención del empaquetado con el registro del hallazgo; el empaquetado de `v0.7.0` queda registrado como excepción con el commit `5da6df6` y sus 18 archivos (`SPEC-015`, `AUD-088`).
+- Firma obligatoria posterior a la publicación en `docs/Flujo_de_Trabajo_Git.md`: cada modificación de una entrada de release o de un artefacto de una spec publicada consta en un commit firmado por el propietario con una clave de `docs/sdd/firmantes_autorizados`, el estado de firma se transcribe en la evidencia del cierre y la firma del empaquetado no se extiende a las correcciones posteriores; el caso `494db2e` queda registrado con estado de firma `N` (`SPEC-015`, `AUD-090`).
+- Nota append-only del resultado de G6 en el reporte de validación de `SPEC-014`, con las tres verificaciones de release y sin alteración de la matriz de 17 filas ni del dictamen `CONVERGIDO`, y nota de cierre corregida en el reporte de `SPEC-013`, que declara el valor efectivo `PARCIAL` de `RNF-001` y de `CA-015` y el cierre de las siete observaciones del informe final con seis cerradas con artefacto y `AUD-075` cerrada por `SPEC-015` (`SPEC-015`, `AUD-089`, `AUD-076`).
+- Cierre de las diez observaciones de `docs/sdd/auditoria_posterior_v0_7_0.md` con el artefacto que satisface cada una y su evidencia transcrita por ruta y línea; `AUD-099` queda cerrada por la fila 34 de la tabla de inventario de `docs/sdd/README.md`, existente y sin modificación por `SPEC-015` (`SPEC-015`).
+
+### Fixed
+
+- La fila T7 del historial de transiciones de `SPEC-014` declara el release publicado `v0.7.0` con el tag anotado verificado y la línea de G6 firmada, en lugar del tag pendiente de la firma; la spec pasa a la versión 0.8.1 con una fila de motivo de regularización y conserva `status: released`, el campo `release: "v0.7.0"`, sus requisitos y sus criterios de aceptación (`SPEC-015`, `AUD-057`).
+- §12 de `docs/sdd/PROTOCOLO_OPERATIVO.md` retira del bloque de documentos de raíz la remisión al bloque B3 y declara ejecutada la formalización de la allowlist de agentes, con referencia a la matriz de permisos vigente de los seis roles (`SPEC-015`, `AUD-068`).
+- El párrafo posterior al historial de releases de `CHANGELOG.md` declara en tiempo pasado la línea de G6 registrada en la entrada del release y la creación del tag `v0.7.0`, y la viñeta de la entrada del release enumera los 16 identificadores asignados en lugar del rango que incluía números no asignados (`SPEC-015`, `AUD-100`).
+
+- Approved by: Agent Sebaxtian
+
 ## [v0.7.0] - 2026-11-14
 
 ### Added
 
+- Cierre de las observaciones de los informes de auditoría de conformidad, con los identificadores `AUD-001` a `AUD-041` de la auditoría de origen y los identificadores `AUD-038`, `AUD-057`, `AUD-066`, `AUD-067`, `AUD-068`, `AUD-075`, `AUD-076`, `AUD-087`, `AUD-088`, `AUD-089`, `AUD-090`, `AUD-098`, `AUD-099`, `AUD-100`, `AUD-101` y `AUD-102` de la reauditoría final (`SPEC-013`, `SPEC-014`, `SPEC-015`).
 - Informe de auditoría de cumplimiento SDD en `docs/sdd/auditoria_cumplimiento_sdd.md`: diez dimensiones evaluadas, 41 hallazgos con identificador `AUD-NNN`, hoja de ruta organizada en los bloques B1 a B4 y veredicto global `NO CONFORME` sobre el periodo de `SPEC-001` a `SPEC-007` (`SPEC-008`).
 - Base normativa v2 (`SPEC-009`): mapa único de siete rangos, protocolo operativo redactado desde cero con sus dieciséis secciones, plantillas reconocidas como norma, contratos de informe analítico y de informe de auditoría, regla de versionado de specs, índice completo del corpus y lista `docs/sdd/firmantes_autorizados`. Fecha de corte `2026-11-14`.
 - Rol `auditor` con lectura de la base completa y escritura limitada al informe que produce, implementado en `.opencode/agents/auditor.md` (`SPEC-011`).
@@ -21,7 +40,6 @@ vMAJOR.MINOR.PATCH
 - Comprobaciones nuevas del validador determinista: aprobación de G1, G4 y G6 contra `docs/sdd/firmantes_autorizados` y la firma del commit, cobertura de requisitos como error desde G2, detección de tareas abiertas en la ejecución agregada, G5 y G6 con lógica propia, transiciones e historial de transiciones, relación de sucesión y alcance exacto impreso en cada ejecución (`SPEC-010`).
 - Trazabilidad profunda (`SPEC-012`): criterio de aceptación y evidencia obligatoria por tarea, sección de cierre de integración en el reporte de validación con el commit de integración y el tag del release, y regularización de `SPEC-001` a `SPEC-007` con esos campos.
 - Informes `docs/sdd/auditoria_cierre_v0_7_0.md` y `docs/sdd/auditoria_final_v0_7_0.md`, con veredicto global `NO CONFORME` y `CONFORME CON OBSERVACIONES` respectivamente, y cierre registrado de las dieciséis observaciones de la reauditoría de cierre y de las cuatro observaciones que permanecían abiertas del informe final (`SPEC-013`, `SPEC-014`).
-- Cierre de las observaciones de los informes de auditoría de conformidad, con identificadores `AUD-001` a `AUD-041` en la auditoría de origen y `AUD-038` a `AUD-102` en la reauditoría final (`SPEC-013`, `SPEC-014`).
 
 ### Changed
 
@@ -221,5 +239,6 @@ Se publicó `v0.1.0` como primera versión estructural y documental del proyecto
 | `v0.5.1` | 2026-11-13 | `v0.5.1` |
 | `v0.6.0` | 2026-11-13 | `v0.6.0` |
 | `v0.7.0` | 2026-11-14 | `v0.7.0` |
+| `v0.7.1` | 2026-11-21 | `v0.7.1` |
 
-El empaquetado de `v0.7.0` queda registrado en su entrada y en la tabla anterior; G6 permanece pendiente de la línea `- Approved by: Agent Sebaxtian` que el propietario introducirá en un commit firmado al publicar, y el tag `v0.7.0` se crea sobre el commit publicado.
+El empaquetado de `v0.7.0` quedó registrado en su entrada y en la tabla anterior: el release quedó publicado con la línea `- Approved by: Agent Sebaxtian` firmada por el propietario en el commit de empaquetado, G6 quedó cumplida y el tag anotado `v0.7.0` se creó sobre el commit publicado `5a3af48` con el mensaje `Release v0.7.0`.
