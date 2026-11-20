@@ -297,6 +297,8 @@ Cada artefacto de una spec declara rango 6. La plantilla de rango 5 fija la form
 
 **Rol de auditoría.** Se declara en este capítulo, en el rango 1 y en `AGENTS.md`, con lectura sobre la base completa, sin permiso de modificar requisitos y sin permiso de aprobar compuertas. Está implementado en `.opencode/agents/auditor.md`, con escritura limitada al informe de auditoría que produce conforme a la plantilla de rango 5.
 
+**Inventario del corpus.** La fila del informe de auditoría en la tabla de inventario de `docs/sdd/README.md` la escribe el `documenter` antes de la integración del informe. El rol de auditoría escribe solo el informe que produce y no escribe esa fila. Un informe integrado sin fila deja la verificación en rojo con la ruta del archivo sin fila y detiene la integración.
+
 ## 13. Integración Git y release
 
 **G5, integración.** Condición: G4 aprobada, spec en `validated`, check `verify` del flujo `SDD` declarado exigible con `strict: true` en `main` y en `dev`, y rama de trabajo integrada en `dev` por Pull Request con `merge --no-ff`. Evidencia: merge con dos padres, check `verify` exigible en las dos reglas de protección, validador posterior a la integración y listado de ramas sin la rama. Si una de las dos ramas no declara exigible el check `verify`, la verificación de G5 queda bloqueada y el caso se registra como ausencia del check exigible. Sin G5 no se integra.
@@ -348,7 +350,18 @@ El reporte de validación es append-only después de G4: el registro de G5 y G6 
 
 **Cambio editorial.** Sin spec se admite solo un cambio exclusivamente editorial: erratas, formato y enlaces, sin alterar reglas, requisitos, comportamiento, configuración ni scripts. Se registra con commit `docs:` o `chore:`.
 
-**Rama de release.** `release/vX-Y-Z` se dedica al empaquetado de `CHANGELOG.md`, `specs/INDEX.md` y el frontmatter de las specs publicadas; no introduce código funcional ni cambios de requisito y se integra por Pull Request con `merge --no-ff`.
+**Rama de release.** `release/vX-Y-Z` se dedica al empaquetado de los 6 artefactos de la tabla siguiente y se integra por Pull Request con `merge --no-ff`. No introduce código funcional ni cambios de requisito. El rango 3 escribe esta enumeración antes que el paso 3 de `docs/Flujo_de_Trabajo_Git.md`, que declara el mismo conjunto con las mismas claves y los mismos límites.
+
+| Clave | Artefacto | Modificación admitida |
+|---|---|---|
+| `A1` | `CHANGELOG.md` | entrada del release e historial de releases |
+| `A2` | `specs/INDEX.md` | fila de la spec publicada |
+| `A3` | `spec.md` de una spec publicada | campos del frontmatter `status`, `version`, `updated` y `release` |
+| `A4` | `spec.md` de una spec publicada | fila del historial de cambios de la versión de release |
+| `A5` | `spec.md` de una spec publicada | fila T7 del historial de transiciones |
+| `A6` | `validation_report.md` de una spec publicada | línea `Release:` con el tag del release |
+
+Cualquier ruta distinta de los 6 artefactos exige una spec previa o un fix previo y detiene el empaquetado, que se registra como hallazgo.
 
 **Hotfix.** Exige spec, aunque sea mínima.
 
@@ -362,7 +375,22 @@ El reporte de validación es append-only después de G4: el registro de G5 y G6 
 
 **Declaración del documento.** Cada documento de la base declara en su encabezado el rango y el carácter, y su versión se registra en la entrada de `CHANGELOG.md` que lo sustituye. Un documento sin declaración de rango y carácter es defecto de conformidad.
 
+**Autorreferencia.** Ninguna spec fija el veredicto, el recuento de hallazgos ni el conjunto de dimensiones de una auditoría futura. Un requisito, un criterio de aceptación o una tarea de una spec no declara `CONFORME`, `PARCIAL`, `NO CONFORME` ni `NO VERIFICABLE`, no declara un recuento de hallazgos y no enumera las dimensiones de un informe cuya emisión es posterior a la aprobación de la spec. El criterio que invoca una auditoría se limita a exigir la existencia del artefacto y la evidencia transcrita. El veredicto y el recuento los emite el rol de auditoría sobre el estado del inventario. Un requisito, un criterio o una tarea con la forma prohibida se registra como hallazgo y la spec no se aprueba en G1.
+
 **Auditoría de conformidad.** Antes de cada release menor se ejecuta una auditoría de conformidad sobre la base vigente. La ejecuta el rol de auditoría, sigue la plantilla de informe de auditoría de rango 5, se conserva en `docs/sdd/` y su identificador `AUD-NNN` se registra en la entrada del release.
+
+**Regla citada.** Cada hallazgo cita la regla normativa que se incumple con la forma `ruta §capítulo:línea`, por ejemplo `docs/constitution.md §7:76`. El juicio que carece de esa cita se registra como observación, queda fuera del recuento de hallazgos y no computa como hallazgo abierto en el cálculo del veredicto. Un hallazgo sin regla citada no se admite.
+
+**Cálculo del veredicto.** El veredicto se calcula desde el estado de las filas del inventario de hallazgos y no desde la apreciación del redactor. La precedencia es `NO CONFORME`, después `NO VERIFICABLE`, después `PARCIAL` y después `CONFORME`; se declara el primero que se cumple.
+
+| Veredicto | Condición sobre el inventario |
+|---|---|
+| `NO CONFORME` | 1 o más hallazgos abiertos de severidad `Crítica` o `Alta`. |
+| `NO VERIFICABLE` | 0 hallazgos abiertos de severidad `Crítica` o `Alta`, y 1 o más filas sin regla normativa citada o sin evidencia de cierre. |
+| `PARCIAL` | 0 hallazgos abiertos de severidad `Crítica` o `Alta`, 0 filas sin regla citada o sin evidencia de cierre, y 1 o más hallazgos abiertos de severidad `Media` o `Baja`, o 1 o más observaciones de severidad `Alta` o `Media` sin tratamiento. |
+| `CONFORME` | 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento. |
+
+Son estados cerrados `cerrado` y `cerrado por ratificación`; son estados abiertos `parcial`, `vigente` y `cerrado por exención`. Un tratamiento es la decisión registrada del propietario, con fecha e identificador del commit, que declara el efecto de la observación y su destino. `CONFORME` exige 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento. Un veredicto que contradiga el recuento del inventario no se admite y la verificación registra la fila que sostiene la diferencia.
 
 **Prohibición de G6.** No se emite G6 sin informe de auditoría de conformidad registrado. Un release preparado sin ese informe es incumplimiento y se detiene.
 

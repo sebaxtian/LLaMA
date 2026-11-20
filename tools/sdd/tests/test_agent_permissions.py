@@ -25,6 +25,7 @@ CONFIG_PATH = ROOT / "opencode.jsonc"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "sdd.yml"
 
 sys.path.insert(0, str(ROOT / "tools" / "sdd"))
+import hallazgos as mecanismo  # noqa: E402
 import validate as validador  # noqa: E402
 
 ROLES = ("sdd", "planner", "coder", "reviewer", "documenter", "auditor")
@@ -1989,16 +1990,23 @@ class TestDocumentosSinRango(unittest.TestCase):
                       f"el hallazgo debe nombrar el archivo sin fila: {detectados}")
 
     def test_historial_de_releases(self):
-        """RF-016, CB-013, CA-014: el historial registra una fila por release publicado."""
+        """RF-016, RF-010 y CA-010: una fila por release publicado, sin equiparar recuentos."""
         changelog = texto_de_ruta(CHANGELOG_PATH)
         problemas = problemas_de_historial(changelog)
         self.assertEqual(problemas, [], "el historial debe registrar los releases publicados")
         encabezados = releases_publicados(changelog)
         filas = filas_de_releases(changelog)
         self.assertTrue(encabezados, "el registro de cambios no declara releases publicados")
-        self.assertEqual(len(filas), len(encabezados),
-                         "el historial declara una fila por cada encabezado de release "
-                         f"y cuenta {len(filas)} filas para {len(encabezados)} encabezados")
+        declarados = [celda[0].strip("`") for celda in filas]
+        # La comprobación admite las filas que el empaquetado escribe: exige la fila de cada
+        # release publicado y no equipara el número de filas con el número de encabezados,
+        # porque el historial de cambios y el de transiciones también escriben filas.
+        for version in encabezados:
+            self.assertEqual(declarados.count(version), 1,
+                             "el historial declara una fila por release publicado y cuenta "
+                             f"{declarados.count(version)} filas para {version}")
+        self.assertIn("released", ESTADOS_POSTERIORES_A_LA_VALIDACION,
+                      "la constante de estados de la nota de cierre debe admitir released")
         sintetico = (
             "# Changelog\n\n## [Unreleased]\n\n## [v0.2.0] - 2026-11-12\n\n## [v0.1.0] - 2026-11-10\n\n"
             "## Historial de releases\n\n| Versión | Fecha | Tag |\n|---|---|---|\n"
@@ -2043,7 +2051,9 @@ OBSERVACIONES_NUEVAS = 7
 FILAS_DE_LA_MATRIZ = 40
 CELDAS_SIN_VALOR = ("", "-", "—", "`-`", "`—`")
 # Estados alcanzados al cerrar la validación: el reporte conserva matriz y dictamen.
-ESTADOS_POSTERIORES_A_LA_VALIDACION = ("validated", "released")
+# RF-010 y CA-010: la constante se declara en el mecanismo de hallazgos y admite `released`;
+# la regularización consta en la fila de `Unreleased` del registro de cambios (AUD-088).
+ESTADOS_POSTERIORES_A_LA_VALIDACION = mecanismo.ESTADOS_POSTERIORES_A_LA_VALIDACION
 
 
 def concesiones_de_escritura(entradas: list[dict]) -> list[str]:
@@ -3077,8 +3087,17 @@ def valor_de_celda(celda: str) -> str:
     return celda.strip().strip("`").strip('"').strip("'")
 
 
+def version_del_frontmatter(texto: str) -> tuple[int, int, int] | None:
+    """Versión `X.Y.Z` del frontmatter como tupla comparable, o `None` sin esa forma."""
+    valor = campos_del_frontmatter(texto).get("version", "").strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", valor):
+        return None
+    mayor, menor, parche = (int(parte) for parte in valor.split("."))
+    return (mayor, menor, parche)
+
+
 def problemas_de_la_fila_t7(texto: str) -> list[str]:
-    """C-5: la fila T7 declara el release publicado y la versión asciende a 0.8.1."""
+    """C-5: la fila T7 declara el release publicado y la versión asciende tras 0.8.0."""
     campos = campos_del_frontmatter(texto)
     problemas: list[str] = []
     if campos.get("id", "").strip() != "SPEC-014":
@@ -3089,9 +3108,15 @@ def problemas_de_la_fila_t7(texto: str) -> list[str]:
         problemas.append(
             f"la spec no conserva el release v0.7.0: {_sin_comillas(campos.get('release', ''))}"
         )
-    if campos.get("version", "").strip() != "0.8.1":
+    version = version_del_frontmatter(texto)
+    if version is None:
         problemas.append(
-            f"la versión del frontmatter es {campos.get('version')} y el incremento PATCH exige 0.8.1"
+            f"la versión del frontmatter no declara la forma X.Y.Z: {campos.get('version')}"
+        )
+    elif version <= (0, 8, 0):
+        problemas.append(
+            f"la versión del frontmatter es {campos.get('version')} y la corrección de T7 exige "
+            "una versión posterior a 0.8.0"
         )
     filas = filas_de_transiciones(texto)
     if not filas:
@@ -3113,12 +3138,15 @@ def problemas_de_la_fila_t7(texto: str) -> list[str]:
             problemas.append("la fila T7 no declara la línea de G6 firmada")
     if any(fila[1] == "T8" for fila in filas):
         problemas.append("el historial de transiciones declara una transición nueva")
-    motivos = re.findall(r"(?m)^\|\s*0\.8\.1\s*\|", texto)
-    if len(motivos) != 1:
-        problemas.append(
-            f"el historial de cambios declara {len(motivos)} filas de motivo para la versión 0.8.1 "
-            "y el contrato exige 1"
-        )
+    if version is not None:
+        version_texto = campos.get("version", "").strip()
+        historial = seccion(texto, r"Historial de cambios")
+        motivos = re.findall(rf"(?m)^\|\s*{re.escape(version_texto)}\s*\|", historial)
+        if len(motivos) != 1:
+            problemas.append(
+                f"el historial de cambios declara {len(motivos)} filas de motivo para la versión "
+                f"{version_texto} y el contrato exige 1"
+            )
     return problemas
 
 
@@ -3654,14 +3682,18 @@ class TestFilaT7YRegistro(unittest.TestCase):
         self.changelog = texto_de_ruta(CHANGELOG_PATH)
 
     def test_fila_t7_declara_el_release_publicado(self):
-        """CA-006: T7 con el release publicado, versión 0.8.1 y destino conservado."""
+        """CA-006: T7 con el release publicado, versión posterior a 0.8.0 y destino conservado."""
         self.assertEqual(
             problemas_de_la_fila_t7(self.spec),
             [],
-            "la fila T7 debe declarar el release publicado y la versión 0.8.1",
+            "la fila T7 debe declarar el release publicado y una versión posterior a 0.8.0",
         )
         campos = campos_del_frontmatter(self.spec)
-        self.assertEqual(campos.get("version", "").strip(), "0.8.1")
+        version = version_del_frontmatter(self.spec)
+        self.assertIsNotNone(version, "la versión del frontmatter debe declarar la forma X.Y.Z")
+        self.assertGreater(
+            version, (0, 8, 0), "la corrección de T7 exige una versión posterior a 0.8.0"
+        )
         self.assertEqual(campos.get("status", "").strip(), "released")
         self.assertEqual(_sin_comillas(campos.get("release", "")), "v0.7.0")
         filas = filas_de_transiciones(self.spec)
@@ -3670,7 +3702,15 @@ class TestFilaT7YRegistro(unittest.TestCase):
         self.assertIn("v0.7.0", t7[5])
         self.assertNotRegex(t7[5], r"(?i)pendiente")
         self.assertFalse([fila for fila in filas if fila[1] == "T8"])
-        self.assertEqual(len(re.findall(r"(?m)^\|\s*0\.8\.1\s*\|", self.spec)), 1)
+        version_texto = campos.get("version", "").strip()
+        self.assertEqual(
+            len(re.findall(
+                rf"(?m)^\|\s*{re.escape(version_texto)}\s*\|",
+                seccion(self.spec, r"Historial de cambios"),
+            )),
+            1,
+            f"el historial de cambios debe declarar una fila de motivo para {version_texto}",
+        )
 
     def test_fila_t7_con_tag_pendiente_es_error(self):
         """CB-006: una fila T7 con el tag pendiente produce error con la fila nombrada."""

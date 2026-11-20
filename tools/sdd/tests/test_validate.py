@@ -195,7 +195,7 @@ class TestReporteAusente(unittest.TestCase):
 
 
 class TestDependencias(unittest.TestCase):
-    """RNF-002: validate.py solo importa biblioteca estándar."""
+    """RNF-002: validate.py solo importa biblioteca estándar y módulos locales del mecanismo."""
 
     def test_solo_biblioteca_estandar(self):
         source = (ROOT / "tools" / "sdd" / "validate.py").read_text(encoding="utf-8")
@@ -205,8 +205,13 @@ class TestDependencias(unittest.TestCase):
                 modules.update(alias.name.split(".")[0] for alias in node.names)
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 modules.add(node.module.split(".")[0])
-        external = sorted(m for m in modules if m not in sys.stdlib_module_names)
+        # Los módulos del propio directorio `tools/sdd` no son dependencias externas:
+        # `hallazgos.py` integra el mecanismo de cierre de SPEC-016 (DEC-008).
+        locales = {ruta.stem for ruta in (ROOT / "tools" / "sdd").glob("*.py")}
+        external = sorted(m for m in modules
+                          if m not in sys.stdlib_module_names and m not in locales)
         self.assertEqual(external, [], f"importaciones no estándar: {external}")
+        self.assertIn("hallazgos", locales, "el mecanismo de hallazgos es un módulo local")
 
 
 class TestCoberturaRF004(unittest.TestCase):

@@ -89,3 +89,27 @@ Merge: 4dd07f5
 Release: v0.7.1
 
 - G5: merge 4dd07f5 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-posterior eliminada en local y en remoto.
+
+## Nota del resultado de G5 y de G6 y del objeto del tag `v0.7.1`
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-016` por delegación escrita del propietario, a continuación de la sección de cierre de integración y sin alterar la matriz de trazabilidad, las brechas, la nota sobre la evidencia del tag de la línea 77, el dictamen ni esa sección.
+
+- G5: merge `4dd07f5` con dos padres sobre la rama `feat/cierre-auditoria-posterior`; la validación posterior a la integración no presentó hallazgos y la rama de trabajo quedó eliminada en local y en remoto, conforme a la transcripción de la sección de cierre de integración, que conserva su contenido.
+- G6: resultado registrado en la entrada `v0.7.1` de `CHANGELOG.md` con la línea de aprobación de G6 firmada por el propietario; las 3 verificaciones de release quedaron cumplidas sobre el estado publicado.
+- Ancestría: `git merge-base --is-ancestor main dev` devuelve código 0 con `main` en `da30c86` y `dev` en `fbc6031`, de modo que `main` es ancestro de `dev`.
+- Tag anotado: el objeto del tag `v0.7.1` es un objeto de tipo `tag` con el mensaje `Release v0.7.1` y el commit objetivo `da30c86`, que coincide con el valor de `main` leído con `git rev-parse main`; el identificador del objeto anotado es `4d0473b` y su lectura con `git show v0.7.1 --no-patch` declara el tipo `tag` y el destino `da30c86`.
+- Actualización documental: `specs/INDEX.md` y `CHANGELOG.md` actualizados con el release `v0.7.1` y con la línea de G6 firmada; la fila 21 de `specs/INDEX.md` declara el estado `released` y el release `v0.7.1`.
+- Matriz y dictamen: las 23 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+
+Esta nota no declara compuerta alguna: no añade registro de G1 a G6, no emite línea de aprobación y no sustituye la firma del propietario.
+
+## Nota de autorreferencia
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-016` en la tarea `T-031`, por delegación escrita del propietario, a continuación de la última sección de este documento y sin alterar la matriz de trazabilidad, las brechas, el dictamen ni las notas anteriores. Fecha de la nota: 2026-11-21 (UTC).
+
+- Regla: `RF-001` de `SPEC-016` y §16 de `docs/sdd/PROTOCOLO_OPERATIVO.md` prohíben que una spec determine el veredicto, el recuento o las dimensiones de un informe de auditoría posterior.
+- Alcance: los criterios de este reporte que fijaban el veredicto o el recuento de un informe de auditoría futuro quedan sin efecto por esa regla, y su texto publicado se conserva como registro del corte. La referencia concreta alcanza a la fila de `RF-010`, que declaraba el recuento de observaciones cerradas en su paquete de cierre, y a la sección «Nota sobre `RNF-001` y `CA-015` de `SPEC-013`», que declaraba un valor de veredicto para el corte posterior.
+- Efecto: el veredicto y el recuento los emite el rol de auditoría con el cálculo desde el inventario de hallazgos de `docs/sdd/inventario_hallazgos.md`; esta nota no declara un valor de veredicto ni una cifra de recuento para un informe venidero.
+- Conservación: la matriz de trazabilidad, las brechas y el dictamen no se alteran; las 23 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`, en su condición de registro del corte.
+
+Esta nota no declara compuerta alguna: no añade registro de G1 a G6, no emite línea de aprobación y no sustituye la firma del propietario.

@@ -2,7 +2,7 @@
 id: SPEC-015
 title: Cierre de la auditoría posterior al release
 status: released
-version: 0.8.0
+version: 0.8.1
 created: 2026-11-20
 updated: 2026-11-21
 owner: Agent Sebaxtian
@@ -276,6 +276,8 @@ Cubre: `RNF-002`.
 | 0.6.0 | 2026-11-20 | Cierre de la implementación y verificación G3 |
 | 0.7.0 | 2026-11-20 | Validación e integración del cierre de la auditoría posterior |
 | 0.8.0 | 2026-11-21 | Release v0.7.1 |
+| 0.8.1 | 2026-11-21 | Corrección de la fila T7: el tag anotado `v0.7.1` apunta al commit de merge `da30c86` publicado en `main`, con el commit de empaquetado `f6f053a` como ancestro de ese merge |
+| 0.8.1 | 2026-11-21 | Nota de autorreferencia y corrección de los criterios que fijaban el veredicto de una auditoría futura |
 
 ### Historial de transiciones
 
@@ -288,4 +290,4 @@ Cubre: `RNF-002`.
 | 2026-11-20 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, diecinueve tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-20 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `9750fed` con diecinueve tareas cerradas, 187 pruebas en la suite del mecanismo y 48 en las herramientas de Git |
 | 2026-11-20 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `3a98f2b`, dictamen `CONVERGIDO` de 23 de 23 filas e integración `4dd07f5` con dos padres y rama eliminada |
-| 2026-11-21 | T7 | `validated` | `released` | `planner` | release v0.7.1 publicado con tag anotado verificado sobre el commit de empaquetado y G6 firmada |
+| 2026-11-21 | T7 | `validated` | `released` | `planner` | release v0.7.1 publicado con tag anotado `v0.7.1` sobre el commit de merge `da30c86` publicado en `main`, con el destino `released` conservado, con el commit de empaquetado `f6f053a` como ancestro de ese merge y con la línea de G6 firmada |

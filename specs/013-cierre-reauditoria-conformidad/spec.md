@@ -2,9 +2,9 @@
 id: SPEC-013
 title: Cierre de la reauditoría de conformidad
 status: released
-version: 0.8.0
+version: 0.8.1
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-21
 owner: Agent Sebaxtian
 branch: feat/reauditoria-cierre
 release: "v0.7.0"
@@ -373,6 +373,7 @@ Cubre: `RNF-007`, `RNF-008`.
 | 0.6.0 | 2026-11-14 | Cierre de la implementación y verificación G3 |
 | 0.7.0 | 2026-11-14 | Validación e integración del cierre de la reauditoría |
 | 0.8.0 | 2026-11-14 | Release v0.7.0 |
+| 0.8.1 | 2026-11-21 | Nota de autorreferencia y corrección de los criterios que fijaban el veredicto de una auditoría futura |
 
 ### Historial de transiciones
 
