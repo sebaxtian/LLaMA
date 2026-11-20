@@ -1,8 +1,8 @@
 ---
 id: SPEC-015
 title: Cierre de la auditoría posterior al release
-status: implementing
-version: 0.5.0
+status: implemented
+version: 0.6.0
 created: 2026-11-20
 updated: 2026-11-20
 owner: Agent Sebaxtian
@@ -273,6 +273,7 @@ Cubre: `RNF-002`.
 | 0.3.0 | 2026-11-20 | Plan técnico cerrado: doce componentes, contratos `C-1` a `C-8`, decisiones `DEC-001` a `DEC-007` y matriz de cobertura de 23 filas |
 | 0.4.0 | 2026-11-20 | Tareas cerradas: 19 tareas atómicas con dependencias acíclicas, evidencia por tarea y trazabilidad `CA-NNN` a `T-NNN` |
 | 0.5.0 | 2026-11-20 | Implementación del cierre de la auditoría posterior |
+| 0.6.0 | 2026-11-20 | Cierre de la implementación y verificación G3 |
 
 ### Historial de transiciones
 
@@ -283,3 +284,4 @@ Cubre: `RNF-002`.
 | 2026-11-20 | T2 | `clarified` | `planned` | `planner` | `plan.md` redactado con doce componentes, los contratos `C-1` a `C-8`, las decisiones `DEC-001` a `DEC-007`, la estrategia de testing y la matriz de cobertura de los 11 requisitos funcionales, los 4 no funcionales y los 8 casos borde |
 | 2026-11-20 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 19 tareas atómicas, ocho campos por tarea, dependencias acíclicas y cobertura de los 11 requisitos funcionales, los 4 no funcionales, los 8 casos borde y los 11 criterios de aceptación |
 | 2026-11-20 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, diecinueve tareas cerradas con evidencia y `--all` con código 0 |
+| 2026-11-20 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `9750fed` con diecinueve tareas cerradas, 187 pruebas en la suite del mecanismo y 48 en las herramientas de Git |
