@@ -18,7 +18,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-012 | Trazabilidad profunda SDD verificable | released | feat/trazabilidad-profunda-sdd | v0.7.0 | specs/012-trazabilidad-profunda-sdd/ |
 | SPEC-013 | Cierre de la reauditoría de conformidad | released | feat/reauditoria-cierre | v0.7.0 | specs/013-cierre-reauditoria-conformidad/ |
 | SPEC-014 | Cierre de las observaciones de la reauditoría final | released | feat/cierre-observaciones-finales | v0.7.0 | specs/014-cierre-observaciones-finales/ |
-| SPEC-015 | Cierre de la auditoría posterior al release | clarified | feat/cierre-auditoria-posterior |  | specs/015-cierre-auditoria-posterior/ |
+| SPEC-015 | Cierre de la auditoría posterior al release | tasked | feat/cierre-auditoria-posterior |  | specs/015-cierre-auditoria-posterior/ |
 
 ## Reglas
 

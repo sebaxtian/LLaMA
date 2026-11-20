@@ -1,8 +1,8 @@
 ---
 id: SPEC-015
 title: Cierre de la auditoría posterior al release
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-20
 updated: 2026-11-20
 owner: Agent Sebaxtian
@@ -270,6 +270,8 @@ Cubre: `RNF-002`.
 |---|---|---|
 | 0.1.0 | 2026-11-20 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-20 | Clarificación cerrada: 11 ambigüedades resueltas y parches aplicados a los requisitos funcionales, los requisitos no funcionales, los casos borde, los criterios de aceptación, los actores y el alcance |
+| 0.3.0 | 2026-11-20 | Plan técnico cerrado: doce componentes, contratos `C-1` a `C-8`, decisiones `DEC-001` a `DEC-007` y matriz de cobertura de 23 filas |
+| 0.4.0 | 2026-11-20 | Tareas cerradas: 19 tareas atómicas con dependencias acíclicas, evidencia por tarea y trazabilidad `CA-NNN` a `T-NNN` |
 
 ### Historial de transiciones
 
@@ -277,3 +279,5 @@ Cubre: `RNF-002`.
 |---|---|---|---|---|---|
 | 2026-11-20 | creación | — | `draft` | `planner` | redacción inicial de `spec.md` con once requisitos funcionales, cuatro no funcionales, ocho casos borde y once criterios de aceptación |
 | 2026-11-20 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con 11 hallazgos resueltos y sin casillas pendientes, y parches aplicados a `spec.md` |
+| 2026-11-20 | T2 | `clarified` | `planned` | `planner` | `plan.md` redactado con doce componentes, los contratos `C-1` a `C-8`, las decisiones `DEC-001` a `DEC-007`, la estrategia de testing y la matriz de cobertura de los 11 requisitos funcionales, los 4 no funcionales y los 8 casos borde |
+| 2026-11-20 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 19 tareas atómicas, ocho campos por tarea, dependencias acíclicas y cobertura de los 11 requisitos funcionales, los 4 no funcionales, los 8 casos borde y los 11 criterios de aceptación |
