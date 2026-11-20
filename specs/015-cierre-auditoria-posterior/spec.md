@@ -1,8 +1,8 @@
 ---
 id: SPEC-015
 title: Cierre de la auditoría posterior al release
-status: implemented
-version: 0.6.0
+status: validated
+version: 0.7.0
 created: 2026-11-20
 updated: 2026-11-20
 owner: Agent Sebaxtian
@@ -274,6 +274,7 @@ Cubre: `RNF-002`.
 | 0.4.0 | 2026-11-20 | Tareas cerradas: 19 tareas atómicas con dependencias acíclicas, evidencia por tarea y trazabilidad `CA-NNN` a `T-NNN` |
 | 0.5.0 | 2026-11-20 | Implementación del cierre de la auditoría posterior |
 | 0.6.0 | 2026-11-20 | Cierre de la implementación y verificación G3 |
+| 0.7.0 | 2026-11-20 | Validación e integración del cierre de la auditoría posterior |
 
 ### Historial de transiciones
 
@@ -285,3 +286,4 @@ Cubre: `RNF-002`.
 | 2026-11-20 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 19 tareas atómicas, ocho campos por tarea, dependencias acíclicas y cobertura de los 11 requisitos funcionales, los 4 no funcionales, los 8 casos borde y los 11 criterios de aceptación |
 | 2026-11-20 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, diecinueve tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-20 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `9750fed` con diecinueve tareas cerradas, 187 pruebas en la suite del mecanismo y 48 en las herramientas de Git |
+| 2026-11-20 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `3a98f2b`, dictamen `CONVERGIDO` de 23 de 23 filas e integración `4dd07f5` con dos padres y rama eliminada |
