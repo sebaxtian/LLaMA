@@ -1,8 +1,8 @@
 ---
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
-status: implemented
-version: 0.7.0
+status: validated
+version: 0.8.0
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
@@ -429,6 +429,7 @@ Cubre: `RNF-005`, `RNF-006`, `RNF-007`, `RNF-008`, `RNF-009`.
 | 0.5.0 | 2026-11-21 | Descomposición en tareas: 34 tareas atómicas con los ocho campos, dependencias acíclicas y cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 17 criterios de aceptación |
 | 0.6.0 | 2026-11-21 | Implementación del cierre de la auditoría de v0.7.1 |
 | 0.7.0 | 2026-11-21 | Cierre de la implementación y verificación G3 |
+| 0.8.0 | 2026-11-21 | Validación e integración del cierre de la auditoría de v0.7.1 |
 
 ### Historial de transiciones
 
@@ -440,3 +441,4 @@ Cubre: `RNF-005`, `RNF-006`, `RNF-007`, `RNF-008`, `RNF-009`.
 | 2026-11-21 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 34 tareas atómicas, ocho campos por tarea, dependencias acíclicas y cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 17 criterios de aceptación |
 | 2026-11-21 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, treinta y cuatro tareas cerradas con evidencia y `--all` con código 0 |
 | 2026-11-21 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `e2ede7a` con treinta y cuatro tareas cerradas, 222 pruebas en la suite del mecanismo y 48 en las herramientas de Git |
+| 2026-11-21 | T6 | `implemented` | `validated` | `planner` | G4 firmada en el commit `3704b33`, dictamen `CONVERGIDO` de 37 de 37 filas e integración `79bcd83` con dos padres y rama eliminada |

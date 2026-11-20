@@ -77,3 +77,10 @@ Las 37 filas declaran `PASADO`, que es el único valor que converge; ninguna abr
 - [ ] NO CONVERGIDO.
 
 El dictamen se calcula desde la matriz: 37 de 37 filas en `PASADO` y 0 brechas abiertas. Este reporte no declara compuerta alguna; la aprobación de G4 corresponde al propietario y se registra solo en la sección de aprobaciones de `spec.md`.
+
+## Cierre de integración
+
+Merge: 79bcd83
+Release:
+
+- G5: merge 79bcd83 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-v0-7-1 eliminada en local y en remoto.
