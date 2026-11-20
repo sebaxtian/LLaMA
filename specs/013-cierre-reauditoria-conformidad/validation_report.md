@@ -124,3 +124,14 @@ Nota append-only añadida por el subagente `reviewer` de `SPEC-015` por delegaci
 - Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
 
 Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.
+
+## Nota de autorreferencia
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-016` en la tarea `T-031`, por delegación escrita del propietario, a continuación de la última sección de este documento y sin alterar la matriz de trazabilidad, las brechas, el dictamen ni las notas anteriores. Fecha de la nota: 2026-11-21 (UTC).
+
+- Regla: `RF-001` de `SPEC-016` y §16 de `docs/sdd/PROTOCOLO_OPERATIVO.md` prohíben que una spec determine el veredicto, el recuento o las dimensiones de un informe de auditoría posterior.
+- Alcance: los criterios de este reporte que fijaban el veredicto o el recuento de un informe de auditoría futuro quedan sin efecto por esa regla, y su texto publicado se conserva como registro del corte. La referencia concreta alcanza a la fila de `RNF-001` y a la fila de `CA-015` de la matriz, que declaraban el estado esperado de las observaciones y de las dimensiones del informe de la reauditoría posterior.
+- Efecto: el veredicto y el recuento los emite el rol de auditoría con el cálculo desde el inventario de hallazgos de `docs/sdd/inventario_hallazgos.md`; esta nota no declara un valor de veredicto ni una cifra de recuento para un informe venidero.
+- Conservación: la matriz de trazabilidad, las brechas y el dictamen no se alteran; las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`, en su condición de registro del corte.
+
+Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.

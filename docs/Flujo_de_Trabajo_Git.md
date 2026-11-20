@@ -13,6 +13,8 @@ El flujo tiene dos compuertas: **G5** autoriza la integración de una rama de tr
 
 Sin G5 no se integra y sin G6 no se publica. Una integración intentada sin la compuerta cumplida se revierte en la rama de trabajo y no se registra.
 
+**Auditoría previa al release.** La secuencia del release es G5, después la auditoría de conformidad sobre el estado integrado en `dev` y después G6. La auditoría se ejecuta sobre el commit de merge integrado, sigue la plantilla de informe de auditoría de rango 5 y declara el veredicto calculado desde el inventario de hallazgos. El release exige el veredicto `CONFORME`; un veredicto distinto de `CONFORME` impide la publicación, conserva la spec en `validated` y transcribe el motivo con el hallazgo que lo sostiene.
+
 ## Integración
 
 `merge --no-ff` es la única forma admitida de integración. El merge con `--no-ff` conserva la relación entre la rama de trabajo y la rama destino. Quedan prohibidos `rebase`, `squash merge` y la copia manual de archivos como mecanismo de integración.
@@ -227,9 +229,10 @@ Un release pasa la validación únicamente cuando:
 - `CHANGELOG.md` tiene entradas en `Unreleased`.
 - El incremento de versión cumple las reglas de «Sincronización y tag».
 - El propietario ha autorizado el release.
+- La auditoría de conformidad posterior a G5 y previa a G6 declara el veredicto `CONFORME` sobre el estado integrado en `dev`.
 - La validación estructural y las validaciones funcionales aplicables han pasado.
 
-La raíz del repositorio cuenta con dos suites de pruebas: la del mecanismo de control en `tools/sdd/tests/`, con 187 pruebas, y la de las herramientas de Git en `tools/git/tests/`, con 48 pruebas. El job `verify` del flujo `SDD` de `.github/workflows/sdd.yml` las ejecuta como pasos nombrados en cada Pull Request dirigido a `main` y a `dev`: `python -m unittest discover -s tools\sdd\tests -q` y `python -m unittest discover -s tools\git\tests -q`, cada uno con `timeout-minutes: 1`, dentro de un job con `timeout-minutes: 5`. El fallo de cualquiera de las dos suites deja el check `verify` en rojo y bloquea G5, y ninguna de las dos sustituye las validaciones anteriores.
+La raíz del repositorio cuenta con dos suites de pruebas: la del mecanismo de control en `tools/sdd/tests/`, con 222 pruebas, y la de las herramientas de Git en `tools/git/tests/`, con 48 pruebas. El job `verify` del flujo `SDD` de `.github/workflows/sdd.yml` las ejecuta como pasos nombrados en cada Pull Request dirigido a `main` y a `dev`: `python -m unittest discover -s tools\sdd\tests -q` y `python -m unittest discover -s tools\git\tests -q`, cada uno con `timeout-minutes: 1`, dentro de un job con `timeout-minutes: 5`. El fallo de cualquiera de las dos suites deja el check `verify` en rojo y bloquea G5, y ninguna de las dos sustituye las validaciones anteriores.
 
 ### Condición de cierre de la rama
 
@@ -337,7 +340,16 @@ Resolver conflictos en `dev` si los hubiera, completar el merge y repetir las va
 git switch -c release/vX-Y-Z dev
 ```
 
-3. Actualizar los artefactos de release exclusivamente en `release/vX-Y-Z`: `CHANGELOG.md`, `specs/INDEX.md`, el frontmatter de las specs publicadas y la línea `Release:` de los reportes publicados. Cualquier otra ruta exige una spec previa o un fix previo: la rama de empaquetado no incorpora código, pruebas, configuración ni documentación operativa, y una ruta fuera de los cuatro artefactos detiene el empaquetado y se registra como hallazgo.
+3. Actualizar los artefactos de release exclusivamente en `release/vX-Y-Z`: los 6 artefactos de la tabla siguiente, con las claves `A1` a `A6` y el mismo límite que §15 del protocolo de rango 3. Las rutas admitidas son `CHANGELOG.md`, `specs/INDEX.md`, el frontmatter de las specs publicadas, la fila del historial de cambios de la versión de release, la fila T7 del historial de transiciones y la línea `Release:` del reporte publicado. Cualquier otra ruta exige una spec previa o un fix previo: la rama de empaquetado no incorpora código, pruebas, configuración ni documentación operativa, y una ruta fuera de los 6 artefactos detiene el empaquetado y se registra como hallazgo.
+
+| Clave | Artefacto | Modificación admitida |
+|---|---|---|
+| `A1` | `CHANGELOG.md` | entrada del release e historial de releases |
+| `A2` | `specs/INDEX.md` | fila de la spec publicada |
+| `A3` | `spec.md` de una spec publicada | campos del frontmatter `status`, `version`, `updated` y `release` |
+| `A4` | `spec.md` de una spec publicada | fila del historial de cambios de la versión de release |
+| `A5` | `spec.md` de una spec publicada | fila T7 del historial de transiciones |
+| `A6` | `validation_report.md` de una spec publicada | línea `Release:` con el tag del release |
 
 4. Crear el commit de empaquetado:
 
@@ -372,7 +384,7 @@ git merge --no-ff release/vX-Y-Z
 git branch -d release/vX-Y-Z
 ```
 
-**Excepción registrada del empaquetado de `v0.7.0`.** El commit de empaquetado `5da6df6` modificó 18 archivos en lugar de los cuatro artefactos del paso 3: además de `CHANGELOG.md` y de `specs/INDEX.md`, incorporó el registro operativo de `MEMORY.md` y cambios en la suite de pruebas del mecanismo de control. La excepción queda registrada como deuda cerrada por `SPEC-015`: el alcance del paso 3 rige para el empaquetado siguiente y cualquier ruta fuera de esos cuatro artefactos exige una spec previa o un fix previo.
+**Excepción registrada del empaquetado de `v0.7.0`.** El commit de empaquetado `5da6df6` modificó 18 archivos en lugar de los 6 artefactos del paso 3: además de `CHANGELOG.md` y de `specs/INDEX.md`, incorporó el registro operativo de `MEMORY.md` y cambios en la suite de pruebas del mecanismo de control. La excepción queda registrada como deuda cerrada por `SPEC-015`: el alcance del paso 3 rige para el empaquetado siguiente y cualquier ruta fuera de esos 6 artefactos exige una spec previa o un fix previo.
 
 El commit de `main` debe contener el changelog actualizado. Antes de crear el tag, verificar que no exista y después comprobar su tipo, mensaje y commit objetivo:
 
@@ -396,6 +408,8 @@ git merge-base --is-ancestor vX.Y.Z^{commit} main
 ```
 
 Un resultado distinto de `0` detiene el release y la sincronización no se declara cumplida.
+
+**Destino del tag.** El tag anotado apunta al commit de merge publicado en `main` y no al commit de empaquetado. La fila T7 del historial de transiciones de la spec publicada declara el identificador de ese commit de merge, la rama `main` como rama del commit y su relación de ancestría con el commit de empaquetado, con el destino `released` y el campo `release` conservados. Una fila T7 que nombra el commit de empaquetado como destino del tag se corrige y no se admite.
 
 **Tres verificaciones de release.** Se ejecutan en este orden y las tres deben pasar: `main` ancestro de `dev` y tag del release alcanzable desde `main`; tag anotado `vX.Y.Z` con mensaje `Release vX.Y.Z` y commit objetivo verificado; `specs/INDEX.md` y `CHANGELOG.md` actualizados con la autorización de G6. Una verificación fallida detiene el release y la entrada permanece en `Unreleased`.
 
@@ -467,11 +481,11 @@ Ajustes a nivel de repositorio:
 
 En el repositorio local, las mismas restricciones se respetan mediante el procedimiento de este documento.
 
-**Check exigible.** El check exigible de las dos ramas es el job `verify` del flujo `SDD` de `.github/workflows/sdd.yml`, con `strict: true`: prepara el árbol con `actions/checkout@v4`, `fetch-depth: 0` y `fetch-tags: true`, instala Python 3.12 con `actions/setup-python@v5` y ejecuta `python tools/sdd/validate.py --all` y las 2 suites —`tools/sdd/tests`, con 187 pruebas, y `tools/git/tests`, con 48 pruebas— en cada Pull Request dirigido a `main` y a `dev`. La preparación con profundidad completa y descarga de etiquetas es la condición del alcance real de la comprobación `Spec:`: sin el historial completo el rango se reduce al último commit descargado y sin las etiquetas el corte del último release no se resuelve, de modo que la comprobación no examinaría commit de implementación alguno. La exigibilidad se declara en `tools/git/protection_rules/main.json` y `tools/git/protection_rules/dev.json`, se aplica con `python tools/git/configure_branch_protection.py` y se verifica con `python tools/git/verify_branch_protection.py`. Si una de las dos ramas no declara exigible el check `verify`, la verificación de G5 queda bloqueada y el caso se registra como ausencia del check exigible.
+**Check exigible.** El check exigible de las dos ramas es el job `verify` del flujo `SDD` de `.github/workflows/sdd.yml`, con `strict: true`: prepara el árbol con `actions/checkout@v4`, `fetch-depth: 0` y `fetch-tags: true`, instala Python 3.12 con `actions/setup-python@v5` y ejecuta `python tools/sdd/validate.py --all` y las 2 suites —`tools/sdd/tests`, con 222 pruebas, y `tools/git/tests`, con 48 pruebas— en cada Pull Request dirigido a `main` y a `dev`. La preparación con profundidad completa y descarga de etiquetas es la condición del alcance real de la comprobación `Spec:`: sin el historial completo el rango se reduce al último commit descargado y sin las etiquetas el corte del último release no se resuelve, de modo que la comprobación no examinaría commit de implementación alguno. La exigibilidad se declara en `tools/git/protection_rules/main.json` y `tools/git/protection_rules/dev.json`, se aplica con `python tools/git/configure_branch_protection.py` y se verifica con `python tools/git/verify_branch_protection.py`. Si una de las dos ramas no declara exigible el check `verify`, la verificación de G5 queda bloqueada y el caso se registra como ausencia del check exigible.
 
 **Excepción editorial.** Un cambio exclusivamente editorial —erratas, formato y enlaces— se integra sin spec, siempre que no altere reglas, requisitos, comportamiento, configuración ni scripts, y se registra en un commit `docs:` o `chore:`.
 
-**Excepción de ramas de release.** `release/vX-Y-Z` se dedica al empaquetado de `CHANGELOG.md`, `specs/INDEX.md`, el frontmatter de las specs publicadas y la línea `Release:` de los reportes publicados; no introduce código funcional ni cambios de requisito, cualquier otra ruta exige una spec previa o un fix previo y se integra por Pull Request con `merge --no-ff`.
+**Excepción de ramas de release.** `release/vX-Y-Z` se dedica al empaquetado de los 6 artefactos de las claves `A1` a `A6` de la tabla del paso 3; no introduce código funcional ni cambios de requisito, cualquier otra ruta exige una spec previa o un fix previo y se integra por Pull Request con `merge --no-ff`.
 
 ### Contenido excluido del repositorio
 
