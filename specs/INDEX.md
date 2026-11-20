@@ -19,7 +19,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-013 | Cierre de la reauditoría de conformidad | released | feat/reauditoria-cierre | v0.7.0 | specs/013-cierre-reauditoria-conformidad/ |
 | SPEC-014 | Cierre de las observaciones de la reauditoría final | released | feat/cierre-observaciones-finales | v0.7.0 | specs/014-cierre-observaciones-finales/ |
 | SPEC-015 | Cierre de la auditoría posterior al release | released | feat/cierre-auditoria-posterior | v0.7.1 | specs/015-cierre-auditoria-posterior/ |
-| SPEC-016 | Cierre de la auditoría de v0.7.1 | tasked | feat/cierre-auditoria-v0-7-1 | — | specs/016-cierre-auditoria-v0-7-1/ |
+| SPEC-016 | Cierre de la auditoría de v0.7.1 | implementing | feat/cierre-auditoria-v0-7-1 | — | specs/016-cierre-auditoria-v0-7-1/ |
 
 ## Reglas
 

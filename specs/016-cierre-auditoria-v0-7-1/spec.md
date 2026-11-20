@@ -1,8 +1,8 @@
 ---
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
-status: tasked
-version: 0.5.0
+status: implementing
+version: 0.6.0
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
@@ -427,6 +427,7 @@ Cubre: `RNF-005`, `RNF-006`, `RNF-007`, `RNF-008`, `RNF-009`.
 | 0.3.0 | 2026-11-21 | Ampliación de la clarificación: 6 ambigüedades resueltas y parches aplicados al inventario de hallazgos, al criterio que separa hallazgo de observación, al cálculo del veredicto, a la ratificación de las violaciones históricas y a la condición del release v0.7.2 |
 | 0.4.0 | 2026-11-21 | Plan técnico: 12 componentes, los contratos `C-1` a `C-9`, las decisiones `DEC-001` a `DEC-008`, la estrategia de testing y la matriz de cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales y los 13 casos borde |
 | 0.5.0 | 2026-11-21 | Descomposición en tareas: 34 tareas atómicas con los ocho campos, dependencias acíclicas y cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 17 criterios de aceptación |
+| 0.6.0 | 2026-11-21 | Implementación del cierre de la auditoría de v0.7.1 |
 
 ### Historial de transiciones
 
@@ -436,3 +437,4 @@ Cubre: `RNF-005`, `RNF-006`, `RNF-007`, `RNF-008`, `RNF-009`.
 | 2026-11-21 | T1 | `draft` | `clarified` | `planner` | `clarify.md` cerrado con 10 hallazgos resueltos y sin casillas pendientes, y parches aplicados a `spec.md` |
 | 2026-11-21 | T2 | `clarified` | `planned` | `planner` | G1 firmada en `spec.md` y `plan.md` redactado con 12 componentes, los contratos `C-1` a `C-9`, las decisiones `DEC-001` a `DEC-008`, la estrategia de testing y la matriz de cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales y los 13 casos borde |
 | 2026-11-21 | T3 | `planned` | `tasked` | `planner` | `tasks.md` redactado con 34 tareas atómicas, ocho campos por tarea, dependencias acíclicas y cobertura de los 15 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 17 criterios de aceptación |
+| 2026-11-21 | T4 | `tasked` | `implementing` | `planner` | G2 verificada por el orquestador, treinta y cuatro tareas cerradas con evidencia y `--all` con código 0 |
