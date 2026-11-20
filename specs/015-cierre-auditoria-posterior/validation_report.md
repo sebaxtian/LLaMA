@@ -86,6 +86,6 @@ El valor efectivo de las dos filas diferidas es `PARCIAL`, equivalente a `CONFOR
 ## Cierre de integración
 
 Merge: 4dd07f5
-Release:
+Release: v0.7.1
 
 - G5: merge 4dd07f5 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-posterior eliminada en local y en remoto.
