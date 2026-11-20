@@ -167,6 +167,12 @@ El acta declara la fecha UTC, el alcance con los 5 identificadores de exención 
 - **Justificación:** la pareja positiva y negativa acredita que la comprobación detecta el defecto y que no lo inventa sobre el artefacto conforme, que es la única forma de que la prueba sobreviva a la corrección. Las funciones puras permiten reproducir el resultado sin depender del estado del repositorio.
 - **Alternativas descartadas:** pruebas solo positivas, que pasarían aunque la comprobación no detectara nada; pruebas contra Git real o el remoto, que no son reproducibles y exceden el permiso del rol; pruebas sobre el documento completo sin caso sintético, que no distinguen la detección del cumplimiento.
 
+### DEC-009
+
+- **Decisión:** la reapertura 0.9.0 corrige la condición de publicación sobre el inventario y no sobre el valor del veredicto, amplía el alcance del inventario a cada informe presente en `docs/sdd/`, nombra las observaciones con `OBS-NNN` fuera del recuento y declara la autoría de la nota de un reporte publicado en el `documenter` con firma del propietario. La condición de publicación se verifica con el recuento de hallazgos abiertos y de observaciones de severidad `Alta` o `Media` sin tratamiento.
+- **Justificación:** `§16` del protocolo prohíbe que una spec fije el veredicto y el recuento de hallazgos de un informe emitido después de su aprobación. El valor del veredicto es salida del rol de auditoría; el recuento de abiertos es un estado del inventario y se puede contrastar sin anticipar el juicio. La nota de un reporte publicado queda fuera de la matriz de permisos del `reviewer`, que `§12` limita al reporte de la spec en curso.
+- **Alternativas descartadas:** conservar el valor `CONFORME` en `RF-015` y `CA-016`, que reproduce `H-01`; trasladar la condición de publicación al rango 3 o al rango 4 en esta spec, que excede su alcance de escritura y queda para una spec del régimen; mantener la delegación del `reviewer` sobre reportes publicados, que reproduce `H-02` sin corregir la matriz de permisos.
+
 ## Estrategia de testing
 
 | Nivel | Instrumento | Resultado esperado |
@@ -203,7 +209,9 @@ El acta declara la fecha UTC, el alcance con los 5 identificadores de exención 
 | `RF-012` | §16 del rango 3 y plantilla del informe con la regla citada | `test_regla_citada` exige la forma `ruta §capítulo:línea` y trata el juicio sin cita como observación |
 | `RF-013` | Tabla de cálculo de §16 y anexo de observaciones | `test_veredicto` recorre las 4 condiciones y la precedencia, y detecta el veredicto que contradice el recuento |
 | `RF-014` | `docs/sdd/ratificacion_historica.md` y las 5 filas de exención | `test_cierre_de_los_dieciseis` exige el estado `cerrado por ratificación` con identificador de commit firmado |
-| `RF-015` | Validaciones de release del rango 4 y entrada del release `v0.7.2` | Contraste de la secuencia G5, auditoría y G6 y del efecto de un veredicto distinto de `CONFORME` |
+| `RF-015` | Validaciones de release del rango 4 y entrada del release `v0.7.2` | Contraste de la secuencia G5, auditoría y G6 y del efecto de un recuento de hallazgos abiertos distinto de 0 |
+| `RF-016` | §12 del rango 3 y configuración del rol `reviewer` | Contraste de la autoría del `documenter` y de la firma del propietario sobre la nota de un reporte publicado, y del límite de escritura del `reviewer` a la spec en curso |
+| `RF-017` | `MEMORY.md` y contraste con el frontmatter y con la fila del índice | Contraste del estado y del release pendiente en las 3 fuentes, con la cita del índice como fuente y la fila del historial de cambios |
 | `RNF-001` | Requisitos, criterios y tareas de esta spec | `test_autorreferencia` recorre el contrato de la spec y devuelve 0 coincidencias |
 | `RNF-002` | `SPEC-013`, `SPEC-014` y `SPEC-015` | Contraste de requisitos y criterios contra la versión anterior con 0 renumeraciones |
 | `RNF-003` | Validación agregada | Duración transcrita de `python tools\sdd\validate.py --all` de 300 segundos o menos |
@@ -212,7 +220,7 @@ El acta declara la fecha UTC, el alcance con los 5 identificadores de exención 
 | `RNF-006` | Inventario de hallazgos | `test_regla_citada` exige 0 filas sin cita por ruta, capítulo y línea |
 | `RNF-007` | Informes de auditoría e inventario | `test_veredicto` exige 0 diferencias entre el veredicto declarado y el calculado |
 | `RNF-008` | Acta de ratificación | `test_ratificacion` exige firma verificable y clave en la lista para cada violación histórica |
-| `RNF-009` | Validaciones de release del rango 4 | Contraste de la auditoría previa con veredicto `CONFORME` sobre el estado integrado |
+| `RNF-009` | Validaciones de release del rango 4 | Contraste de la auditoría previa sobre el estado integrado con 0 hallazgos abiertos |
 | `CB-001` | Tabla de cierre de `RF-009` | `test_cierre_de_los_dieciseis` deja vigente la observación cuyo artefacto falta |
 | `CB-002` | Acta de ratificación | `test_ratificacion` rechaza la ratificación con estado de firma distinto de `G` |
 | `CB-003` | §15 del rango 3 y paso 3 del rango 4 | `test_seis_artefactos` produce 1 error que nombra la diferencia y no declara alineada la enumeración |

@@ -148,6 +148,42 @@
 - **Fecha:** 2026-11-21 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-017
+
+- **Descripción:** la auditoría previa al release v0.7.2 emitió el hallazgo `H-01` y registró en §9 que el inventario no admite sus filas porque `RF-011` limita el alcance a los 5 informes de `docs/sdd/` con los que se redactó el inventario. El corpus conserva informes integrados con posterioridad, de modo que el recuento de `RF-013` no alcanza los hallazgos de un informe nuevo y el veredicto calculado no cubre el estado auditado.
+- **Pregunta:** ¿Qué informes alcanza el inventario de hallazgos?
+- **Respuesta:** el inventario cubre los informes de auditoría presentes en `docs/sdd/`, sin límite de cinco ni enumeración cerrada. El alcance de `RF-011` queda definido por la ubicación del archivo y no por la fecha de corte del inventario, la comprobación recorre cada informe presente y un informe integrado sin fila detiene la integración conforme a `CB-013`. La ampliación del inventario no reescribe los informes publicados ni los cita como modificados.
+- **Decisión:** parche a `RF-011` y al párrafo de la ampliación del contrato que enumeraba los 5 informes.
+- **Fecha:** 2026-11-21 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
+### AMB-018
+
+- **Descripción:** `RF-015` y `CA-016` exigían que la auditoría previa al release v0.7.2 declarara el veredicto `CONFORME`, y `RNF-009` y `CB-012` repetían esa condición. `§16` del protocolo prohíbe que una spec fije el veredicto de un informe emitido después de su aprobación, de modo que el requisito anulaba la independencia de la evidencia y contradecía el recuento nulo de `RNF-001`. `CA-017` acreditaba ese recuento en 0.
+- **Pregunta:** ¿Qué condición sustituye la exigencia del veredicto `CONFORME` en el contrato del release v0.7.2?
+- **Respuesta:** la condición se expresa sobre el inventario y no sobre el veredicto: 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento. `RF-015`, `RNF-009`, `CB-012` y `CA-016` dejan de nombrar los valores del veredicto; la entrada del release transcribe el identificador del informe y el recuento de hallazgos abiertos; `RF-013` conserva el cálculo del veredicto como definición normativa aplicable a cualquier corte y no como salida fijada por esta spec. Un recuento distinto de 0 hallazgos abiertos impide la publicación.
+- **Decisión:** parche a `RF-015`, `RNF-009`, `CB-012` y `CA-016`, y ajuste de `CA-017` y del apartado de actores a la misma condición.
+- **Fecha:** 2026-11-21 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
+### AMB-019
+
+- **Descripción:** el inventario conserva el identificador `AUD-NNN` de cada hallazgo y el informe previo al release v0.7.2 registró sus juicios sin número reservado, con `H-01` a `H-03`, y sus observaciones como `OBS-001` a `OBS-004`. El criterio que separa hallazgo de observación no fijaba los identificadores ni el efecto de la observación sobre el recuento.
+- **Pregunta:** ¿Con qué identificadores se nombran los hallazgos y las observaciones, y cuál computa en el recuento?
+- **Respuesta:** los hallazgos usan el identificador `AUD-NNN` del inventario y conservan su número sin reutilización. Las observaciones usan el identificador `OBS-NNN`, constan con su severidad y su tratamiento y no computan como hallazgo abierto: quedan fuera del recuento de hallazgos y su severidad no altera el cálculo salvo por la condición de tratamiento que `RF-013` declara para las severidades `Alta` y `Media`.
+- **Decisión:** parche a `CA-013`, con la forma de los 2 identificadores y la exclusión de la observación del recuento.
+- **Fecha:** 2026-11-21 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
+### AMB-020
+
+- **Descripción:** la auditoría previa al release v0.7.2 registró el hallazgo `H-02`: el rol `reviewer` escribió las notas append-only de los reportes de `SPEC-013` y de `SPEC-015`, que son specs publicadas, mientras `§12` del protocolo le concede escritura solo sobre el reporte de la spec en curso. La delegación constaba en `spec.md` y no en la matriz de permisos, y `§12` declara que un permiso no se extiende por analogía.
+- **Pregunta:** ¿Qué rol escribe las notas de los reportes de specs publicadas y qué límite rige para el `reviewer`?
+- **Respuesta:** las notas append-only de los reportes de specs publicadas las escribe el `documenter` y las firma el propietario en 1 commit firmado con una clave de `docs/sdd/firmantes_autorizados`. El `reviewer` solo escribe el reporte de validación de la spec en curso: no escribe reportes de specs publicadas ni de specs ajenas. El límite se declara en `§12` del protocolo y en la configuración del rol, y el apartado de actores de esta spec deja de atribuirle la nota de un reporte publicado.
+- **Decisión:** requisito nuevo `RF-016`, criterio `CA-018` y parche al apartado de actores y permisos.
+- **Fecha:** 2026-11-21 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
 La ampliación añade 6 casos borde:
@@ -158,6 +194,8 @@ La ampliación añade 6 casos borde:
 - `CB-011`: una violación histórica sin cierre por artefacto exige ratificación firmada, con efecto retroactivo limitado al régimen y sin reescritura del contenido publicado — `AMB-014`.
 - `CB-012`: un veredicto distinto de `CONFORME` impide el release v0.7.2 y conserva la spec en `validated` — `AMB-015`.
 - `CB-013`: un informe de auditoría sin fila en el inventario de hallazgos deja la verificación en rojo y detiene la integración — `AMB-011`.
+
+`AMB-018` sustituye en `CB-012` el valor del veredicto por el recuento de hallazgos abiertos: el caso conserva su número y su efecto sobre la publicación del release v0.7.2.
 
 Los 7 casos borde de la versión 0.1.0 se conservan con la redacción que `AMB-001`, `AMB-003`, `AMB-004`, `AMB-005`, `AMB-006`, `AMB-007`, `AMB-008` y `AMB-009` fijan.
 
@@ -184,6 +222,15 @@ Los 7 casos borde de la versión 0.1.0 se conservan con la redacción que `AMB-0
 - [x] `## Fuera de alcance` con la prohibición de reescribir historia publicada, de mover o recrear los 2 tags, de ampliar las ventanas de legado, de declarar compuertas o un veredicto de conformidad, de publicar el release v0.7.2, de modificar los informes publicados y de reasignar o reabrir un identificador — afecta a `RF-002`, `RF-004`, `RF-005`, `RF-009`, `RF-011` y `RF-015`.
 - [x] `## Trazabilidad con el informe de auditoría` con las 11 observaciones del informe de v0.7.1, su severidad, su requisito y su criterio, y `### Trazabilidad de los dieciséis hallazgos del inventario` con 1 fila por hallazgo, las 5 exenciones incluidas — afecta a `RF-001` a `RF-015` y a `CA-001` a `CA-017`.
 - [x] Frontmatter con `version` 0.3.0, `updated` 2026-11-21 y `status` `clarified`; fila nueva en `## Historial de cambios` y conservación de la fila T1 en `### Historial de transiciones`, sin transición nueva porque el estado no cambia — afecta a la estructura de `spec.md`.
+- [x] `RF-011` con el alcance a los informes de auditoría presentes en `docs/sdd/`, sin límite de 5 ni enumeración cerrada, y con la fila del inventario exigida en cada informe integrado — afecta a `RF-011`, `RNF-005` y `CA-012`.
+- [x] `RF-015`, `RNF-009` y `CB-012` con la condición de 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento, sin nombrar los valores del veredicto, y con el recuento de hallazgos abiertos transcrito en la entrada del release — afecta a `RF-015`, `RNF-009`, `CB-012`, `CA-016` y `CA-017`.
+- [x] `CA-016` con la condición expresada sobre el inventario, la transcripción del identificador del informe y del recuento de hallazgos abiertos, la precedencia de G5 sobre G6 y el efecto de un recuento distinto de 0 — afecta a `CA-016`.
+- [x] `CA-013` con el identificador `AUD-NNN` del hallazgo, el identificador `OBS-NNN` de la observación y la exclusión de la observación del recuento de hallazgos — afecta a `CA-013`.
+- [x] `RF-016` con la autoría del `documenter` y la firma del propietario sobre la nota append-only de un reporte publicado, el límite de escritura del `reviewer` al reporte de la spec en curso y la declaración de ese límite en `§12` y en la configuración del rol — afecta a `RF-016` y `CA-018`.
+- [x] `RF-017` con la actualización de `MEMORY.md` al mismo estado y al mismo release pendiente que el frontmatter y que la fila del índice, la cita del índice como fuente y la fila de corrección en el historial de cambios — afecta a `RF-017` y `CA-019`.
+- [x] `CA-018` y `CA-019` al final de `## Criterios de aceptación`, con la numeración existente conservada y los 2 identificadores nuevos en el orden de lectura — afecta a `CA-018` y `CA-019`.
+- [x] `## Actores y permisos` con el límite del `reviewer` al reporte de la spec en curso y con la nota append-only de un reporte publicado a cargo del `documenter` y firmada por el propietario — afecta a `RF-007`, `RF-016` y `CA-018`.
+- [x] Frontmatter con `status` `implementing`, `version` 0.9.0 y `updated` 2026-11-21; fila 0.9.0 en `## Historial de cambios`; fila T9 en `### Historial de transiciones`; nota de zona UTC de las fechas documentales; retiro de la mención de la integración en la fila T6 — afecta a la estructura de `spec.md` y a `OBS-003` y `OBS-004`.
 
 ## Decisiones de negocio
 
@@ -196,4 +243,9 @@ Los 7 casos borde de la versión 0.1.0 se conservan con la redacción que `AMB-0
 - El veredicto deja de depender del criterio de cada pasada: se calcula desde el estado de las filas del inventario y su valor `CONFORME` exige 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento. Un juicio sin regla normativa citada es observación y no hallazgo, porque un hallazgo sin norma identificada no se puede verificar ni cerrar con artefacto.
 - El inventario es la memoria del régimen y no un informe: conserva el identificador emitido, admite estados sucesivos sobre la misma fila y no renumera. Su escritura corresponde al `documenter` y no al rol de auditoría, que acredita hechos y no mantiene el registro.
 - Las violaciones históricas que ningún artefacto repara se cierran por ratificación firmada del propietario, con efecto retroactivo limitado al régimen. La ratificación no reescribe el contenido publicado ni el informe de origen: acredita la autoría y declara el efecto, con la misma lógica declarativa de la ratificación del commit `564bac4`.
-- El release v0.7.2 se publica solo sobre una auditoría del estado integrado con veredicto `CONFORME`. Auditar el estado integrado y no el estado de la rama de trabajo evita que el veredicto califique un árbol distinto del que se publica.
+- El release v0.7.2 se publica solo sobre una auditoría del estado integrado con 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento. Auditar el estado integrado y no el estado de la rama de trabajo evita que el informe califique un árbol distinto del que se publica, y la condición se expresa sobre el inventario y no sobre el valor del veredicto, que emite el rol de auditoría.
+- El objeto auditado no determina la auditoría: la condición de publicación cuenta hallazgos abiertos y observaciones sin tratamiento, y no nombra el veredicto. Nombrar el valor del veredicto en el contrato restablece la autorreferencia que `RF-001` prohíbe y anula la independencia de la evidencia.
+- El inventario alcanza cada informe de auditoría presente en `docs/sdd/`: el alcance lo fija la ubicación del archivo y no la fecha de corte con la que se redactó el inventario, de modo que un informe nuevo computa en el cálculo desde su integración.
+- El hallazgo conserva el identificador `AUD-NNN` y la observación usa `OBS-NNN`. La observación documenta un juicio sin regla normativa citada y no computa en el recuento de hallazgos.
+- La nota append-only de un reporte publicado la escribe el `documenter` y la firma el propietario; el `reviewer` solo redacta el reporte de su propia spec. La delegación escrita no amplía una matriz de permisos que `§12` declara cerrada.
+- La reapertura corrige las cuatro observaciones del informe previo: `OBS-003` y `OBS-004` en `spec.md`, y `OBS-001` y `OBS-002` en `docs/sdd/inventario_hallazgos.md` y en `docs/Flujo_de_Trabajo_Git.md`, que escribe el `documenter` en la etapa Implement de esta reapertura.
