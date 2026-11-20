@@ -2,7 +2,7 @@
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
 status: clarified
-version: 0.2.0
+version: 0.3.0
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
@@ -26,15 +26,48 @@ Resultado esperado: prohibición escrita de la autorreferencia en la norma de ra
 
 La feature no reescribe historia publicada, no mueve ni recrea los tags `v0.7.0` y `v0.7.1`, no cambia los requisitos de las specs publicadas más allá de las 2 filas T7, las 3 notas append-only y las filas de motivo de regularización declaradas, y no emite veredicto de conformidad: el veredicto corresponde al rol de auditoría y el cierre de esta spec se acredita con artefacto y evidencia por observación. Un resultado favorable del validador acredita estructura, coherencia interna y trazabilidad declarada, no la conformidad del régimen.
 
+### Ampliación del contrato sobre el inventario y el veredicto
+
+El informe `docs/sdd/auditoria_final_v0_7_1.md` dejó 11 hallazgos con estado distinto de cerrado y el corpus conserva 5 hallazgos con estado `cerrado por exención`, de modo que 16 hallazgos no cuentan con cierre acreditado por artefacto. La ausencia de un registro único permite además que el veredicto dependa del criterio de cada pasada y que un juicio sin regla citada compute como hallazgo. La ampliación fija cuatro piezas: el inventario único de los hallazgos emitidos por los 5 informes de `docs/sdd/`; el criterio que separa hallazgo de observación por la regla normativa citada; el cálculo del veredicto desde el inventario con la definición de `CONFORME`; y la ratificación firmada del propietario para las violaciones históricas que ningún artefacto repara.
+
+Resultado esperado de la ampliación: 1 fila por hallazgo en `docs/sdd/inventario_hallazgos.md` con los 8 campos de `RF-011`; 0 hallazgos sin regla normativa citada; veredicto determinista con 0 hallazgos abiertos bajo `CONFORME`; ratificación firmada de las 5 exenciones y de las 2 modificaciones sin firma, con efecto retroactivo limitado al régimen; y release v0.7.2 condicionado a 1 auditoría sobre el estado integrado con veredicto `CONFORME`.
+
+Los 16 hallazgos del cierre son 11 con estado distinto de cerrado en el informe de v0.7.1 —`AUD-088`, `AUD-089`, `AUD-090`, `AUD-103`, `AUD-104`, `AUD-105`, `AUD-106`, `AUD-107`, `AUD-108`, `AUD-109` y `AUD-110`— y 5 con estado `cerrado por exención` —`AUD-003`, `AUD-004`, `AUD-005`, `AUD-037` y `AUD-053`—. Los 11 se cierran con los artefactos de `RF-001` a `RF-010` y con la evidencia de la tabla de cierre de `RF-009`; los 5 se cierran con la ratificación de `RF-014` y con la fila del inventario que declara el estado `cerrado por ratificación`.
+
+### Trazabilidad de los dieciséis hallazgos del inventario
+
+El informe de origen se declara por su nombre de archivo en `docs/sdd/`.
+
+| Hallazgo | Estado en el informe de origen | Requisito | Criterio de aceptación |
+|---|---|---|---|
+| `AUD-003` | cerrado por exención | `RF-014` | `CA-015` |
+| `AUD-004` | cerrado por exención | `RF-014` | `CA-015` |
+| `AUD-005` | cerrado por exención | `RF-014` | `CA-015` |
+| `AUD-037` | cerrado por exención | `RF-014` | `CA-015` |
+| `AUD-053` | cerrado por exención | `RF-014` | `CA-015` |
+| `AUD-088` | parcial | `RF-010` | `CA-010` |
+| `AUD-089` | parcial | `RF-005` | `CA-005` |
+| `AUD-090` | parcial | `RF-014`, `RF-004` | `CA-015`, `CA-004` |
+| `AUD-103` | vigente | `RF-003` | `CA-003` |
+| `AUD-104` | vigente | `RF-004`, `RF-014` | `CA-004`, `CA-015` |
+| `AUD-105` | vigente | `RF-005` | `CA-005` |
+| `AUD-106` | vigente | `RF-008` | `CA-008` |
+| `AUD-107` | vigente | `RF-008` | `CA-008` |
+| `AUD-108` | vigente | `RF-006` | `CA-006` |
+| `AUD-109` | vigente | `RF-001`, `RF-002` | `CA-001`, `CA-002` |
+| `AUD-110` | vigente | `RF-007` | `CA-007` |
+
+Cada uno de los 16 hallazgos consta con al menos 1 requisito y 1 criterio. El inventario de `RF-011` conserva el estado vigente de cada fila, `RF-012` separa el hallazgo de la observación y `RF-013` calcula el veredicto desde ese estado.
+
 ### Trazabilidad con el informe de auditoría
 
 | Observación | Severidad | Requisito | Criterio de aceptación |
 |---|---|---|---|
 | `AUD-088` | Alta (parcial) | `RF-003`, `RF-010` | `CA-003`, `CA-010` |
 | `AUD-089` | Media (parcial) | `RF-005` | `CA-005` |
-| `AUD-090` | Alta (parcial) | `RF-004` | `CA-004` |
+| `AUD-090` | Alta (parcial) | `RF-004`, `RF-014` | `CA-004`, `CA-015` |
 | `AUD-103` | Media | `RF-003` | `CA-003` |
-| `AUD-104` | Alta | `RF-004` | `CA-004` |
+| `AUD-104` | Alta | `RF-004`, `RF-014` | `CA-004`, `CA-015` |
 | `AUD-105` | Media | `RF-005` | `CA-005` |
 | `AUD-106` | Media | `RF-008` | `CA-008` |
 | `AUD-107` | Media | `RF-008` | `CA-008` |
@@ -47,13 +80,13 @@ Cada una de las 11 observaciones queda cubierta por al menos 1 requisito funcion
 
 ## Actores y permisos
 
-- **Propietario (`Agent Sebaxtian`):** declara G1 y G4 mediante un commit firmado con una clave de `docs/sdd/firmantes_autorizados`, emite la ratificación firmada de las modificaciones del commit `564bac4` con el alcance declarado, firma cada modificación de un artefacto publicado y declara G6 en la entrada del release; no delega la firma.
+- **Propietario (`Agent Sebaxtian`):** declara G1 y G4 mediante un commit firmado con una clave de `docs/sdd/firmantes_autorizados`, emite la ratificación firmada de las modificaciones del commit `564bac4` y de las violaciones históricas no reparables con el alcance declarado, firma cada modificación de un artefacto publicado, declara G6 en la entrada del release y declara G6 del release v0.7.2 sobre un informe con veredicto `CONFORME`; no delega la firma.
 - **Agente `planner`:** redacta los artefactos de esta spec dentro de `specs/016-cierre-auditoria-v0-7-1/`, escribe la fila de `specs/INDEX.md`, las transiciones T1 a T3 y las transiciones T4 a T7 sobre la verificación registrada por el orquestador; no escribe fuera de `specs/`, no redacta reporte de validación y no declara compuertas.
-- **Agente `documenter`:** redacta las correcciones de `docs/sdd/PROTOCOLO_OPERATIVO.md`, de `docs/Flujo_de_Trabajo_Git.md`, de `docs/sdd/plantillas/spec.md`, de `docs/sdd/plantillas/informe_auditoria.md`, de `docs/sdd/README.md` y de `CHANGELOG.md` dentro del alcance declarado y como delegado explícito del propietario; es el único rol que escribe la fila de inventario de un informe de auditoría y no modifica la sección de aprobaciones de una spec.
-- **Agente `coder`:** escribe en `tools/` las comprobaciones de igualdad de los 6 artefactos de empaquetado, de la prohibición de autorreferencia y del inventario previo a la integración del informe, regulariza la comprobación del historial de releases y cierra tareas en `tasks.md` con la evidencia transcrita.
+- **Agente `documenter`:** redacta las correcciones de `docs/sdd/PROTOCOLO_OPERATIVO.md`, de `docs/Flujo_de_Trabajo_Git.md`, de `docs/sdd/plantillas/spec.md`, de `docs/sdd/plantillas/informe_auditoria.md`, de `docs/sdd/inventario_hallazgos.md`, de `docs/sdd/README.md` y de `CHANGELOG.md` dentro del alcance declarado y como delegado explícito del propietario; es el único rol que escribe la fila de inventario de un informe de auditoría y la fila de hallazgo del inventario, y no modifica la sección de aprobaciones de una spec.
+- **Agente `coder`:** escribe en `tools/` las comprobaciones de igualdad de los 6 artefactos de empaquetado, de la prohibición de autorreferencia, del inventario previo a la integración del informe, de la regla normativa citada en cada hallazgo y del cálculo del veredicto desde el inventario, regulariza la comprobación del historial de releases y cierra tareas en `tasks.md` con la evidencia transcrita.
 - **Agente `reviewer`:** escribe el reporte de validación de esta spec y, por delegación escrita del propietario, escribe las notas append-only de los reportes publicados de `SPEC-013` y de `SPEC-015`, sin alterar matriz ni dictamen; no declara G4.
 - **Orquestador (`sdd`):** verifica G2, G3 y G5, registra el resultado de cada verificación, ejecuta el validador y `git add` y `git commit` de los artefactos de control; no redacta artefacto alguno y no declara aprobación.
-- **Agente `auditor`:** produce su informe de auditoría con lectura de la base completa y escritura limitada a ese informe; no escribe la fila de inventario, no edita requisitos y no declara compuertas.
+- **Agente `auditor`:** produce su informe de auditoría con lectura de la base completa y escritura limitada a ese informe, calcula el veredicto desde el estado de las filas del inventario conforme a `RF-013` y cita la regla normativa incumplida en cada hallazgo; no escribe la fila de inventario de su informe, no escribe la fila de hallazgo, no edita requisitos y no declara compuertas.
 
 ## Requisitos funcionales (EARS)
 
@@ -119,6 +152,54 @@ Cierre del caso de la fila 34 de la tabla de inventario, introducida en un commi
 
 `El sistema DEBE regularizar la comprobación del historial de releases del mecanismo de control para que admita las filas de historial de cambios y de transición que el empaquetado escribe y la constante de estados que admite released, DEBE registrar la regularización en 1 fila del registro de cambios bajo Unreleased, y NO DEBE declarar conforme una comprobación cuya regla siga siendo más estrecha que el alcance de RF-003.`
 
+### RF-011
+
+`El sistema DEBE mantener en docs/sdd/inventario_hallazgos.md 1 fila por cada hallazgo emitido por los 5 informes de auditoría de docs/sdd/, con los 8 campos de la tabla de este requisito, DEBE conservar el identificador AUD-NNN de cada hallazgo sin reutilizarlo ni renumerarlo, DEBE registrar el estado vigente con el informe que lo declara y la evidencia de cierre por ruta y línea, y NO DEBE admitir la integración de un informe de auditoría cuya fila falte ni la de un hallazgo sin fila en el inventario.`
+
+Campos obligatorios de cada fila del inventario:
+
+| N.º | Campo | Contenido obligatorio |
+|---|---|---|
+| 1 | Identificador | `AUD-NNN` del informe de origen, conservado sin reutilización |
+| 2 | Dimensión | D1 a D11 del informe de origen |
+| 3 | Severidad | `Crítica`, `Alta`, `Media` o `Baja` |
+| 4 | Informe de origen | ruta del informe que emitió el hallazgo y fecha de corte |
+| 5 | Regla normativa citada | ruta, capítulo y línea de la regla que se incumple |
+| 6 | Estado | `cerrado`, `parcial`, `vigente`, `cerrado por exención` o `cerrado por ratificación` |
+| 7 | Evidencia de cierre | ruta y línea del artefacto, o identificador del commit firmado que ratifica |
+| 8 | Informe que declara el estado | ruta del informe y fecha de corte |
+
+El documento `docs/sdd/inventario_hallazgos.md` consta en la tabla de inventario de `docs/sdd/README.md` conforme a la regla de inventario del corpus.
+
+### RF-012
+
+`CUANDO el rol de auditoría emite un juicio sobre el régimen, el sistema DEBE exigir que el hallazgo cite la regla normativa que se incumple con su ruta, su capítulo y su línea, DEBE registrar como observación el juicio que no cita una regla, DEBE excluir la observación del recuento de hallazgos y NO DEBE admitir un hallazgo sin regla citada ni un veredicto que compute la observación como hallazgo abierto.`
+
+### RF-013
+
+`El sistema DEBE calcular el veredicto de auditoría desde el estado de las filas del inventario de hallazgos con la condición de la tabla de este requisito, DEBE declarar CONFORME solo cuando el número de hallazgos abiertos sea 0 y el número de observaciones de severidad Alta o Media sin tratamiento sea 0, DEBE aplicar la precedencia NO CONFORME, después NO VERIFICABLE, después PARCIAL y después CONFORME, y NO DEBE admitir un veredicto que contradiga el recuento del inventario.`
+
+Condición de cada veredicto:
+
+| Veredicto | Condición sobre el inventario |
+|---|---|
+| `NO CONFORME` | 1 o más hallazgos abiertos de severidad `Crítica` o `Alta` |
+| `NO VERIFICABLE` | 0 hallazgos abiertos de severidad `Crítica` o `Alta`, y 1 o más filas sin regla normativa citada o sin evidencia de cierre |
+| `PARCIAL` | 0 hallazgos abiertos de severidad `Crítica` o `Alta`, 0 filas sin regla citada o sin evidencia de cierre, y 1 o más hallazgos abiertos de severidad `Media` o `Baja`, o 1 o más observaciones de severidad `Alta` o `Media` sin tratamiento |
+| `CONFORME` | 0 hallazgos abiertos y 0 observaciones de severidad `Alta` o `Media` sin tratamiento |
+
+Son estados cerrados `cerrado` y `cerrado por ratificación`; son estados abiertos `parcial`, `vigente` y `cerrado por exención`. Un tratamiento es la decisión registrada del propietario, con fecha e identificador del commit, que declara el efecto de la observación y su destino.
+
+### RF-014
+
+`CUANDO una violación histórica del régimen no admite cierre por artefacto verificable, el sistema DEBE cerrarla mediante 1 ratificación firmada del propietario con una clave de docs/sdd/firmantes_autorizados, DEBE declarar en la ratificación el alcance, la fecha, las rutas o los identificadores afectados y el efecto retroactivo limitado al régimen, DEBE registrar el estado cerrado por ratificación en la fila del inventario con el identificador del commit, y NO DEBE reescribir el contenido publicado ni alterar el informe que emitió el hallazgo.`
+
+Casos de esta spec: las 5 exenciones `AUD-003`, `AUD-004`, `AUD-005`, `AUD-037` y `AUD-053`, y las 2 modificaciones sin firma de los commits `494db2e` y `564bac4`. `RF-004` registra la ratificación del segundo y `RF-014` declara el efecto común de la ratificación sobre el régimen.
+
+### RF-015
+
+`El sistema DEBE publicar el release v0.7.2 solo después de 1 auditoría de conformidad ejecutada sobre el estado integrado en dev que declare el veredicto CONFORME conforme a RF-013, DEBE transcribir en la entrada del release el identificador del informe y el veredicto, DEBE exigir G5 antes de G6, y NO DEBE publicar el release con 1 hallazgo abierto de severidad Crítica o Alta ni con 1 observación de severidad Alta o Media sin tratamiento.`
+
 ## Requisitos no funcionales
 
 ### RNF-001
@@ -136,6 +217,26 @@ Cierre del caso de la fila 34 de la tabla de inventario, introducida en un commi
 ### RNF-004
 
 `El número de artefactos publicados modificados por esta spec fuera de 1 commit firmado por una clave de docs/sdd/firmantes_autorizados DEBE ser 0.`
+
+### RNF-005
+
+`El número de hallazgos emitidos por los informes de auditoría de docs/sdd/ que carecen de fila en el inventario DEBE ser 0 y el número de campos obligatorios de RF-011 con contenido vacío en una fila DEBE ser 0.`
+
+### RNF-006
+
+`El número de hallazgos del inventario sin regla normativa citada por ruta, capítulo y línea DEBE ser 0.`
+
+### RNF-007
+
+`El número de veredictos que difieren del cálculo de RF-013 para el mismo conjunto de filas DEBE ser 0 y el número de hallazgos abiertos admitidos bajo un veredicto CONFORME DEBE ser 0.`
+
+### RNF-008
+
+`El número de violaciones históricas cerradas sin 1 ratificación firmada por una clave de docs/sdd/firmantes_autorizados DEBE ser 0.`
+
+### RNF-009
+
+`El número de releases publicados con posterioridad a esta spec sin 1 auditoría previa sobre el estado integrado con veredicto CONFORME DEBE ser 0.`
 
 ## Casos borde
 
@@ -167,6 +268,30 @@ Cierre del caso de la fila 34 de la tabla de inventario, introducida en un commi
 
 `SI un informe de auditoría se integra sin la fila de inventario registrada por el documenter, ENTONCES el check verify DEBE quedar en rojo con la ruta del archivo sin fila y la integración DEBE detenerse.`
 
+### CB-008
+
+`SI un informe posterior declara un estado distinto para un hallazgo que ya figura en el inventario, ENTONCES el sistema DEBE conservar el identificador, DEBE registrar el estado nuevo con el informe que lo declara y su evidencia, y NO DEBE asignar un identificador nuevo al mismo hallazgo.`
+
+### CB-009
+
+`SI un juicio de auditoría no cita la regla normativa que se incumple, ENTONCES el sistema DEBE registrarlo como observación, DEBE excluirlo del recuento de hallazgos y NO DEBE computar su severidad como hallazgo abierto en el cálculo del veredicto.`
+
+### CB-010
+
+`SI el recuento del inventario produce un veredicto distinto del que declara el informe, ENTONCES la verificación DEBE registrar el error con la fila que sostiene la diferencia y NO DEBE admitir el veredicto declarado.`
+
+### CB-011
+
+`SI una violación histórica no admite cierre por artefacto verificable, ENTONCES el sistema DEBE exigir 1 ratificación firmada del propietario con alcance y efecto declarados, DEBE limitar el efecto retroactivo al régimen y NO DEBE reescribir el contenido publicado.`
+
+### CB-012
+
+`SI la auditoría previa al release v0.7.2 emite un veredicto distinto de CONFORME, ENTONCES el sistema NO DEBE publicar el release, DEBE conservar la spec en validated y DEBE transcribir el motivo con el hallazgo que lo sostiene.`
+
+### CB-013
+
+`SI un archivo de informe de auditoría consta en docs/sdd/ sin fila en el inventario de hallazgos, ENTONCES la verificación DEBE quedar en rojo con la ruta del archivo y la integración DEBE detenerse.`
+
 ## Fuera de alcance
 
 - La reescritura de historia publicada, con rebase, squash o copia manual de commits integrados.
@@ -177,6 +302,9 @@ Cierre del caso de la fila 34 de la tabla de inventario, introducida en un commi
 - La ampliación de las 2 ventanas de legado de §14 del protocolo.
 - La declaración de compuertas: esta spec no aprueba G1, G4 ni G6.
 - La emisión de un veredicto de conformidad del régimen, que corresponde al rol de auditoría.
+- La publicación del release v0.7.2: esta spec fija su condición y no lo publica.
+- La modificación de los informes de auditoría publicados: se citan como evidencia y no se reescriben.
+- La reasignación del identificador de un hallazgo ya emitido y la reapertura de un hallazgo cerrado sin un informe que declare el estado nuevo.
 - Hardware, modelos, cuantizaciones y benchmarks de ejecución local.
 
 ## Criterios de aceptación
@@ -247,6 +375,42 @@ Cubre: `RF-010`.
 
 Cubre: `RNF-001`, `RNF-002`, `RNF-003`, `RNF-004`.
 
+### CA-012
+
+`DADOS los 5 informes de auditoría de docs/sdd/ y el documento docs/sdd/inventario_hallazgos.md, CUANDO se contrasta el inventario con los hallazgos emitidos, ENTONCES cada hallazgo AUD-NNN consta en 1 fila con los 8 campos de RF-011, el identificador se conserva sin reutilización ni renumeración, el estado vigente y su evidencia constan con el informe que los declara, un estado nuevo se registra sobre el identificador existente, y un informe integrado sin fila o un hallazgo sin fila deja la verificación en rojo con la ruta del archivo y detiene la integración.`
+
+Cubre: `RF-011`, `CB-008`, `CB-013`.
+
+### CA-013
+
+`DADO un juicio emitido por el rol de auditoría, CUANDO se contrasta con la regla normativa que declara incumplida, ENTONCES el hallazgo cita la ruta, el capítulo y la línea de la regla, el juicio que no cita una regla consta como observación, la observación queda fuera del recuento de hallazgos, y su severidad no computa como hallazgo abierto en el cálculo del veredicto.`
+
+Cubre: `RF-012`, `CB-009`.
+
+### CA-014
+
+`DADO el inventario de hallazgos y la condición de cálculo de RF-013, CUANDO se calcula el veredicto sobre el corte auditado, ENTONCES el veredicto coincide con la condición de la tabla para el recuento de hallazgos abiertos y de observaciones sin tratamiento, la precedencia NO CONFORME, NO VERIFICABLE, PARCIAL y CONFORME se aplica en ese orden, CONFORME exige 0 hallazgos abiertos y 0 observaciones de severidad Alta o Media sin tratamiento, y un veredicto que contradiga el recuento se registra con la fila que sostiene la diferencia.`
+
+Cubre: `RF-013`, `CB-010`.
+
+### CA-015
+
+`DADA una violación histórica sin cierre por artefacto verificable, CUANDO el propietario la ratifica, ENTONCES la ratificación consta en 1 commit firmado con una clave de docs/sdd/firmantes_autorizados, declara el alcance, la fecha, las rutas o los identificadores afectados y el efecto retroactivo limitado al régimen, la fila del inventario pasa a cerrado por ratificación con el identificador del commit, y el contenido publicado y el informe de origen conservan su texto.`
+
+Cubre: `RF-014`, `CB-011`.
+
+### CA-016
+
+`DADO el release v0.7.2 y el estado integrado en dev, CUANDO se prepara su publicación, ENTONCES consta 1 auditoría ejecutada sobre el estado integrado con veredicto CONFORME conforme a RF-013, la entrada del release transcribe el identificador del informe y el veredicto, G5 precede a G6, y un veredicto distinto de CONFORME impide la publicación, conserva la spec en validated y transcribe el motivo con el hallazgo que lo sostiene.`
+
+Cubre: `RF-015`, `CB-012`.
+
+### CA-017
+
+`DADO el commit validado, CUANDO se ejecutan las verificaciones de los criterios de RF-011 a RF-015, ENTONCES el número de hallazgos sin fila en el inventario es 0, el número de campos obligatorios vacíos por fila es 0, el número de hallazgos sin regla normativa citada es 0, el número de veredictos que difieren del cálculo del inventario es 0, el número de hallazgos abiertos admitidos bajo un veredicto CONFORME es 0, el número de violaciones históricas cerradas sin ratificación firmada es 0 y el número de releases publicados sin auditoría previa con veredicto CONFORME es 0.`
+
+Cubre: `RNF-005`, `RNF-006`, `RNF-007`, `RNF-008`, `RNF-009`.
+
 ## Aprobaciones
 
 <!-- Sección protegida: solo la escribe el propietario mediante un commit firmado. Dos casillas y ninguna más: G1 y G4. -->
@@ -260,6 +424,7 @@ Cubre: `RNF-001`, `RNF-002`, `RNF-003`, `RNF-004`.
 |---|---|---|
 | 0.1.0 | 2026-11-21 | Redacción inicial de la spec |
 | 0.2.0 | 2026-11-21 | Clarificación cerrada: 10 ambigüedades resueltas y parches aplicados a los requisitos funcionales, los requisitos no funcionales, los casos borde, los criterios de aceptación, los actores y el alcance |
+| 0.3.0 | 2026-11-21 | Ampliación de la clarificación: 6 ambigüedades resueltas y parches aplicados al inventario de hallazgos, al criterio que separa hallazgo de observación, al cálculo del veredicto, a la ratificación de las violaciones históricas y a la condición del release v0.7.2 |
 
 ### Historial de transiciones
 
