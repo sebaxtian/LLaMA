@@ -33,8 +33,8 @@ Reglas adicionales:
 
 ## Progreso
 
-- Cerradas: 32 de 34 tareas (`T-001` a `T-026` y `T-028` a `T-033`).
-- Abiertas: 2 de 34 tareas; `T-027` aguarda la viñeta de `RF-004` en la entrada `Unreleased` de `CHANGELOG.md`, que escriben `documenter` y propietario, y la verificación agregada de `T-034` cierra la secuencia tras esa viñeta y la firma del commit de las modificaciones publicadas.
+- Cerradas: 34 de 34 tareas (`T-001` a `T-034`).
+- Abiertas: 0 de 34 tareas; la secuencia se cierra tras la viñeta de `RF-004` en la entrada `Unreleased` de `CHANGELOG.md` y la firma del commit `d0126ce` de las modificaciones publicadas, con estado de firma `G`.
 
 ## Archivos de la etapa y escritor
 
@@ -352,8 +352,8 @@ Reglas adicionales:
 - **Archivos:** `CHANGELOG.md`.
 - **Estimación:** 30 min.
 - **Validación:** `Unreleased` declara el conjunto de 6 artefactos, la regularización del historial de releases, el inventario de hallazgos, la prohibición de autorreferencia, el identificador `564bac4` y `494db2e` con sus 3 rutas publicadas y el efecto declarativo de la ratificación, sin línea de aprobación.
-- **Evidencia:** transcripción de las viñetas añadidas a `Unreleased` y número de línea del inicio de la sección.
-- [ ] Completada.
+- **Evidencia:** `CHANGELOG.md:11` abre la sección `## [Unreleased]` y `:23` porta la viñeta de `RF-004`: «Ratificación firmada del propietario sobre las modificaciones del commit `564bac4` en artefactos publicados: 3 rutas afectadas (`CHANGELOG.md`, `specs/014-cierre-observaciones-finales/spec.md` y `specs/013-cierre-reauditoria-conformidad/validation_report.md`), junto con el caso `494db2e`; efecto declarativo: el contenido publicado se conserva y la autoría queda acreditada por el acta de `docs/sdd/ratificacion_historica.md`, firmada en `9042ae6` con estado `G` (`SPEC-016`, `RF-004`, `AUD-090`, `AUD-104`).» La viñeta declara los 2 identificadores de commit, las 3 rutas publicadas y el efecto declarativo del acta, y la sección `Unreleased` no porta línea de aprobación.
+- [x] Completada.
 
 ### T-028
 
@@ -429,5 +429,5 @@ Reglas adicionales:
 - **Archivos:** `specs/016-cierre-auditoria-v0-7-1/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** `python tools\sdd\validate.py --all` con código de salida 0 en 300 segundos o menos, 0 hallazgos sin fila, 0 campos obligatorios vacíos, 0 filas sin regla citada, 0 diferencias de veredicto, 0 violaciones históricas sin ratificación firmada y 0 requisitos de esta spec que fijen el veredicto de un informe posterior.
-- **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q`: «Ran 222 tests in 1.136s» y «OK». `python -m unittest discover -s tools\git\tests -q`: «Ran 48 tests in 20.469s» y «OK». `python tools\sdd\validate.py --all`: código 0, concluido dentro del límite de 300 s de la invocación, con las 17 comprobaciones ejecutadas y sin error de `C-19`, `C-20`, `C-21`, `C-22`, `C-23`, `C-24`, `C-25` ni `C-26`; las advertencias corresponden a las cláusulas de legado de `SPEC-001` a `SPEC-008` y a la ausencia del reporte de `SPEC-016`. Recuentos de `CA-017`: 0 hallazgos sin fila, 0 campos obligatorios vacíos, 0 hallazgos sin regla citada, 0 veredictos divergentes del cálculo del inventario, 0 hallazgos abiertos bajo `CONFORME`, 0 violaciones históricas cerradas sin ratificación firmada y 0 releases publicados sin auditoría previa. Queda pendiente el estado de firma del commit de las modificaciones publicadas y el cierre de `T-027`, de modo que la casilla permanece abierta hasta que el propietario firme ese commit.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q`: «Ran 222 tests» y «OK». `python -m unittest discover -s tools\git\tests -q`: «Ran 48 tests» y «OK». `python tools\sdd\validate.py --all`: código 0 en 300 segundos o menos, con las 17 comprobaciones ejecutadas y sin error de `C-19`, `C-20`, `C-21`, `C-22`, `C-23`, `C-24`, `C-25` ni `C-26`; las advertencias corresponden a las cláusulas de legado de `SPEC-001` a `SPEC-009` y a la ausencia del reporte de `SPEC-016`. Los 7 recuentos de `CA-017` quedan en 0: 0 hallazgos sin fila, 0 campos obligatorios vacíos, 0 hallazgos sin regla citada, 0 veredictos divergentes del cálculo del inventario, 0 hallazgos abiertos bajo `CONFORME`, 0 violaciones históricas cerradas sin ratificación firmada y 0 releases publicados sin auditoría previa. El commit de las modificaciones publicadas es `d0126ce` y su estado de firma es `G`, con la clave `SHA256:strw3vZ7xct0YMz+hGHAYjDOfv/zO0JyAI9Om3Olhqc` declarada en `docs/sdd/firmantes_autorizados`.
+- [x] Completada.
