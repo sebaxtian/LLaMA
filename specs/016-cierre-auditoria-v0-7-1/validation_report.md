@@ -82,9 +82,10 @@ El dictamen se calcula desde la matriz: 39 de 39 filas en `PASADO` y 0 brechas a
 
 ## Cierre de integración
 
-Merge: 79bcd83
+Merge: 6b85789
 Release:
 
+- G5: merge 6b85789 con dos padres (`922ee68` y `0283833`); validación posterior a la integración sin hallazgos; rama feat/reapertura-spec-016 eliminada en local y en remoto.
 - G5: merge 79bcd83 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-v0-7-1 eliminada en local y en remoto.
 
 ## Nota de reapertura
@@ -98,4 +99,16 @@ Nota append-only añadida sin retirar contenido anterior. Registra la reapertura
 - Matriz: pasa de 37 a 39 filas con `RF-016` y `CA-018` sobre la autoría del `documenter`, la firma del propietario y el límite del `reviewer`, y con `RF-017` y `CA-019` sobre la consistencia de `MEMORY.md`; las 2 filas constan en `PASADO`.
 - Dictamen: se conserva `CONVERGIDO`; las 39 de 39 filas constan en `PASADO` y el número de brechas abiertas es 0. Las 37 filas anteriores conservan su contenido.
 - Compuertas: esta nota no declara compuerta alguna. G1 y G4 corresponden al propietario y se registran solo en la sección de aprobaciones de `spec.md`.
+
+## Nota del cierre de integración de la reapertura
+
+Nota append-only añadida sin retirar contenido anterior. Registra la integración del ciclo reabierto en la sección `## Cierre de integración` y deja constancia de que el cierre anterior corresponde al ciclo previo a la reapertura `T9` y se conserva como historial.
+
+- Integración en curso: merge `6b85789`, correspondiente al Pull Request #32, con dos padres `922ee68` y `0283833`; el segundo padre es la punta de `feat/reapertura-spec-016`.
+- Rama eliminada: `feat/reapertura-spec-016` no figura en las ramas locales ni en la referencia remota de seguimiento, y el listado de ramas no devuelve la rama.
+- Validación posterior: `python tools\sdd\validate.py --spec SPEC-016 --gate G5` y `python tools\sdd\validate.py --all` devuelven código 0 después de la integración, sin hallazgos.
+- Cierre anterior: el merge `79bcd83` y su fila `- G5:` corresponden al ciclo previo a la reapertura; la fila conserva su texto en la misma sección como historial y no acredita la integración en curso.
+- Líneas de la sección: `Merge:` transcribe el merge del ciclo reabierto y `Release:` permanece vacía, conforme al estado `validated` de la spec.
+- Conservación: la matriz de 39 filas, las brechas, el dictamen `CONVERGIDO`, la nota de reapertura y las notas anteriores conservan su contenido.
+- Compuertas: esta nota no declara compuerta alguna; G5 y G6 corresponden al propietario y su registro no se escribe en este documento.
 
