@@ -9,6 +9,7 @@ Cada prueba combina una comprobación positiva sobre los artefactos del reposito
 negativa sobre texto sintético, de modo que el detector demuestre que discrimina.
 """
 
+import ast
 import hashlib
 import re
 import sys
@@ -288,7 +289,8 @@ def cuerpo(texto: str) -> str:
 
 
 def _sin_comillas(valor: str) -> str:
-    return valor.strip().strip('"').strip("'")
+    """Valor sin comillas invertidas, simples ni dobles y sin espacios sobrantes."""
+    return valor.strip().strip("\"'`").strip()
 
 
 def leer_permisos_texto(texto: str) -> list[dict]:
@@ -2452,6 +2454,1312 @@ class TestCierreDeObservaciones(unittest.TestCase):
                       f"el hallazgo debe nombrar la observación vigente: {problemas}")
         self.assertEqual(observaciones_cerradas(sin_cierre), 3,
                          "la observación sin artefacto no se cuenta como cerrada")
+
+
+# ==========================================================================
+# SPEC-015 · cierre de la auditoría posterior al release
+#
+# Pruebas en rojo de las siete correcciones del plan: el procedimiento de
+# corrección de un tag publicado, el alcance cerrado del empaquetado, la firma
+# posterior a la publicación, la alineación de G5 y de §12, las dos notas
+# append-only, la fila T7 con el registro de cambios y el cierre de las diez
+# observaciones. Cada comprobación declara un caso positivo sobre el artefacto
+# del repositorio y un caso negativo sobre texto sintético que conserva el
+# defecto. Los detectores son funciones puras sobre texto: la suite no crea
+# tags, no consulta el remoto y no escribe archivo versionado.
+# ==========================================================================
+
+TASKS_015 = ROOT / "specs" / "015-cierre-auditoria-posterior" / "tasks.md"
+SPEC_014_PATH = ROOT / "specs" / "014-cierre-observaciones-finales" / "spec.md"
+REPORTE_SPEC_014 = ROOT / "specs" / "014-cierre-observaciones-finales" / "validation_report.md"
+README_CORPUS = CORPUS_DIR / "README.md"
+
+OBSERVACIONES_DEL_CIERRE = (
+    "AUD-039",
+    "AUD-057",
+    "AUD-068",
+    "AUD-076",
+    "AUD-087",
+    "AUD-088",
+    "AUD-089",
+    "AUD-090",
+    "AUD-099",
+    "AUD-100",
+)
+# RF-009: los 16 identificadores que la viñeta de la entrada del release cita.
+IDENTIFICADORES_DEL_RELEASE = (
+    "AUD-038",
+    "AUD-057",
+    "AUD-066",
+    "AUD-067",
+    "AUD-068",
+    "AUD-075",
+    "AUD-076",
+    "AUD-087",
+    "AUD-088",
+    "AUD-089",
+    "AUD-090",
+    "AUD-098",
+    "AUD-099",
+    "AUD-100",
+    "AUD-101",
+    "AUD-102",
+)
+FILAS_DE_LA_MATRIZ_014 = 17
+SEVERIDADES_DEL_CIERRE = ("Alta", "Media", "Baja")
+# Tramo de identificadores que la entrada del release cita: AUD-038 a AUD-102.
+TRAMO_DEL_RELEASE = (38, 102)
+
+# ------------------------------------------------------------------ T-001
+
+SECCION_DE_TAG = r"Sincronizaci[oó]n y tag"
+CONDICIONES_HABILITANTES = (
+    ("autorización escrita del propietario", r"autorizaci[oó]n escrita"),
+    ("registro del identificador anterior", r"identificador (?:anterior|del tag anterior)"),
+    (
+        "ausencia de consumidores del tag",
+        r"ausencia de consumidores|ning[uú]n consumidor|no depende del tag",
+    ),
+)
+
+SECCION_DE_TAG_SIN_AUTORIZACION = """
+## Sincronización y tag
+
+**Corrección de un tag publicado.** Una consecuencia de un release publicado se corrige con las condiciones habilitantes de forma simultánea. El registro del identificador anterior figura con el tag anterior `ad739a0` y el destino vigente `5a3af48`. La corrección se ejecuta antes de que un consumidor dependa del tag y, si un consumidor depende del tag, se tramita por un release PATCH nuevo.
+"""
+
+
+def seccion_del_tag(texto: str) -> str:
+    """Texto de la sección «Sincronización y tag» de la norma de rango 4."""
+    return seccion(texto, SECCION_DE_TAG)
+
+
+def evaluar_correccion_de_tag(texto: str) -> dict:
+    """C-1: las 3 condiciones habilitantes, el registro previo y el desplazamiento."""
+    bloque = seccion_del_tag(texto)
+    if not bloque:
+        return {
+            "problemas": ["el documento no declara la sección «Sincronización y tag»"],
+            "admitida": False,
+            "deuda": False,
+        }
+    problemas: list[str] = []
+    for nombre, patron in CONDICIONES_HABILITANTES:
+        if not re.search(patron, bloque, re.IGNORECASE):
+            problemas.append(f"falta la condición habilitante: {nombre}")
+    if not re.search(r"(?i)simult[aá]ne", bloque):
+        problemas.append("no exige las 3 condiciones de forma simultánea")
+    for identificador, rol in (("ad739a0", "tag anterior"), ("5a3af48", "destino vigente")):
+        if identificador not in bloque:
+            problemas.append(f"no registra el identificador del {rol}: {identificador}")
+    if not re.search(r"(?i)antes de que un consumidor", bloque):
+        problemas.append("no declara la corrección ejecutada antes de que un consumidor dependa del tag")
+    if not re.search(r"(?i)release PATCH", bloque):
+        problemas.append("no desplaza la corrección a un release PATCH nuevo cuando existe consumidor")
+    if not re.search(r"(?i)deuda aceptada", bloque):
+        problemas.append("no registra la deuda aceptada del release publicado")
+    if "Un tag publicado no se mueve, elimina ni reutiliza" not in bloque:
+        problemas.append("no conserva la prohibición de mover, eliminar o reutilizar un tag publicado")
+    admitida = not any(
+        "condición habilitante" in problema or "identificador" in problema for problema in problemas
+    )
+    return {
+        "problemas": problemas,
+        "admitida": admitida,
+        "deuda": bool(re.search(r"(?i)deuda aceptada", bloque)),
+    }
+
+
+_NOMBRES_DE_PROCESO = (
+    "run",
+    "call",
+    "check_call",
+    "check_output",
+    "Popen",
+    "system",
+    "popen",
+    "spawn",
+)
+
+
+def _llamada_de_proceso(nodo: ast.AST) -> bool:
+    """Verdadero si el nodo invoca una función capaz de lanzar un proceso."""
+    if not isinstance(nodo, ast.Call):
+        return False
+    funcion = nodo.func
+    nombre = funcion.attr if isinstance(funcion, ast.Attribute) else getattr(funcion, "id", "")
+    return nombre in _NOMBRES_DE_PROCESO
+
+
+def _argumentos_de_la_llamada(nodo: ast.Call) -> list[str]:
+    """Vector de argumentos del primer parámetro: lista de cadenas o cadena de shell."""
+    if not nodo.args:
+        return []
+    primero = nodo.args[0]
+    if isinstance(primero, (ast.List, ast.Tuple)):
+        return [
+            elemento.value
+            for elemento in primero.elts
+            if isinstance(elemento, ast.Constant) and isinstance(elemento.value, str)
+        ]
+    if isinstance(primero, ast.Constant) and isinstance(primero.value, str):
+        return primero.value.split()
+    return []
+
+
+def tags_creados_por_la_suite(fuente: str) -> int:
+    """Tags que la suite crearía al ejecutarse: invocaciones reales, no menciones.
+
+    Se recorre el árbol sintáctico, de modo que la cadena `tag` dentro de un literal
+    —incluido el texto de esta propia función— no cuenta como creación. Un vector de
+    argumentos cuenta cuando contiene `tag` junto con `-a` o `git`.
+    """
+    arbol = ast.parse(fuente)
+    creados = 0
+    for nodo in ast.walk(arbol):
+        if not _llamada_de_proceso(nodo):
+            continue
+        argumentos = _argumentos_de_la_llamada(nodo)
+        if "tag" in argumentos and ("-a" in argumentos or "git" in argumentos):
+            creados += 1
+    return creados
+
+
+def problemas_del_procedimiento_de_tag(texto: str) -> list[str]:
+    """C-1: defectos del procedimiento de corrección de un tag publicado."""
+    return evaluar_correccion_de_tag(texto)["problemas"]
+
+
+# ------------------------------------------------------------------ T-002
+
+ARTEFACTOS_DEL_EMPAQUETADO = (
+    ("CHANGELOG.md", r"`CHANGELOG\.md`"),
+    ("specs/INDEX.md", r"`specs/INDEX\.md`"),
+    ("frontmatter de una spec publicada", r"(?i)frontmatter de (?:una|las) specs?"),
+    ("línea `Release:` de un reporte publicado", r"`?Release:`?"),
+)
+RUTAS_AJENAS_AL_EMPAQUETADO = ("MEMORY.md", "README.md", "AGENTS.md", "opencode.jsonc")
+PASO_3_CON_RUTA_AJENA = """
+## Sincronización y tag
+
+Procedimiento obligatorio de release:
+
+3. Actualizar los artefactos de release exclusivamente en `release/vX-Y-Z`: `CHANGELOG.md`, `specs/INDEX.md`, el frontmatter de las specs publicadas y la línea `Release:` del reporte publicado, y `MEMORY.md`.
+"""
+
+
+def parrafo_del_paso_3(texto: str) -> str:
+    """Párrafo del paso 3 del procedimiento de release."""
+    lineas = texto.splitlines()
+    inicio = next(
+        (
+            i
+            for i, linea in enumerate(lineas)
+            if re.match(r"^\s*3\.\s*Actualizar los artefactos de release", linea)
+        ),
+        None,
+    )
+    if inicio is None:
+        return ""
+    bloque: list[str] = []
+    for linea in lineas[inicio:]:
+        if bloque and not linea.strip():
+            break
+        bloque.append(linea)
+    return "\n".join(bloque)
+
+
+def rutas_fuera_del_alcance(parrafo: str) -> list[str]:
+    """Rutas de repositorio nombradas en el párrafo y ajenas a los 4 artefactos."""
+    fuera: list[str] = []
+    for token in re.findall(r"`([^`]+)`", parrafo):
+        limpio = token.strip()
+        if limpio in ("CHANGELOG.md", "specs/INDEX.md", "Release:"):
+            continue
+        if limpio.startswith("release/"):
+            continue
+        ajeno = limpio in RUTAS_AJENAS_AL_EMPAQUETADO
+        ajeno = ajeno or limpio.startswith(("src/", "tools/", "tests/", "docs/"))
+        ajeno = ajeno or limpio.endswith((".py", ".bat", ".json", ".jsonc"))
+        if ajeno:
+            fuera.append(limpio)
+    return fuera
+
+
+def problemas_del_alcance_del_empaquetado(texto: str) -> list[str]:
+    """C-2: 4 artefactos, spec previa o fix previo y la excepción del commit 5da6df6."""
+    parrafo = parrafo_del_paso_3(texto)
+    if not parrafo:
+        return ["el documento no declara el paso 3 del procedimiento de release"]
+    problemas: list[str] = []
+    for nombre, patron in ARTEFACTOS_DEL_EMPAQUETADO:
+        if not re.search(patron, parrafo):
+            problemas.append(f"el paso 3 no declara el artefacto admitido: {nombre}")
+    for ruta in rutas_fuera_del_alcance(parrafo):
+        problemas.append(f"el paso 3 admite una ruta fuera del alcance: {ruta}")
+    if not re.search(r"(?i)spec previa", texto):
+        problemas.append("no exige una spec previa para una ruta distinta de las 4 declaradas")
+    if not re.search(r"(?i)fix previo", texto):
+        problemas.append("no exige un fix previo para una ruta distinta de las 4 declaradas")
+    if "5da6df6" not in texto:
+        problemas.append("no registra la excepción del commit 5da6df6")
+    elif not re.search(r"(?i)5da6df6[^\n]{0,240}18 archivos|18 archivos[^\n]{0,240}5da6df6", texto):
+        problemas.append("la excepción del commit 5da6df6 no declara los 18 archivos")
+    return problemas
+
+
+# ------------------------------------------------------------------ T-003
+
+MODIFICACION_FIRMADA = (
+    "La modificación posterior a la publicación de la entrada se registra en 1 commit firmado "
+    "por una clave de `docs/sdd/firmantes_autorizados`. Estado de firma del commit: `G`.\n"
+)
+MODIFICACION_SIN_FIRMA = (
+    "La modificación posterior de la entrada publicada de `CHANGELOG.md` se registra en el commit "
+    "`494db2e` y se declara válida. Estado de firma del commit: `N`. No consta firma verificable "
+    "del propietario.\n"
+)
+
+
+def estado_de_firma(texto: str) -> str:
+    """Estado de firma transcrito para una modificación, en la notación de Git."""
+    posicion = re.search(r"(?i)estado de firma", texto)
+    if not posicion:
+        return ""
+    tramo = texto[posicion.start(): posicion.start() + 160]
+    codigo = re.search(r"`([GNUEBXR])`", tramo)
+    return codigo.group(1) if codigo else ""
+
+
+def evaluar_modificacion_publicada(texto: str) -> dict:
+    """C-3: una modificación sin firma verificable registra su estado y no se declara válida."""
+    estado = estado_de_firma(texto)
+    sin_firma = re.search(r"(?i)(?:sin|no consta|no verifica|no figura)[^\n]{0,24}firma", texto)
+    valida = bool(estado) and estado in {"G", "U"} and sin_firma is None
+    if valida:
+        problemas: list[str] = []
+    elif sin_firma is not None:
+        problemas = [
+            "la modificación sin firma verificable registra el estado de firma "
+            f"{estado or 'ausente'} y no se declara válida"
+        ]
+    else:
+        problemas = [f"la modificación no se declara válida: estado de firma {estado or 'ausente'}"]
+    return {"problemas": problemas, "estado": estado, "valida": valida}
+
+
+def modificaciones_sin_firma_admitidas(texto: str) -> int:
+    """Afirmaciones que declaran válida una modificación sin firma verificable."""
+    return len(re.findall(r"(?i)se declara válida[^\n]{0,80}sin firma", texto))
+
+
+def problemas_de_la_firma_posterior(texto: str) -> list[str]:
+    """C-3: 1 commit firmado por modificación publicada y transcripción del estado."""
+    problemas: list[str] = []
+    if not re.search(r"(?i)posterior(?:es)? a la publicaci[oó]n", texto):
+        problemas.append("no acota la regla a la modificación posterior a la publicación")
+    if not re.search(r"(?i)\b(?:1|un|una)\b[^\n]{0,24}\bcommit\b[^\n]{0,24}\bfirmado\b", texto):
+        problemas.append("no exige 1 commit firmado por cada modificación posterior a la publicación")
+    if "docs/sdd/firmantes_autorizados" not in texto:
+        problemas.append("no exige una clave de docs/sdd/firmantes_autorizados")
+    if not re.search(r"(?i)estado de firma", texto):
+        problemas.append("no exige la transcripción del estado de firma")
+    if not re.search(
+        r"(?i)firma del empaquetado no se extiende|no se extiende a las correcciones", texto
+    ):
+        problemas.append(
+            "no declara que la firma del empaquetado no se extiende a las correcciones posteriores"
+        )
+    if "require_signed_commits" not in texto:
+        problemas.append("no conserva la fila de `require_signed_commits`")
+    for linea in texto.splitlines():
+        if re.search(r"(?i)se declara válida[^\n]{0,80}sin firma", linea):
+            problemas.append(f"admite una modificación sin firma verificable: {linea.strip()}")
+    return problemas
+
+
+# ------------------------------------------------------------------ T-004
+
+FILA_G5_SIN_CHECK = (
+    "| G5 | La integración de la rama de trabajo en `dev` | G4 aprobada, spec en `validated`, "
+    "Pull Request con `merge --no-ff` y validación posterior sin hallazgos | merge con dos padres, "
+    "validador posterior sin hallazgos y listado de ramas sin la rama integrada |\n"
+)
+REGLA_DE_BLOQUEO = (
+    "\n**Check exigible.** Si una de las dos ramas no declara exigible el check `verify`, "
+    "la verificación de G5 queda bloqueada y el caso se registra como ausencia del check exigible.\n"
+)
+BLOQUE_DE_DOCUMENTOS_CON_B3 = """
+## 12. Roles y permisos
+
+**Documentos de raíz.** `README.md`, `MEMORY.md` y `CHANGELOG.md` los escribe el propietario o su delegado explícito. La formalización de la allowlist de agentes para la raíz corresponde al bloque B3.
+"""
+
+
+def fila_de_compuerta(texto: str, compuerta: str) -> str:
+    """Fila de la tabla de compuertas cuyo primer campo nombra la compuerta."""
+    for linea in texto.splitlines():
+        if re.match(rf"^\|\s*{compuerta}\s*\|", linea):
+            return linea
+    return ""
+
+
+def problemas_de_la_fila_g5(texto: str) -> list[str]:
+    """RF-007: la fila G5 incorpora el check `verify` con `strict: true` en las 2 ramas."""
+    fila = fila_de_compuerta(texto, "G5")
+    if not fila:
+        return ["la tabla de compuertas no declara la fila G5"]
+    problemas: list[str] = []
+    if not re.search(r"`?verify`?", fila):
+        problemas.append("G5 no incorpora el check `verify` a su condición")
+    if not re.search(r"strict:\s*true", fila):
+        problemas.append("G5 no declara el check exigible con `strict: true`")
+    if not (re.search(r"`main`", fila) and re.search(r"`dev`", fila)):
+        problemas.append("G5 no declara el check exigible en `main` y en `dev`")
+    for condicion in ("G4", "validated", "merge --no-ff", "sin hallazgos"):
+        if condicion not in fila:
+            problemas.append(f"G5 no conserva la condición previa: {condicion}")
+    for evidencia in ("dos padres", "validador", "ramas"):
+        if evidencia not in fila:
+            problemas.append(f"G5 no conserva la evidencia exigida: {evidencia}")
+    if not re.search(r"(?i)G5[^\n]{0,60}bloquead", texto):
+        problemas.append("el documento no conserva la regla de bloqueo de G5")
+    return problemas
+
+
+def bloque_de_documentos_de_raiz(protocolo: str) -> str:
+    """Párrafo «Documentos de raíz» de §12 del protocolo."""
+    maquina = seccion(protocolo, r"12\.\s*Roles y permisos")
+    inicio = re.search(r"(?im)^\*\*Documentos de raíz\.\*\*", maquina)
+    if not inicio:
+        return ""
+    resto = maquina[inicio.start():]
+    fin = re.search(r"\n\s*\n", resto)
+    return resto[: fin.start()] if fin else resto
+
+
+def remisiones_a_b3(texto: str) -> int:
+    """Remisiones al bloque B3 declaradas en el documento."""
+    return len(re.findall(r"(?i)bloque\s+B3", texto))
+
+
+def problemas_de_la_remision_b3(protocolo: str) -> list[str]:
+    """RF-008: §12 referencia la matriz de permisos vigente y su formalización ejecutada."""
+    bloque = bloque_de_documentos_de_raiz(protocolo)
+    if not bloque:
+        return ["el protocolo no declara el bloque «Documentos de raíz» de §12"]
+    problemas: list[str] = []
+    if re.search(r"(?i)bloque\s+B3", bloque):
+        problemas.append("§12 conserva la remisión al bloque B3")
+    if not re.search(r"(?i)matriz de permisos", bloque):
+        problemas.append("§12 no referencia la matriz de permisos vigente")
+    if not re.search(r"(?i)formalizaci[oó]n[^\n]{0,80}(?:ejecutada|presente)", bloque):
+        problemas.append("§12 no declara la formalización ejecutada")
+    restantes = remisiones_a_b3(protocolo)
+    if restantes:
+        problemas.append(f"el protocolo conserva {restantes} remisión al bloque B3")
+    return problemas
+
+
+# ------------------------------------------------------------------ T-005
+
+VERIFICACIONES_DE_RELEASE = (
+    (
+        "tag anotado verificado con su commit objetivo",
+        r"(?is)tag anotado.{0,200}commit objetivo",
+    ),
+    (
+        "`specs/INDEX.md` y `CHANGELOG.md` actualizados",
+        r"(?is)specs/INDEX\.md.{0,160}CHANGELOG\.md.{0,160}actualizad",
+    ),
+    ("línea de G6 firmada", r"(?is)G6.{0,160}firmad"),
+)
+NOTA_G6_PARCIAL = (
+    "\n### Nota del resultado de G6\n\n"
+    "El release `v0.7.0` quedó publicado con el tag anotado `v0.7.0` verificado con su commit "
+    "objetivo `5a3af48` y con la línea de G6 firmada por el propietario.\n\n"
+    "Esta nota no declara compuerta alguna.\n"
+)
+NOTA_G6_COMPLETA = (
+    "\n### Nota del resultado de G6\n\n"
+    "El release `v0.7.0` quedó publicado con el tag anotado `v0.7.0` verificado con su commit "
+    "objetivo `5a3af48`, con `specs/INDEX.md` y `CHANGELOG.md` actualizados con el release y con "
+    "la línea de G6 firmada por el propietario.\n\n"
+    "Esta nota no declara compuerta alguna.\n"
+)
+NOTA_DE_CIERRE_CON_SEIS = """
+### Nota de cierre corregida de SPEC-013 por regularización de SPEC-015
+
+- `RNF-001` y `CA-015`: valor efectivo que la evidencia sostiene.
+- Cierre del informe final: 7 observaciones del informe final, 6 cerradas con artefacto.
+- Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+"""
+
+
+def verificaciones_de_release(texto: str) -> dict[str, bool]:
+    """Presencia de cada una de las 3 verificaciones de release."""
+    return {nombre: bool(re.search(patron, texto)) for nombre, patron in VERIFICACIONES_DE_RELEASE}
+
+
+def declaracion_de_compuerta(texto: str) -> list[str]:
+    """Líneas del texto que declaran una aprobación o una casilla de compuerta."""
+    marcas: list[str] = []
+    if re.search(r"(?m)^-\s*Approved by:", texto):
+        marcas.append("línea de aprobación")
+    if re.search(r"(?m)^-\s*\[[xX ]\]\s*G\d", texto):
+        marcas.append("casilla de compuerta")
+    return marcas
+
+
+def problemas_de_la_nota_de_g6(reporte: str) -> list[str]:
+    """RF-004: nota append-only con las 3 verificaciones y la matriz de 17 filas conservada."""
+    problemas: list[str] = []
+    valores = valores_de_la_matriz(reporte)
+    if len(valores) != FILAS_DE_LA_MATRIZ_014:
+        problemas.append(
+            f"la matriz declara {len(valores)} filas y el contrato exige {FILAS_DE_LA_MATRIZ_014}"
+        )
+    ajenos = sorted({valor for valor in valores if valor != "PASADO"})
+    if ajenos:
+        problemas.append(f"la matriz conserva valores distintos de PASADO: {ajenos}")
+    if not re.search(r"(?m)^-\s*\[x\]\s*CONVERGIDO", reporte):
+        problemas.append("el dictamen no conserva CONVERGIDO")
+    cierre = reporte.find("## Cierre de integración")
+    if cierre == -1:
+        problemas.append("el reporte no declara la sección de cierre de integración")
+        return problemas
+    cola = reporte[cierre:]
+    if not re.search(r"(?i)G6", cola):
+        problemas.append("la nota no transcribe el resultado de G6")
+    for nombre, presente in verificaciones_de_release(cola).items():
+        if not presente:
+            problemas.append(f"la nota omite la verificación de release: {nombre}")
+    for marca in declaracion_de_compuerta(cola):
+        problemas.append(f"la nota declara una compuerta: {marca}")
+    return problemas
+
+
+def bloques_de_seccion(texto: str) -> list[str]:
+    """Bloques del documento, uno por encabezado de nivel 1 a 4."""
+    bloques: list[str] = []
+    actual: list[str] | None = None
+    for linea in texto.splitlines():
+        if re.match(r"^#{1,4}\s+", linea):
+            if actual is not None:
+                bloques.append("\n".join(actual))
+            actual = [linea]
+        elif actual is not None:
+            actual.append(linea)
+    if actual is not None:
+        bloques.append("\n".join(actual))
+    return bloques
+
+
+def nota_de_cierre_corregida(reporte: str) -> str:
+    """Último bloque del reporte que referencia a SPEC-015."""
+    for bloque in reversed(bloques_de_seccion(reporte)):
+        if "SPEC-015" in bloque:
+            return bloque
+    return ""
+
+
+def problemas_de_la_nota_de_cierre_corregida(reporte: str) -> list[str]:
+    """RF-005: valor efectivo de `RNF-001` y de `CA-015` y cierre de las 7 observaciones."""
+    problemas: list[str] = []
+    valores = valores_de_la_matriz(reporte)
+    if len(valores) != FILAS_DE_LA_MATRIZ:
+        problemas.append(
+            f"la matriz declara {len(valores)} filas y el contrato exige {FILAS_DE_LA_MATRIZ}"
+        )
+    ajenos = sorted({valor for valor in valores if valor != "PASADO"})
+    if ajenos:
+        problemas.append(f"la matriz conserva valores distintos de PASADO: {ajenos}")
+    if not re.search(r"(?m)^-\s*\[x\]\s*CONVERGIDO", reporte):
+        problemas.append("el dictamen no conserva CONVERGIDO")
+    nota = nota_de_cierre_corregida(reporte)
+    if not nota:
+        problemas.append(
+            "el reporte no declara la nota de cierre corregida que referencia a SPEC-015"
+        )
+        return problemas
+    for identificador in ("RNF-001", "CA-015"):
+        if identificador not in nota:
+            problemas.append(f"la nota no declara el valor efectivo de {identificador}")
+    if not re.search(r"(?i)valor efectivo|valor que la evidencia sostiene|valor vigente", nota):
+        problemas.append("la nota no declara el valor efectivo que la evidencia sostiene")
+    if not re.search(r"(?i)\b(?:7|siete)\s+observaciones", nota):
+        problemas.append("la nota no declara las 7 observaciones del informe final")
+    if not re.search(r"(?i)\b(?:6|seis)\b[^\n]{0,40}con artefacto", nota):
+        problemas.append("la nota no declara las 6 observaciones cerradas con artefacto")
+    if not re.search(
+        r"(?i)(?:s[eé]ptima|la restante|una de ellas)[^\n]{0,140}(?:SPEC-015|esta spec)", nota
+    ):
+        problemas.append(
+            "la nota declara 6 de 7 observaciones cerradas y el informe final exige 6 con "
+            "artefacto y la séptima cerrada por esta spec"
+        )
+    for marca in declaracion_de_compuerta(nota):
+        problemas.append(f"la nota declara una compuerta: {marca}")
+    return problemas
+
+
+# ------------------------------------------------------------------ T-006
+
+SPEC_014_CON_TAG_PENDIENTE = """---
+id: SPEC-014
+title: Cierre de las observaciones de la reauditoría final
+status: released
+version: 0.8.1
+release: "v0.7.0"
+---
+
+# Cierre de las observaciones de la reauditoría final
+
+## Historial de cambios
+
+| Versión | Fecha | Cambio |
+|---|---|---|
+| 0.8.1 | 2026-11-20 | Regularización de la evidencia de la fila T7 |
+
+### Historial de transiciones
+
+| Fecha (UTC) | Transición | Origen | Destino | Responsable | Evidencia |
+|---|---|---|---|---|---|
+| 2026-11-14 | T7 | `validated` | `released` | `planner` | release v0.7.0 empaquetado con tag anotado pendiente de la firma de G6 |
+"""
+
+REGISTRO_CON_RANGO = """# Changelog
+
+## [v0.7.0] - 2026-11-14
+
+### Added
+
+- Cierre de las observaciones de los informes de auditoría de conformidad, con identificadores `AUD-038` a `AUD-102` (`SPEC-013`, `SPEC-014`).
+
+- Approved by: Agent Sebaxtian
+
+## Historial de releases
+
+| Versión | Fecha | Tag |
+|---|---|---|
+| `v0.7.0` | 2026-11-14 | `v0.7.0` |
+
+G6 permanece pendiente de la línea de aprobación y el tag `v0.7.0` se crea sobre el commit publicado.
+"""
+
+
+def campos_del_frontmatter(texto: str) -> dict[str, str]:
+    """Pares `clave: valor` del frontmatter de una spec."""
+    return dict(re.findall(r"^(\w+)\s*:\s*(.*)$", frontmatter(texto), re.MULTILINE))
+
+
+def filas_de_transiciones(texto: str) -> list[list[str]]:
+    """Filas de la tabla «Historial de transiciones» con sus 6 campos."""
+    lineas = texto.splitlines()
+    inicio = next(
+        (i for i, linea in enumerate(lineas) if re.match(r"^#{2,4}\s*Historial de transiciones", linea)),
+        None,
+    )
+    if inicio is None:
+        return []
+    filas: list[list[str]] = []
+    for linea in lineas[inicio + 1:]:
+        if re.match(r"^#{1,4}\s+", linea):
+            break
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 6 and re.fullmatch(r"(?:creación|T\d)", celdas[1]):
+            filas.append(celdas)
+    return filas
+
+
+def valor_de_celda(celda: str) -> str:
+    """Valor de una celda sin comillas invertidas ni comillas."""
+    return celda.strip().strip("`").strip('"').strip("'")
+
+
+def problemas_de_la_fila_t7(texto: str) -> list[str]:
+    """C-5: la fila T7 declara el release publicado y la versión asciende a 0.8.1."""
+    campos = campos_del_frontmatter(texto)
+    problemas: list[str] = []
+    if campos.get("id", "").strip() != "SPEC-014":
+        problemas.append(f"la spec no conserva el identificador SPEC-014: {campos.get('id')}")
+    if campos.get("status", "").strip() != "released":
+        problemas.append(f"la spec no conserva el estado released: {campos.get('status')}")
+    if _sin_comillas(campos.get("release", "")) != "v0.7.0":
+        problemas.append(
+            f"la spec no conserva el release v0.7.0: {_sin_comillas(campos.get('release', ''))}"
+        )
+    if campos.get("version", "").strip() != "0.8.1":
+        problemas.append(
+            f"la versión del frontmatter es {campos.get('version')} y el incremento PATCH exige 0.8.1"
+        )
+    filas = filas_de_transiciones(texto)
+    if not filas:
+        problemas.append("el historial de transiciones no declara fila alguna")
+    t7 = next((fila for fila in filas if fila[1] == "T7"), [])
+    if not t7:
+        problemas.append("el historial de transiciones no declara la fila T7")
+    else:
+        if valor_de_celda(t7[3]) != "released":
+            problemas.append(f"la fila T7 no conserva el destino released: {t7[3]}")
+        evidencia = t7[5]
+        if "v0.7.0" not in evidencia:
+            problemas.append("la fila T7 no declara el release publicado v0.7.0")
+        if not re.search(r"(?i)tag anotado", evidencia):
+            problemas.append("la fila T7 no declara el tag anotado verificado")
+        if re.search(r"(?i)pendiente", evidencia):
+            problemas.append(f"la fila T7 conserva el tag pendiente de la firma de G6: {evidencia}")
+        if not re.search(r"(?i)G6[^\n]{0,40}firmad|firmad[^\n]{0,40}G6", evidencia):
+            problemas.append("la fila T7 no declara la línea de G6 firmada")
+    if any(fila[1] == "T8" for fila in filas):
+        problemas.append("el historial de transiciones declara una transición nueva")
+    motivos = re.findall(r"(?m)^\|\s*0\.8\.1\s*\|", texto)
+    if len(motivos) != 1:
+        problemas.append(
+            f"el historial de cambios declara {len(motivos)} filas de motivo para la versión 0.8.1 "
+            "y el contrato exige 1"
+        )
+    return problemas
+
+
+def entrada_del_release(changelog: str, version: str = "v0.7.0") -> str:
+    """Texto de la entrada de `CHANGELOG.md` del release indicado."""
+    encabezado = re.search(rf"(?m)^## \[{re.escape(version)}\][^\n]*$", changelog)
+    if not encabezado:
+        return ""
+    resto = changelog[encabezado.end():]
+    fin = re.search(r"(?m)^## ", resto)
+    return resto[: fin.start()] if fin else resto
+
+
+def parrafo_posterior_al_historial(changelog: str) -> str:
+    """Párrafo que sigue a la tabla del historial de releases."""
+    lineas = seccion(changelog, r"(?i)historial de releases").splitlines()
+    posiciones = [i for i, linea in enumerate(lineas) if linea.strip().startswith("|")]
+    if not posiciones:
+        return ""
+    parrafo: list[str] = []
+    for linea in lineas[posiciones[-1] + 1:]:
+        if not linea.strip():
+            if parrafo:
+                break
+            continue
+        parrafo.append(linea.strip())
+    return " ".join(parrafo)
+
+
+def rangos_de_auditoria(texto: str) -> list[tuple[int, int]]:
+    """Rangos «AUD-NNN a AUD-NNN» declarados en el texto."""
+    patron = r"AUD-(\d{3})`?\s+a\s+`?AUD-(\d{3})"
+    return [(int(inicio), int(fin)) for inicio, fin in re.findall(patron, texto)]
+
+
+def numeros_no_asignados(texto: str) -> list[str]:
+    """Identificadores de un rango del release que la entrada no declara asignados."""
+    asignados = {int(identificador.split("-")[1]) for identificador in IDENTIFICADORES_DEL_RELEASE}
+    faltantes: list[str] = []
+    for inicio, fin in rangos_de_auditoria(texto):
+        bajo, alto = min(inicio, fin), max(inicio, fin)
+        if bajo < TRAMO_DEL_RELEASE[0] or alto > TRAMO_DEL_RELEASE[1]:
+            continue
+        for numero in range(bajo, alto + 1):
+            if numero not in asignados:
+                faltantes.append(f"AUD-{numero:03d}")
+    return faltantes
+
+
+def problemas_del_registro_de_cambios(changelog: str) -> list[str]:
+    """RF-009: párrafo en tiempo pasado y viñeta con los 16 identificadores asignados."""
+    entrada = entrada_del_release(changelog)
+    if not entrada:
+        return ["el registro de cambios no declara la entrada del release v0.7.0"]
+    problemas: list[str] = []
+    parrafo = parrafo_posterior_al_historial(changelog)
+    if not parrafo:
+        problemas.append("el registro no declara el párrafo posterior al historial de releases")
+    else:
+        if not re.search(r"(?i)G6", parrafo):
+            problemas.append("el párrafo no declara el resultado de G6")
+        if not re.search(r"(?i)registr(?:ad|ó|ada|ados)", parrafo):
+            problemas.append("el párrafo no declara en tiempo pasado la línea de G6 registrada")
+        if "v0.7.0" not in parrafo:
+            problemas.append("el párrafo no nombra el tag v0.7.0")
+        if not re.search(r"(?i)\b(?:se )?cre(?:ó|ado|ada|aron)\b", parrafo):
+            problemas.append("el párrafo no declara en tiempo pasado la creación del tag")
+        if re.search(r"(?i)permanece pendiente|queda pendiente|se crear[aá]|introducir[aá]", parrafo):
+            problemas.append("el párrafo conserva la enunciación en tiempo futuro")
+    vineta = ""
+    for linea in entrada.splitlines():
+        if linea.strip().startswith("- ") and "AUD-" in linea:
+            vineta = linea
+            break
+    if not vineta:
+        problemas.append("la entrada del release no declara la viñeta con los identificadores")
+    else:
+        presentes = [i for i in IDENTIFICADORES_DEL_RELEASE if i in vineta]
+        if len(presentes) != len(IDENTIFICADORES_DEL_RELEASE):
+            problemas.append(
+                f"la viñeta enumera {len(presentes)} de los 16 identificadores asignados"
+            )
+        for numero in numeros_no_asignados(vineta):
+            problemas.append(
+                f"la viñeta conserva un rango con un número no asignado por la entrada: {numero}"
+            )
+    if not re.search(r"(?m)^-\s*Approved by: Agent Sebaxtian\s*$", entrada):
+        problemas.append("la entrada no conserva la línea de registro de G6")
+    if "### Added" not in entrada:
+        problemas.append("la entrada no conserva su bloque de cambios")
+    return problemas
+
+
+# ------------------------------------------------------------------ T-007
+
+def seccion_del_paquete_de_cierre(texto: str) -> str:
+    """Sección que declara el paquete de cierre de las diez observaciones."""
+    return seccion(texto, r"Paquete de cierre de las diez observaciones")
+
+
+def filas_del_paquete(texto: str) -> list[list[str]]:
+    """Filas de la tabla del paquete, una por observación."""
+    filas: list[list[str]] = []
+    for linea in seccion_del_paquete_de_cierre(texto).splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 5 and re.fullmatch(r"`?AUD-\d{3}`?", celdas[0]):
+            filas.append(celdas)
+    return filas
+
+
+def estado_del_paquete(texto: str) -> dict[str, dict]:
+    """Estado por observación: severidad, artefacto, evidencia, requisito y causa."""
+    estado: dict[str, dict] = {}
+    for celdas in filas_del_paquete(texto):
+        identificador = celdas[0].strip("`")
+        severidad = celdas[1]
+        artefacto = celdas[2]
+        evidencia = celdas[3]
+        requisito = celdas[4].strip("`")
+        if artefacto in CELDAS_SIN_VALOR:
+            causa = "sin artefacto de cierre declarado"
+        elif evidencia in CELDAS_SIN_VALOR:
+            causa = "sin evidencia transcrita"
+        elif not re.fullmatch(r"RF-\d{3}", requisito):
+            causa = f"sin requisito que la cubra: {requisito or 'ausente'}"
+        else:
+            causa = ""
+        estado[identificador] = {
+            "severidad": severidad,
+            "artefacto": artefacto,
+            "evidencia": evidencia,
+            "requisito": requisito,
+            "cerrada": not causa,
+            "causa": causa,
+        }
+    return estado
+
+
+def recuento_del_paquete(texto: str) -> tuple[int, int] | None:
+    """Recuento declarado «Cerradas: N de M» de la sección del paquete."""
+    encontrado = re.search(r"Cerradas:\s*(\d+)\s+de\s+(\d+)", seccion_del_paquete_de_cierre(texto))
+    return (int(encontrado.group(1)), int(encontrado.group(2))) if encontrado else None
+
+
+def observaciones_del_paquete_cerradas(texto: str) -> int:
+    """Observaciones con artefacto y evidencia transcritos."""
+    return sum(1 for datos in estado_del_paquete(texto).values() if datos["cerrada"])
+
+
+def problemas_del_paquete_de_las_diez(texto: str) -> list[str]:
+    """RF-010: 10 de 10 cerradas con artefacto, evidencia, severidad y requisito."""
+    if not seccion_del_paquete_de_cierre(texto):
+        return ["tasks.md no declara la sección del paquete de cierre de las diez observaciones"]
+    problemas: list[str] = []
+    estado = estado_del_paquete(texto)
+    faltan = [observacion for observacion in OBSERVACIONES_DEL_CIERRE if observacion not in estado]
+    if faltan:
+        problemas.append(f"el paquete no registra las observaciones: {faltan}")
+    sobran = [observacion for observacion in estado if observacion not in OBSERVACIONES_DEL_CIERRE]
+    if sobran:
+        problemas.append(f"el paquete registra observaciones ajenas: {sobran}")
+    if len(estado) != len(OBSERVACIONES_DEL_CIERRE):
+        problemas.append(
+            f"el paquete declara {len(estado)} filas y el contrato exige "
+            f"{len(OBSERVACIONES_DEL_CIERRE)}"
+        )
+    for observacion, datos in estado.items():
+        if not datos["cerrada"]:
+            problemas.append(f"{observacion} sigue vigente: {datos['causa']}")
+        if datos["severidad"] not in SEVERIDADES_DEL_CIERRE:
+            problemas.append(f"{observacion} sin severidad admitida: {datos['severidad']}")
+        if not artefacto_en_linea(datos["artefacto"]):
+            problemas.append(f"{observacion} sin ruta de artefacto en su cierre")
+        if not datos["evidencia"]:
+            problemas.append(f"{observacion} sin evidencia transcrita")
+    declarado = recuento_del_paquete(texto)
+    total = len(OBSERVACIONES_DEL_CIERRE)
+    if declarado is None:
+        problemas.append("el paquete no declara el recuento «Cerradas: 10 de 10»")
+    elif declarado != (total, total):
+        problemas.append(
+            f"el paquete declara {declarado[0]} de {declarado[1]} cerradas y el contrato exige "
+            f"{total} de {total}"
+        )
+    cerradas = observaciones_del_paquete_cerradas(texto)
+    if cerradas != total:
+        problemas.append(
+            f"el paquete registra {cerradas} observaciones con artefacto y evidencia, y el "
+            f"contrato exige {total}"
+        )
+    datos_099 = estado.get("AUD-099", {})
+    if datos_099 and not re.search(r"(?i)fila\s+34", datos_099["artefacto"]):
+        problemas.append("AUD-099 no figura cerrada por la fila 34 de la tabla de inventario")
+    return problemas
+
+
+def fila_del_inventario(readme: str, orden: int) -> list[str]:
+    """Fila de la tabla de inventario con el orden de lectura indicado."""
+    for linea in seccion(readme, r"(?i)tabla de inventario").splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 5 and celdas[3] == str(orden):
+            return celdas
+    return []
+
+
+def sin_artefacto_de_cierre(texto: str, observacion: str) -> str:
+    """Copia del paquete con el artefacto de cierre de la observación retirado."""
+    salida: list[str] = []
+    for linea in texto.splitlines():
+        celdas = [celda.strip() for celda in linea.strip().strip("|").split("|")]
+        if len(celdas) >= 5 and celdas[0].strip("`") == observacion:
+            salida.append("| " + " | ".join([celdas[0], celdas[1], "—", celdas[3], celdas[4]]) + " |")
+        else:
+            salida.append(linea)
+    return "\n".join(salida)
+
+
+# Artefacto de cierre y detector que lo verifica, por observación.
+ARTEFACTO_Y_DETECTOR = {
+    "AUD-087": ("docs/Flujo_de_Trabajo_Git.md", problemas_del_procedimiento_de_tag),
+    "AUD-088": ("docs/Flujo_de_Trabajo_Git.md", problemas_del_alcance_del_empaquetado),
+    "AUD-090": ("docs/Flujo_de_Trabajo_Git.md", problemas_de_la_firma_posterior),
+    "AUD-089": ("specs/014-cierre-observaciones-finales/validation_report.md", problemas_de_la_nota_de_g6),
+    "AUD-076": (
+        "specs/013-cierre-reauditoria-conformidad/validation_report.md",
+        problemas_de_la_nota_de_cierre_corregida,
+    ),
+    "AUD-057": ("specs/014-cierre-observaciones-finales/spec.md", problemas_de_la_fila_t7),
+    "AUD-039": ("docs/Flujo_de_Trabajo_Git.md", problemas_de_la_fila_g5),
+    "AUD-068": ("docs/sdd/PROTOCOLO_OPERATIVO.md", problemas_de_la_remision_b3),
+    "AUD-100": ("CHANGELOG.md", problemas_del_registro_de_cambios),
+}
+
+
+# ------------------------------------------------------------------ clases
+
+
+class TestProcedimientoDeTag(unittest.TestCase):
+    """RF-001, CB-001, CB-002: procedimiento de corrección de un tag publicado."""
+
+    def setUp(self):
+        self.flujo = texto_de_ruta(FLUJO_GIT_PATH)
+
+    def test_procedimiento_de_correccion_completo(self):
+        """CA-001: 3 condiciones, 2 identificadores y el desplazamiento al release PATCH."""
+        resultado = evaluar_correccion_de_tag(self.flujo)
+        self.assertEqual(
+            resultado["problemas"],
+            [],
+            "el procedimiento debe declarar las 3 condiciones y los 2 identificadores",
+        )
+        self.assertTrue(resultado["admitida"], "la corrección debe quedar admitida con las condiciones")
+        self.assertTrue(resultado["deuda"], "el procedimiento debe registrar la deuda aceptada")
+        bloque = seccion_del_tag(self.flujo)
+        for nombre, patron in CONDICIONES_HABILITANTES:
+            with self.subTest(condicion=nombre):
+                self.assertRegex(bloque, f"(?i){patron}")
+        self.assertIn("ad739a0", bloque, "el procedimiento debe registrar el tag anterior ad739a0")
+        self.assertIn("5a3af48", bloque, "el procedimiento debe registrar el destino vigente 5a3af48")
+        self.assertRegex(bloque, r"(?i)antes de que un consumidor")
+        self.assertRegex(bloque, r"(?i)release PATCH")
+        self.assertIn("Un tag publicado no se mueve, elimina ni reutiliza", bloque)
+        self.assertEqual(
+            tags_creados_por_la_suite(Path(__file__).read_text(encoding="utf-8")),
+            0,
+            "la suite no debe crear tags",
+        )
+        sintetico_con_tag = (
+            "import subprocess\n"
+            'subprocess.run(["git", "tag", "-a", "v9.9.9"], check=True)\n'
+        )
+        self.assertEqual(
+            tags_creados_por_la_suite(sintetico_con_tag),
+            1,
+            "el detector debe reconocer una creación real de tag en texto sintético",
+        )
+        sintetico_sin_llamada = '# permiso "git tag *" del frontmatter\n'
+        self.assertEqual(
+            tags_creados_por_la_suite(sintetico_sin_llamada),
+            0,
+            "el detector no debe contar una mención sin invocación de proceso",
+        )
+
+    def test_correccion_sin_autorizacion_es_error(self):
+        """CB-001: sin autorización escrita la corrección no se admite y la deuda se registra."""
+        resultado = evaluar_correccion_de_tag(SECCION_DE_TAG_SIN_AUTORIZACION)
+        self.assertTrue(
+            resultado["problemas"], "la falta de autorización escrita debe producir un error"
+        )
+        texto = " ".join(resultado["problemas"])
+        self.assertIn(
+            "autorización escrita",
+            texto,
+            f"el error debe nombrar la condición ausente: {texto}",
+        )
+        self.assertFalse(
+            resultado["admitida"], "la corrección no se declara admitida sin autorización escrita"
+        )
+        self.assertFalse(resultado["deuda"], "el texto sintético no registra la deuda aceptada")
+        self.assertIn(
+            "deuda aceptada",
+            texto,
+            f"el error debe registrar la deuda aceptada del release publicado: {texto}",
+        )
+
+
+class TestAlcanceDelEmpaquetado(unittest.TestCase):
+    """RF-002, CB-003: alcance cerrado de la rama de empaquetado."""
+
+    def setUp(self):
+        self.flujo = texto_de_ruta(FLUJO_GIT_PATH)
+
+    def test_alcance_cerrado_de_cuatro_artefactos(self):
+        """CA-002: 4 artefactos, spec previa o fix previo y la excepción 5da6df6."""
+        self.assertEqual(
+            problemas_del_alcance_del_empaquetado(self.flujo),
+            [],
+            "el empaquetado debe declarar los 4 artefactos y la exigencia de spec o de fix previo",
+        )
+        parrafo = parrafo_del_paso_3(self.flujo)
+        self.assertTrue(parrafo, "el documento debe declarar el paso 3 del procedimiento de release")
+        for nombre, patron in ARTEFACTOS_DEL_EMPAQUETADO:
+            with self.subTest(artefacto=nombre):
+                self.assertRegex(parrafo, patron)
+        self.assertEqual(
+            rutas_fuera_del_alcance(parrafo),
+            [],
+            "el paso 3 no debe admitir rutas fuera de los 4 artefactos",
+        )
+        self.assertIn("5da6df6", self.flujo)
+        self.assertRegex(self.flujo, r"(?i)fix previo")
+
+    def test_ruta_fuera_del_alcance_es_error(self):
+        """CB-003: una ruta fuera del alcance produce un error que la nombra."""
+        problemas = problemas_del_alcance_del_empaquetado(PASO_3_CON_RUTA_AJENA)
+        self.assertTrue(problemas, "la ruta fuera del alcance debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("MEMORY.md", texto, f"el error debe nombrar la ruta: {texto}")
+        self.assertIn("fuera del alcance", texto, f"el error debe declarar el defecto: {texto}")
+        self.assertEqual(
+            rutas_fuera_del_alcance(parrafo_del_paso_3(PASO_3_CON_RUTA_AJENA)),
+            ["MEMORY.md"],
+            "el detector debe aislar la ruta ajena al empaquetado",
+        )
+
+
+class TestFirmaPosteriorALaPublicacion(unittest.TestCase):
+    """RF-003, CB-004: firma obligatoria de la modificación posterior a la publicación."""
+
+    def setUp(self):
+        self.flujo = texto_de_ruta(FLUJO_GIT_PATH)
+
+    def test_modificacion_publicada_firmada(self):
+        """CA-003: 1 commit firmado por modificación y estado de firma transcrito."""
+        self.assertEqual(
+            problemas_de_la_firma_posterior(self.flujo),
+            [],
+            "la norma debe exigir 1 commit firmado y la transcripción del estado de firma",
+        )
+        self.assertEqual(
+            modificaciones_sin_firma_admitidas(self.flujo),
+            0,
+            "ninguna modificación publicada se admite sin firma verificable",
+        )
+        self.assertIn("require_signed_commits", self.flujo)
+        firmada = evaluar_modificacion_publicada(MODIFICACION_FIRMADA)
+        self.assertEqual(firmada["problemas"], [], "el registro firmado debe aceptarse")
+        self.assertEqual(firmada["estado"], "G")
+        self.assertTrue(firmada["valida"])
+
+    def test_modificacion_sin_firma_es_error(self):
+        """CB-004: sin firma verificable se registra el estado y no se declara válida."""
+        resultado = evaluar_modificacion_publicada(MODIFICACION_SIN_FIRMA)
+        self.assertTrue(resultado["problemas"], "la modificación sin firma debe producir un error")
+        self.assertEqual(resultado["estado"], "N", "el estado de firma debe quedar registrado")
+        self.assertFalse(resultado["valida"], "la modificación no se declara válida")
+        texto = " ".join(resultado["problemas"])
+        self.assertIn("N", texto, f"el error debe transcribir el estado de firma: {texto}")
+        self.assertIn("estado de firma", texto, f"el error debe nombrar el estado: {texto}")
+
+
+class TestAlineacionDeCompuertas(unittest.TestCase):
+    """RF-007, RF-008: fila G5 con el check `verify` y §12 sin la remisión al bloque B3."""
+
+    def setUp(self):
+        self.flujo = texto_de_ruta(FLUJO_GIT_PATH)
+        self.protocolo = texto_de_ruta(PROTOCOLO_PATH)
+
+    def test_fila_g5_incorpora_el_check_verify(self):
+        """CA-007: la fila G5 nombra el check `verify` con `strict: true` en las 2 ramas."""
+        self.assertEqual(
+            problemas_de_la_fila_g5(self.flujo),
+            [],
+            "la fila G5 debe incorporar el check exigible y conservar sus condiciones",
+        )
+        fila = fila_de_compuerta(self.flujo, "G5")
+        self.assertIn("verify", fila)
+        self.assertIn("strict: true", fila)
+        self.assertIn("`main`", fila)
+        self.assertIn("`dev`", fila)
+        self.assertRegex(self.flujo, r"(?i)G5[^\n]{0,60}bloquead")
+
+    def test_fila_g5_sin_check_es_error(self):
+        """Un fila sintética que omite el check produce error que nombra la compuerta."""
+        problemas = problemas_de_la_fila_g5(FILA_G5_SIN_CHECK + REGLA_DE_BLOQUEO)
+        self.assertTrue(problemas, "la fila sin el check debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("G5", texto, f"el error debe nombrar la compuerta: {texto}")
+        self.assertIn("verify", texto, f"el error debe nombrar la condición ausente: {texto}")
+        self.assertIn("strict", texto, f"el error debe nombrar la exigencia de `strict: true`: {texto}")
+
+    def test_remision_b3_retirada(self):
+        """CA-007: §12 referencia la matriz de permisos vigente y su formalización ejecutada."""
+        self.assertEqual(
+            problemas_de_la_remision_b3(self.protocolo),
+            [],
+            "§12 debe retirar la remisión al bloque B3 y referenciar la matriz vigente",
+        )
+        bloque = bloque_de_documentos_de_raiz(self.protocolo)
+        self.assertNotRegex(bloque, r"(?i)bloque\s+B3")
+        self.assertRegex(bloque, r"(?i)matriz de permisos")
+        self.assertRegex(bloque, r"(?i)formalizaci[oó]n[^\n]{0,80}(?:ejecutada|presente)")
+        self.assertEqual(remisiones_a_b3(self.protocolo), 0)
+
+    def test_remision_b3_conservada_es_error(self):
+        """Una remisión conservada produce error con la remisión nombrada."""
+        problemas = problemas_de_la_remision_b3(BLOQUE_DE_DOCUMENTOS_CON_B3)
+        self.assertTrue(problemas, "la remisión conservada debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("bloque B3", texto, f"el error debe nombrar la remisión: {texto}")
+        self.assertEqual(remisiones_a_b3(BLOQUE_DE_DOCUMENTOS_CON_B3), 1)
+
+
+class TestNotasAppendOnly(unittest.TestCase):
+    """RF-004, RF-005, CB-005: notas append-only de los dos reportes publicados."""
+
+    def setUp(self):
+        self.reporte_014 = texto_de_ruta(REPORTE_SPEC_014)
+        self.reporte_013 = texto_de_ruta(REPORTE_SPEC_013)
+
+    def test_nota_de_g6_en_reporte_publicado(self):
+        """CA-004: la nota transcribe las 3 verificaciones sin alterar matriz ni dictamen."""
+        self.assertEqual(
+            problemas_de_la_nota_de_g6(self.reporte_014),
+            [],
+            "la nota debe transcribir las 3 verificaciones de release",
+        )
+        cola = self.reporte_014[self.reporte_014.find("## Cierre de integración"):]
+        verificaciones = verificaciones_de_release(cola)
+        self.assertEqual(len(verificaciones), 3)
+        for nombre, presente in verificaciones.items():
+            with self.subTest(verificacion=nombre):
+                self.assertTrue(presente, f"la nota debe transcribir: {nombre}")
+        self.assertEqual(
+            len(valores_de_la_matriz(self.reporte_014)),
+            FILAS_DE_LA_MATRIZ_014,
+            "las 17 filas de la matriz conservan su contenido",
+        )
+        self.assertRegex(self.reporte_014, r"(?m)^-\s*\[x\]\s*CONVERGIDO")
+        # Complementaria: una segunda nota se acepta a continuación de la precedente.
+        self.assertEqual(
+            problemas_de_la_nota_de_g6(self.reporte_014 + NOTA_G6_COMPLETA),
+            [],
+            "la segunda nota debe añadirse sin alterar la precedente",
+        )
+
+    def test_nota_sin_verificaciones_de_release_es_error(self):
+        """CB-005: una nota con 2 de las 3 verificaciones produce error con la ausente."""
+        base = self.reporte_014[
+            : self.reporte_014.find("## Cierre de integración") + len("## Cierre de integración")
+        ]
+        self.assertIn("## Cierre de integración", base)
+        problemas = problemas_de_la_nota_de_g6(base + NOTA_G6_PARCIAL)
+        self.assertTrue(problemas, "la verificación ausente debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn(
+            "`specs/INDEX.md` y `CHANGELOG.md` actualizados",
+            texto,
+            f"el error debe nombrar la verificación ausente: {texto}",
+        )
+        verificaciones = verificaciones_de_release(NOTA_G6_PARCIAL)
+        self.assertTrue(verificaciones["tag anotado verificado con su commit objetivo"])
+        self.assertFalse(verificaciones["`specs/INDEX.md` y `CHANGELOG.md` actualizados"])
+        self.assertTrue(verificaciones["línea de G6 firmada"])
+
+    def test_nota_de_cierre_corregida_en_spec_013(self):
+        """CA-005: valor efectivo de las 2 filas y cierre de las 7 observaciones."""
+        self.assertEqual(
+            problemas_de_la_nota_de_cierre_corregida(self.reporte_013),
+            [],
+            "la nota posterior debe declarar el valor efectivo y el cierre de las 7 observaciones",
+        )
+        nota = nota_de_cierre_corregida(self.reporte_013)
+        self.assertTrue(nota, "el reporte debe declarar la nota que referencia a SPEC-015")
+        for identificador in ("RNF-001", "CA-015"):
+            self.assertIn(identificador, nota, f"la nota debe declarar el valor de {identificador}")
+        self.assertRegex(nota, r"(?i)\b(?:7|siete)\s+observaciones")
+        self.assertRegex(nota, r"(?i)\b(?:6|seis)\b[^\n]{0,40}con artefacto")
+        self.assertRegex(
+            nota, r"(?i)(?:s[eé]ptima|la restante|una de ellas)[^\n]{0,140}(?:SPEC-015|esta spec)"
+        )
+        self.assertEqual(
+            len(valores_de_la_matriz(self.reporte_013)),
+            FILAS_DE_LA_MATRIZ,
+            "las 40 filas de la matriz conservan su contenido",
+        )
+        self.assertRegex(self.reporte_013, r"(?m)^-\s*\[x\]\s*CONVERGIDO")
+        # Complementaria: la nota precedente de la reauditoría final se conserva.
+        self.assertIn("Nota de cierre de la reauditoría final", self.reporte_013)
+
+    def test_nota_con_siete_observaciones_sin_cierre_es_error(self):
+        """CB-006: una nota con 6 de 7 observaciones cerradas produce error con el recuento."""
+        problemas = problemas_de_la_nota_de_cierre_corregida(
+            self.reporte_013 + NOTA_DE_CIERRE_CON_SEIS
+        )
+        self.assertTrue(problemas, "el recuento incompleto debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("6 de 7", texto, f"el error debe nombrar el recuento en conflicto: {texto}")
+        self.assertNotEqual(
+            problemas_de_la_nota_de_cierre_corregida(
+                self.reporte_013 + NOTA_DE_CIERRE_CON_SEIS
+            ),
+            [],
+            "la nota con 6 de 7 cerradas no se declara conforme",
+        )
+
+
+class TestFilaT7YRegistro(unittest.TestCase):
+    """RF-006, RF-009, CB-006: fila T7 regularizada y registro de cambios corregido."""
+
+    def setUp(self):
+        self.spec = texto_de_ruta(SPEC_014_PATH)
+        self.changelog = texto_de_ruta(CHANGELOG_PATH)
+
+    def test_fila_t7_declara_el_release_publicado(self):
+        """CA-006: T7 con el release publicado, versión 0.8.1 y destino conservado."""
+        self.assertEqual(
+            problemas_de_la_fila_t7(self.spec),
+            [],
+            "la fila T7 debe declarar el release publicado y la versión 0.8.1",
+        )
+        campos = campos_del_frontmatter(self.spec)
+        self.assertEqual(campos.get("version", "").strip(), "0.8.1")
+        self.assertEqual(campos.get("status", "").strip(), "released")
+        self.assertEqual(_sin_comillas(campos.get("release", "")), "v0.7.0")
+        filas = filas_de_transiciones(self.spec)
+        t7 = next(fila for fila in filas if fila[1] == "T7")
+        self.assertEqual(_sin_comillas(t7[3]), "released")
+        self.assertIn("v0.7.0", t7[5])
+        self.assertNotRegex(t7[5], r"(?i)pendiente")
+        self.assertFalse([fila for fila in filas if fila[1] == "T8"])
+        self.assertEqual(len(re.findall(r"(?m)^\|\s*0\.8\.1\s*\|", self.spec)), 1)
+
+    def test_fila_t7_con_tag_pendiente_es_error(self):
+        """CB-006: una fila T7 con el tag pendiente produce error con la fila nombrada."""
+        problemas = problemas_de_la_fila_t7(SPEC_014_CON_TAG_PENDIENTE)
+        self.assertTrue(problemas, "la fila con el tag pendiente debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("T7", texto, f"el error debe nombrar la fila: {texto}")
+        self.assertIn("pendiente", texto, f"el error debe nombrar el defecto: {texto}")
+
+    def test_vineta_enumera_los_dieciseis_identificadores(self):
+        """RF-009: párrafo en tiempo pasado y viñeta con los 16 identificadores."""
+        self.assertEqual(
+            problemas_del_registro_de_cambios(self.changelog),
+            [],
+            "el registro debe declarar el párrafo en tiempo pasado y los 16 identificadores",
+        )
+        parrafo = parrafo_posterior_al_historial(self.changelog)
+        self.assertRegex(parrafo, r"(?i)G6")
+        self.assertRegex(parrafo, r"(?i)registr(?:ad|ó|ada|ados)")
+        self.assertIn("v0.7.0", parrafo)
+        self.assertRegex(parrafo, r"(?i)\b(?:se )?cre(?:ó|ado|ada|aron)\b")
+        entrada = entrada_del_release(self.changelog)
+        vineta = next(
+            (
+                linea
+                for linea in entrada.splitlines()
+                if linea.strip().startswith("- ") and "AUD-" in linea
+            ),
+            "",
+        )
+        self.assertTrue(vineta, "la entrada del release debe declarar la viñeta de identificadores")
+        enumerados = [i for i in IDENTIFICADORES_DEL_RELEASE if i in vineta]
+        self.assertEqual(len(enumerados), 16, f"la viñeta debe enumerar 16 identificadores: {enumerados}")
+        self.assertEqual(numeros_no_asignados(vineta), [], "la viñeta no debe conservar un rango")
+
+    def test_rango_con_numero_no_asignado_es_error(self):
+        """Un rango con un número no asignado produce error con el número nombrado."""
+        problemas = problemas_del_registro_de_cambios(REGISTRO_CON_RANGO)
+        self.assertTrue(problemas, "el rango con un número no asignado debe producir un error")
+        texto = " ".join(problemas)
+        self.assertIn("AUD-040", texto, f"el error debe nombrar el número no asignado: {texto}")
+        self.assertIn("AUD-040", numeros_no_asignados(REGISTRO_CON_RANGO))
+        self.assertEqual(rangos_de_auditoria(REGISTRO_CON_RANGO), [(38, 102)])
+
+
+class TestCierreDeLasDiezObservaciones(unittest.TestCase):
+    """RF-010, CB-008: paquete de cierre de las diez observaciones."""
+
+    def test_cierre_de_las_diez_observaciones(self):
+        """CA-008: 10 de 10 con artefacto, evidencia y el cierre de AUD-099 por su fila."""
+        texto = texto_de_ruta(TASKS_015)
+        self.assertEqual(
+            problemas_del_paquete_de_las_diez(texto),
+            [],
+            "el paquete debe declarar 10 de 10 con artefacto y evidencia",
+        )
+        self.assertEqual(recuento_del_paquete(texto), (10, 10), "el recuento declarado es 10 de 10")
+        self.assertEqual(observaciones_del_paquete_cerradas(texto), 10)
+        estado = estado_del_paquete(texto)
+        self.assertEqual(sorted(estado), sorted(OBSERVACIONES_DEL_CIERRE))
+        fila = fila_del_inventario(texto_de_ruta(README_CORPUS), 34)
+        self.assertTrue(fila, "la tabla de inventario debe declarar la fila 34")
+        self.assertEqual(fila[1].strip("`"), "docs/sdd/auditoria_posterior_v0_7_0.md")
+        self.assertRegex(estado["AUD-099"]["artefacto"], r"(?i)fila\s+34")
+        for observacion, (ruta, detector) in ARTEFACTO_Y_DETECTOR.items():
+            with self.subTest(observacion=observacion):
+                self.assertEqual(
+                    detector(texto_de_ruta(ROOT / ruta)),
+                    [],
+                    f"{observacion} sin artefacto de cierre conforme en {ruta}",
+                )
+
+    def test_observacion_sin_artefacto_sigue_vigente(self):
+        """CB-008: sin artefacto la observación queda vigente con su causa."""
+        texto = texto_de_ruta(TASKS_015)
+        sin_cierre = sin_artefacto_de_cierre(texto, "AUD-099")
+        self.assertNotEqual(sin_cierre, texto, "el caso negativo retira un artefacto de cierre")
+        datos = estado_del_paquete(sin_cierre)["AUD-099"]
+        self.assertFalse(datos["cerrada"], "la observación sin artefacto no se declara cerrada")
+        self.assertEqual(datos["causa"], "sin artefacto de cierre declarado")
+        problemas = problemas_del_paquete_de_las_diez(sin_cierre)
+        self.assertTrue(problemas, "la observación vigente debe producir un hallazgo")
+        self.assertIn("AUD-099", " ".join(problemas),
+                      f"el hallazgo debe nombrar la observación vigente: {problemas}")
+        self.assertEqual(
+            observaciones_del_paquete_cerradas(sin_cierre),
+            9,
+            "la observación sin artefacto no se cuenta como cerrada",
+        )
 
 
 if __name__ == "__main__":

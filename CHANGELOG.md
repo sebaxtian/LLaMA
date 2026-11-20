@@ -14,6 +14,7 @@ vMAJOR.MINOR.PATCH
 
 ### Added
 
+- Cierre de las observaciones de los informes de auditoría de conformidad, con los identificadores `AUD-001` a `AUD-041` de la auditoría de origen y los identificadores `AUD-038`, `AUD-057`, `AUD-066`, `AUD-067`, `AUD-068`, `AUD-075`, `AUD-076`, `AUD-087`, `AUD-088`, `AUD-089`, `AUD-090`, `AUD-098`, `AUD-099`, `AUD-100`, `AUD-101` y `AUD-102` de la reauditoría final (`SPEC-013`, `SPEC-014`, `SPEC-015`).
 - Informe de auditoría de cumplimiento SDD en `docs/sdd/auditoria_cumplimiento_sdd.md`: diez dimensiones evaluadas, 41 hallazgos con identificador `AUD-NNN`, hoja de ruta organizada en los bloques B1 a B4 y veredicto global `NO CONFORME` sobre el periodo de `SPEC-001` a `SPEC-007` (`SPEC-008`).
 - Base normativa v2 (`SPEC-009`): mapa único de siete rangos, protocolo operativo redactado desde cero con sus dieciséis secciones, plantillas reconocidas como norma, contratos de informe analítico y de informe de auditoría, regla de versionado de specs, índice completo del corpus y lista `docs/sdd/firmantes_autorizados`. Fecha de corte `2026-11-14`.
 - Rol `auditor` con lectura de la base completa y escritura limitada al informe que produce, implementado en `.opencode/agents/auditor.md` (`SPEC-011`).
@@ -21,7 +22,6 @@ vMAJOR.MINOR.PATCH
 - Comprobaciones nuevas del validador determinista: aprobación de G1, G4 y G6 contra `docs/sdd/firmantes_autorizados` y la firma del commit, cobertura de requisitos como error desde G2, detección de tareas abiertas en la ejecución agregada, G5 y G6 con lógica propia, transiciones e historial de transiciones, relación de sucesión y alcance exacto impreso en cada ejecución (`SPEC-010`).
 - Trazabilidad profunda (`SPEC-012`): criterio de aceptación y evidencia obligatoria por tarea, sección de cierre de integración en el reporte de validación con el commit de integración y el tag del release, y regularización de `SPEC-001` a `SPEC-007` con esos campos.
 - Informes `docs/sdd/auditoria_cierre_v0_7_0.md` y `docs/sdd/auditoria_final_v0_7_0.md`, con veredicto global `NO CONFORME` y `CONFORME CON OBSERVACIONES` respectivamente, y cierre registrado de las dieciséis observaciones de la reauditoría de cierre y de las cuatro observaciones que permanecían abiertas del informe final (`SPEC-013`, `SPEC-014`).
-- Cierre de las observaciones de los informes de auditoría de conformidad, con identificadores `AUD-001` a `AUD-041` en la auditoría de origen y `AUD-038` a `AUD-102` en la reauditoría final (`SPEC-013`, `SPEC-014`).
 
 ### Changed
 
@@ -222,4 +222,4 @@ Se publicó `v0.1.0` como primera versión estructural y documental del proyecto
 | `v0.6.0` | 2026-11-13 | `v0.6.0` |
 | `v0.7.0` | 2026-11-14 | `v0.7.0` |
 
-El empaquetado de `v0.7.0` queda registrado en su entrada y en la tabla anterior; G6 permanece pendiente de la línea `- Approved by: Agent Sebaxtian` que el propietario introducirá en un commit firmado al publicar, y el tag `v0.7.0` se crea sobre el commit publicado.
+El empaquetado de `v0.7.0` quedó registrado en su entrada y en la tabla anterior: el release quedó publicado con la línea `- Approved by: Agent Sebaxtian` firmada por el propietario en el commit de empaquetado, G6 quedó cumplida y el tag anotado `v0.7.0` se creó sobre el commit publicado `5a3af48` con el mensaje `Release v0.7.0`.

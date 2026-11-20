@@ -112,3 +112,15 @@ Nota append-only añadida por el subagente `reviewer` de `SPEC-014` por delegaci
 - Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
 
 Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.
+
+## Nota de cierre corregida por la regularización de SPEC-015
+
+Nota append-only añadida por el subagente `reviewer` de `SPEC-015` por delegación escrita del propietario, a continuación de la nota precedente y sin alterar la matriz de trazabilidad, las brechas, el dictamen ni la sección de cierre de integración.
+
+- `RNF-001` y `CA-015`: valor efectivo `PARCIAL`, equivalente a `CONFORME CON OBSERVACIONES` en la escala de `docs/sdd/plantillas/informe_auditoria.md`; el informe final registra 0 observaciones abiertas de las 16 registradas y 5 de las 11 dimensiones con observación vigente, de modo que el valor literal `CONFORME` y la cláusula «10 de 10 dimensiones sin observación vigente» no se satisfacen y la fila conserva su contenido publicado sin reescribir el criterio.
+- Reauditoría del estado publicado: `docs/sdd/auditoria_posterior_v0_7_0.md` emitió `NO CONFORME`, de modo que el valor efectivo de las dos filas no asciende a `CONFORME` en el corte posterior.
+- Informe final `docs/sdd/auditoria_final_v0_7_0.md`: siete observaciones nuevas. 6 quedaron cerradas con artefacto y con evidencia transcrita.
+- La séptima, `AUD-075`, queda cerrada por esta spec, `SPEC-015`, con esta nota como regularización declarativa de las dos filas.
+- Matriz y dictamen: las 40 filas conservan `PASADO` y el dictamen conserva `CONVERGIDO`.
+
+Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.

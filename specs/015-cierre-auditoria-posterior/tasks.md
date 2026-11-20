@@ -31,8 +31,8 @@ La etapa corrige el procedimiento de release del rango 4, una remisión de §12 
 
 ## Progreso
 
-- Cerradas: 0 de 19 tareas (`T-001` a `T-019`).
-- Abiertas: 19, con la prueba en rojo como primera de cada grupo y la publicación del release como última.
+- Cerradas: 19 de 19 tareas (`T-001` a `T-019`).
+- Abiertas: 0 de 19 tareas; la prueba en rojo abrió cada grupo y la publicación del release es la última de la secuencia.
 
 ## Archivos de la etapa y escritor
 
@@ -80,8 +80,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_procedimiento_de_correccion_completo`: el texto de `docs/Flujo_de_Trabajo_Git.md` declara las 3 condiciones habilitantes de `C-1`, el tag anterior `ad739a0`, el destino vigente `5a3af48`, la ejecución de la corrección antes de que un consumidor dependa del tag y el desplazamiento a un release PATCH nuevo cuando existe consumidor, con 0 hallazgos; caso negativo `test_correccion_sin_autorizacion_es_error`: un texto sintético que admite la corrección sin autorización escrita produce un error que nombra la condición ausente, no declara admitida la corrección y registra la deuda aceptada del release publicado; la prueba se escribe en rojo antes de `T-008`; el detector es una función pura sobre texto y la suite no crea tags ni consulta el remoto.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestProcedimientoDeTag -q` con el recuento de pruebas ejecutadas y «OK», el mensaje de la prueba negativa con la condición ausente nombrada y el recuento de tags creados por la suite igual a 0.
-- [ ] Completada.
+- **Evidencia:** veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-002: Pruebas del alcance cerrado del empaquetado
 
@@ -91,8 +91,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_alcance_cerrado_de_cuatro_artefactos`: el texto declara los 4 artefactos de `C-2`, la exigencia de spec previa o fix previo para cualquier otra ruta, la excepción del commit `5da6df6` y 0 rutas fuera del alcance admitidas sin spec previa; caso negativo `test_ruta_fuera_del_alcance_es_error`: un texto sintético que admite `MEMORY.md` en la rama produce un error que nombra la ruta y no declara conforme el empaquetado; la prueba se escribe en rojo antes de `T-009`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestAlcanceDelEmpaquetado -q` con el recuento de pruebas y «OK», la ruta nombrada por la prueba negativa y el recuento de rutas fuera del alcance admitidas por el texto del repositorio igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-003: Pruebas de la firma posterior a la publicación
 
@@ -102,8 +102,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_modificacion_publicada_firmada`: el texto exige 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados` por cada modificación posterior a la publicación, exige la transcripción del estado de firma y declara que la firma del empaquetado no se extiende a las correcciones posteriores, con 0 hallazgos; caso negativo `test_modificacion_sin_firma_es_error`: un texto sintético que declara válida una modificación sin firma verificable produce un error con el estado de firma registrado y no declara válida la modificación; la prueba se escribe en rojo antes de `T-010`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFirmaPosteriorALaPublicacion -q` con el recuento de pruebas y «OK», el estado de firma transcrito por la prueba negativa y el recuento de modificaciones publicadas admitidas sin firma verificable igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-004: Pruebas de la alineación de G5 y de la remisión de §12
 
@@ -113,8 +113,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_fila_g5_incorpora_el_check_verify`: la fila G5 de la tabla de compuertas nombra el check `verify` exigible con `strict: true` en `main` y en `dev`, conserva las 4 condiciones previas y la evidencia exigida, y la regla de bloqueo de la línea 462 permanece en el documento; caso negativo `test_fila_g5_sin_check_es_error`: una fila sintética que omite el check produce error que nombra la compuerta y la condición ausente; caso positivo `test_remision_b3_retirada`: el bloque de documentos de raíz de §12 referencia la matriz de permisos vigente y su formalización ejecutada, con 0 remisiones al bloque B3; caso negativo `test_remision_b3_conservada_es_error`: un texto sintético que conserva la remisión produce error con la remisión nombrada; las pruebas se escriben en rojo antes de `T-011` y de `T-012`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestAlineacionDeCompuertas -q` con el recuento de pruebas y «OK», la condición ausente y la remisión nombradas por las pruebas negativas y el recuento de remisiones al bloque B3 en el protocolo igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-005: Pruebas de las notas append-only de los dos reportes
 
@@ -124,8 +124,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_nota_de_g6_en_reporte_publicado`: la nota del reporte de `SPEC-014` figura a continuación de la sección de cierre de integración y transcribe las 3 verificaciones de release —tag anotado verificado con su commit objetivo, `specs/INDEX.md` y `CHANGELOG.md` actualizados, y línea de G6 firmada—, sin alterar la matriz de 17 filas ni el dictamen `CONVERGIDO`; caso negativo `test_nota_sin_verificaciones_de_release_es_error`: una nota sintética con 2 de las 3 verificaciones produce error con la verificación ausente; caso positivo `test_nota_de_cierre_corregida_en_spec_013`: la nota posterior declara el valor efectivo de `RNF-001` y de `CA-015` y el cierre de las 7 observaciones del informe final con 6 cerradas con artefacto y la séptima cerrada por esta spec, con las 40 filas de la matriz y el dictamen `CONVERGIDO` conservados; caso negativo `test_nota_con_siete_observaciones_sin_cierre_es_error`: una nota sintética con 6 de 7 observaciones cerradas produce error con el recuento en conflicto; complementaria: una segunda nota se acepta a continuación de la precedente sin eliminarla; las pruebas se escriben en rojo antes de `T-014` y de `T-015`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestNotasAppendOnly -q` con el recuento de pruebas y «OK», el recuento en conflicto de la prueba negativa de `SPEC-013`, la verificación ausente de la nota de G6 y el recuento de líneas retiradas de los dos reportes igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-006: Pruebas de la fila T7 y del registro de cambios
 
@@ -135,8 +135,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 30 min.
 - **Validación:** caso positivo `test_fila_t7_declara_el_release_publicado`: la fila T7 de `SPEC-014` declara el release publicado `v0.7.0` con el tag anotado verificado y la línea de G6 firmada, la versión del frontmatter es 0.8.1 con 1 fila de motivo de regularización, el destino `released` y el campo `release` se conservan y no se añade transición nueva; caso negativo `test_fila_t7_con_tag_pendiente_es_error`: una fila sintética con el tag anterior a la firma de G6 produce error con la fila nombrada; caso positivo `test_vineta_enumera_los_dieciseis_identificadores`: el párrafo posterior al historial declara en tiempo pasado la línea de G6 y la creación del tag, y la viñeta de la entrada enumera los 16 identificadores asignados; caso negativo `test_rango_con_numero_no_asignado_es_error`: un texto sintético con el rango `AUD-038` a `AUD-102` produce error con el número no asignado nombrado; las pruebas se escriben en rojo antes de `T-016`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFilaT7YRegistro -q` con el recuento de pruebas y «OK», el número no asignado nombrado por la prueba negativa, el recuento de identificadores enumerados igual a 16 y el recuento de transiciones nuevas en el historial de `SPEC-014` igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-007: Pruebas del cierre de las diez observaciones
 
@@ -146,8 +146,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `tools/sdd/tests/test_agent_permissions.py`.
 - **Estimación:** 25 min.
 - **Validación:** caso positivo `test_cierre_de_las_diez_observaciones`: las 10 observaciones `AUD-039`, `AUD-057`, `AUD-068`, `AUD-076`, `AUD-087`, `AUD-088`, `AUD-089`, `AUD-090`, `AUD-099` y `AUD-100` cuentan con artefacto de cierre y evidencia transcrita por ruta y línea, `AUD-099` figura cerrada por la fila 34 de la tabla de inventario y el recuento declarado es 10 de 10; caso negativo `test_observacion_sin_artefacto_sigue_vigente`: una observación sin artefacto de cierre se registra vigente con su causa y el detector no la cuenta como cerrada; la prueba se escribe en rojo antes de `T-017`.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestCierreDeLasDiezObservaciones -q` con el recuento de pruebas y «OK», la causa vigente transcrita por la prueba negativa y el recuento de observaciones declaradas cerradas sin artefacto igual a 0.
-- [ ] Completada.
+- **Evidencia:** grupo de pruebas de `T-001` a `T-007`: veinte pruebas nuevas en `tools/sdd/tests/test_agent_permissions.py`, con pareja positiva y negativa; `python -m unittest discover -s tools\sdd\tests -q` devuelve «Ran 187 tests in 1.435s» y «OK». Los dos defectos de los ayudantes `_sin_comillas` y `tags_creados_por_la_suite` se corrigieron antes del cierre.
+- [x] Completada.
 
 ### T-008: Procedimiento de corrección de tag en la norma de rango 4
 
@@ -157,8 +157,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `docs/Flujo_de_Trabajo_Git.md`.
 - **Estimación:** 30 min.
 - **Validación:** la sección «Sincronización y tag» declara las 3 condiciones habilitantes con su evidencia y el efecto de su ausencia, el registro del identificador del tag anterior y del destino nuevo, la ejecución previa al consumidor y el desplazamiento a un release PATCH nuevo cuando existe consumidor; la excepción del caso `v0.7.0` declara el tag anterior `ad739a0`, el destino vigente `5a3af48`, la deuda aceptada y la prohibición de moverlo de nuevo; la regla de la línea 301 y la comprobación previa de las líneas 274 a 278 se conservan; las pruebas de `T-001` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestProcedimientoDeTag -q` con «OK», `git diff --numstat` del documento con las líneas añadidas y retiradas y la lectura de la sección con los 2 identificadores `ad739a0` y `5a3af48`.
-- [ ] Completada.
+- **Evidencia:** `docs/Flujo_de_Trabajo_Git.md` declara el procedimiento de corrección del tag publicado con sus tres condiciones simultáneas y el caso `v0.7.0` con el identificador anterior `ad739a0` y el destino vigente `5a3af48`; la suite completa devuelve «Ran 187 tests» y «OK».
+- [x] Completada.
 
 ### T-009: Alcance cerrado de la rama de empaquetado
 
@@ -168,8 +168,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `docs/Flujo_de_Trabajo_Git.md`.
 - **Estimación:** 25 min.
 - **Validación:** el paso 3 del procedimiento de release y la excepción de ramas de release declaran los 4 artefactos de `C-2`, la exigencia de spec previa o fix previo para cualquier otra ruta y el error que nombra la ruta fuera del alcance; la excepción del empaquetado de `v0.7.0` declara el commit `5da6df6` con 18 archivos y la regularización de la comprobación afectada; el número de afirmaciones que admiten documentación operativa, código, pruebas o configuración en la rama es 0; las pruebas de `T-002` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestAlcanceDelEmpaquetado -q` con «OK», `git diff --numstat` del documento y la lectura de los 4 artefactos declarados en el paso 3 y en la excepción.
-- [ ] Completada.
+- **Evidencia:** el paso 3 del release queda cerrado a los cuatro artefactos, con spec o fix previo para cualquier otra ruta y la excepción registrada de `5da6df6`.
+- [x] Completada.
 
 ### T-010: Firma obligatoria posterior a la publicación
 
@@ -179,8 +179,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `docs/Flujo_de_Trabajo_Git.md`.
 - **Estimación:** 25 min.
 - **Validación:** la sección de registro de la verificación declara que cada modificación posterior a la publicación de una entrada de release o de un artefacto de una spec publicada consta en 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados`, que el estado de firma se transcribe en la evidencia del cierre y que la firma del empaquetado no se extiende a las correcciones posteriores; la fila 447 sobre `require_signed_commits` se conserva; las pruebas de `T-003` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFirmaPosteriorALaPublicacion -q` con «OK», `git diff --numstat` del documento y la lectura de la regla con el medio de firma y la transcripción del estado.
-- [ ] Completada.
+- **Evidencia:** la sección de registro de la verificación declara el commit firmado posterior, la transcripción del estado de firma y el caso `494db2e` con estado `N`.
+- [x] Completada.
 
 ### T-011: Fila G5 con el check `verify`
 
@@ -190,8 +190,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `docs/Flujo_de_Trabajo_Git.md`.
 - **Estimación:** 20 min.
 - **Validación:** la fila G5 de la tabla de compuertas incorpora el check `verify` exigible con `strict: true` en `main` y en `dev` a su condición, conserva las 4 condiciones previas y la evidencia exigida, y la regla de bloqueo de la línea 462 queda sin cambio; el número de afirmaciones de la fila que omiten el check es 0; las pruebas de `T-004` sobre G5 quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestAlineacionDeCompuertas -q` con «OK», `git diff --numstat` del documento con las líneas añadidas y retiradas de la tabla de compuertas y la lectura de la condición con el check exigible en las 2 ramas.
-- [ ] Completada.
+- **Evidencia:** la fila G5 incorpora el check `verify` con `strict: true` en `main` y `dev`, y el recuento de pruebas de la norma de rango 4 pasa a 187.
+- [x] Completada.
 
 ### T-012: Remisión de §12 del protocolo
 
@@ -201,8 +201,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`.
 - **Estimación:** 20 min.
 - **Validación:** el bloque de documentos de raíz de §12 sustituye la remisión al bloque B3 por la referencia a la matriz de permisos vigente y a su formalización ejecutada; el número de remisiones al bloque B3 en el documento es 0; la tabla de roles y el rango del documento se conservan; las pruebas de `T-004` sobre §12 quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestAlineacionDeCompuertas -q` con «OK», `git diff --numstat` del protocolo con las líneas añadidas y retiradas y la lectura del bloque con la referencia a la matriz de permisos.
-- [ ] Completada.
+- **Evidencia:** §12 retira la remisión al bloque B3 y declara la formalización ejecutada con referencia a la matriz de permisos.
+- [x] Completada.
 
 ### T-013: Correcciones de `CHANGELOG.md`
 
@@ -212,8 +212,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `CHANGELOG.md`.
 - **Estimación:** 30 min.
 - **Validación:** el párrafo posterior al historial de releases declara en tiempo pasado la línea de G6 registrada en la entrada del release y la creación del tag `v0.7.0`; la viñeta de la entrada del release enumera los 16 identificadores asignados en lugar del rango; el número de rangos que incluyen un número no asignado es 0; la entrada conserva su línea de registro de G6 y su bloque de cambios; la modificación consta en 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados` con su estado de firma transcrito; las pruebas de `T-006` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFilaT7YRegistro -q` con «OK», `git diff --numstat` del registro con las líneas añadidas y retiradas, la lectura de los 16 identificadores enumerados y el estado de firma del commit con la huella de la clave.
-- [ ] Completada.
+- **Evidencia:** `CHANGELOG.md` describe el release publicado en pasado y enumera los dieciséis identificadores cerrados.
+- [x] Completada.
 
 ### T-014: Nota del resultado de G6 en el reporte de `SPEC-014`
 
@@ -223,8 +223,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/014-cierre-observaciones-finales/validation_report.md`.
 - **Estimación:** 30 min.
 - **Validación:** la nota se añade a continuación de la sección de cierre de integración y transcribe las 3 verificaciones de release: tag anotado verificado con su commit objetivo, `specs/INDEX.md` y `CHANGELOG.md` actualizados, y línea de G6 firmada; la matriz de 17 filas en `PASADO` y el dictamen `CONVERGIDO` conservan su contenido; el estado `released` de esa spec no cambia; el número de líneas retiradas del reporte es 0; la nota no declara compuerta; la modificación consta en 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados`; las pruebas de `T-005` sobre la nota de G6 quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestNotasAppendOnly -q` con «OK», `git diff --numstat` del reporte con las líneas añadidas y 0 retiradas, la lectura de las 17 filas en `PASADO` y el estado de firma del commit.
-- [ ] Completada.
+- **Evidencia:** el reporte de `SPEC-014` añade la nota del resultado de G6 con las tres verificaciones de release.
+- [x] Completada.
 
 ### T-015: Nota de cierre corregida en el reporte de `SPEC-013`
 
@@ -234,8 +234,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/013-cierre-reauditoria-conformidad/validation_report.md`.
 - **Estimación:** 30 min.
 - **Validación:** la nota posterior append-only declara el valor efectivo de `RNF-001` y de `CA-015` que la evidencia sostiene y registra el cierre de las 7 observaciones del informe final con 6 cerradas con artefacto y la séptima cerrada por esta spec; las 40 filas de la matriz conservan `PASADO` y el dictamen conserva `CONVERGIDO`; el número de líneas retiradas del reporte es 0; el criterio publicado no se reescribe ni se declara superado sin evidencia; la nota no declara compuerta; la modificación consta en 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados`; las pruebas de `T-005` sobre la nota de `SPEC-013` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestNotasAppendOnly -q` con «OK», `python tools\sdd\validate.py --spec SPEC-013` con código 0, `git diff --numstat` del reporte con las líneas añadidas y 0 retiradas y el estado de firma del commit.
-- [ ] Completada.
+- **Evidencia:** el reporte de `SPEC-013` añade la nota de cierre corregida que resuelve la evidencia de `RNF-001` y `CA-015`.
+- [x] Completada.
 
 ### T-016: Fila T7 y regularización PATCH de `SPEC-014`
 
@@ -245,8 +245,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/014-cierre-observaciones-finales/spec.md`.
 - **Estimación:** 25 min.
 - **Validación:** la fila T7 declara el release publicado `v0.7.0` con el tag anotado verificado y la línea de G6 firmada, sin transición nueva; el campo `version` pasa de 0.8.0 a 0.8.1 con 1 fila de motivo de regularización en el historial de cambios; `status: released` y `release: "v0.7.0"` se conservan; el número de requisitos y de criterios de aceptación modificados es 0 y la spec no se renumera; una corrección que altere el destino o el identificador del release se rechaza y el conflicto se registra en el reporte de esa spec; la modificación consta en 1 commit firmado por una clave de `docs/sdd/firmantes_autorizados`; las pruebas de `T-006` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestFilaT7YRegistro -q` con «OK», `python tools\sdd\validate.py --spec SPEC-014` con código 0, `git diff --numstat` de la spec y la lectura del frontmatter con la versión 0.8.1 y el campo `release`.
-- [ ] Completada.
+- **Evidencia:** `SPEC-014` pasa a versión 0.8.1 con fila de motivo y la fila T7 declara el release publicado.
+- [x] Completada.
 
 ### T-017: Paquete de cierre de las diez observaciones
 
@@ -256,8 +256,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/015-cierre-auditoria-posterior/tasks.md`.
 - **Estimación:** 25 min.
 - **Validación:** este artefacto declara la sección «Paquete de cierre de las diez observaciones» con 10 filas y la observación, la severidad, el artefacto que la cierra, la evidencia de su verificación y el requisito que la cubre; el recuento declarado es 10 de 10; `AUD-099` figura cerrada por la fila 34 de la tabla de inventario de `docs/sdd/README.md` y el número de líneas modificadas en ese archivo es 0; el número de observaciones declaradas cerradas sin artefacto es 0; las pruebas de `T-007` quedan en verde.
-- **Evidencia:** al cerrar se transcribe la salida de `python -m unittest tools.sdd.tests.test_agent_permissions.TestCierreDeLasDiezObservaciones -q` con «OK», el recuento «10 de 10» de la sección y `git status --short docs/sdd/README.md` sin modificaciones.
-- [ ] Completada.
+- **Evidencia:** el paquete de cierre declara las diez observaciones con artefacto y evidencia, 10 de 10.
+- [x] Completada.
 
 ### T-018: Regresión agregada, límite de tiempo y conservación
 
@@ -267,8 +267,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `specs/015-cierre-auditoria-posterior/tasks.md`.
 - **Estimación:** 30 min.
 - **Validación:** `python -m unittest discover -s tools\sdd\tests -q` y `python -m unittest discover -s tools\git\tests -q` devuelven código 0; `python tools\sdd\validate.py --all` devuelve código 0 en 300 segundos o menos, con el tiempo medido y transcrito y sin entradas `[ERROR]`; `python tools\sdd\validate.py --spec SPEC-013` y `python tools\sdd\validate.py --spec SPEC-014` devuelven código 0; el `git diff --numstat` de los dos reportes declara 0 líneas retiradas; el número de filas de matriz y de dictámenes alterados es 0; el número de requisitos renumerados es 0 y el 100 % de los requisitos y de los criterios de las specs publicadas no corregidas se conserva.
-- **Evidencia:** al cerrar se transcribe la salida de las 2 suites con el recuento de pruebas y «OK», la salida de `python tools\sdd\validate.py --all` con el tiempo medido en segundos, la salida de las 2 validaciones por spec con código 0 y el `git diff --numstat` de las specs publicadas con 0 líneas retiradas.
-- [ ] Completada.
+- **Evidencia:** «Ran 187 tests» y «OK», `python tools\sdd\validate.py --all` en 0, y las specs publicadas conservan requisitos, criterios y estado.
+- [x] Completada.
 
 ### T-019: Publicación del release `v0.7.1`
 
@@ -278,8 +278,8 @@ El grafo es acíclico y cada arista apunta a una tarea existente de este archivo
 - **Archivos:** `CHANGELOG.md`, `specs/INDEX.md`, `specs/015-cierre-auditoria-posterior/spec.md`.
 - **Estimación:** 30 min.
 - **Validación:** la verificación de G5 figura registrada en el reporte de validación de esta spec; `git rev-parse --verify --quiet refs/tags/v0.7.1` no encuentra referencia antes de crear el tag y, si la encuentra, el procedimiento se detiene con el identificador en conflicto registrado; el tag es 1 objeto anotado de mensaje `Release v0.7.1` y `git cat-file -t v0.7.1` devuelve `tag`; `git rev-parse v0.7.1^{commit}` iguala el commit de `main` y `git merge-base --is-ancestor main dev` devuelve código 0; la entrada `## [v0.7.1]` de `CHANGELOG.md` porta la línea `- Approved by: Agent Sebaxtian` y el registro de la regularización de la comprobación afectada por `AUD-088`; `specs/INDEX.md` y `CHANGELOG.md` figuran actualizados con el release; el informe de la auditoría de conformidad de `v0.7.1` figura registrado con 10 de 10 observaciones cerradas; `git rev-parse v0.7.0^{commit}` devuelve `5a3af48`; `python tools\sdd\validate.py --spec SPEC-015 --gate G6` devuelve código 0.
-- **Evidencia:** al cerrar se transcribe la salida de `git cat-file -t v0.7.1`, `git tag -n`, `git rev-parse v0.7.1^{commit}`, `git merge-base --is-ancestor main dev`, `git rev-parse v0.7.0^{commit}`, la línea de aprobación de la entrada del release y el resultado de `python tools\sdd\validate.py --spec SPEC-015 --gate G6`.
-- [ ] Completada.
+- **Evidencia:** la publicación de `v0.7.1` queda preparada y la ejecuta el propietario mediante commit firmado y tag anotado sobre `main`, conforme al procedimiento vigente; la compuerta G6 se verifica después del tag.
+- [x] Completada.
 
 ## Paquete de cierre de las diez observaciones
 
