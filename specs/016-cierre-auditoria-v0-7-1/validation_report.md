@@ -39,6 +39,8 @@ Registro de ejecución:
 | `RF-013` | `CA-014` | `python -m unittest tools.sdd.tests.test_hallazgos -q` (`test_veredicto_*` y `test_precedencia_*`) y `C-21` | `docs/sdd/PROTOCOLO_OPERATIVO.md:386-391` transcribe la tabla de las 4 condiciones y `:384` fija el cálculo desde el inventario con la precedencia `NO CONFORME`, `NO VERIFICABLE`, `PARCIAL` y `CONFORME`; `docs/sdd/inventario_hallazgos.md:149-151` declara `CONFORME` con 0 abiertos; las 4 condiciones y las 4 precedencias quedan acreditadas y `C-21` devuelve 0 problemas | PASADO |
 | `RF-014` | `CA-015` | `git show --no-patch --format=%G? 9042ae6` y contraste del acta y del inventario | `docs/sdd/ratificacion_historica.md:7` declara la fecha UTC, `:16-19` el alcance con los 2 commits y las 3 rutas, `:25-27` las 5 exenciones, `:31` el efecto retroactivo limitado al régimen y `:38` la lista de firmantes; el commit `9042ae6` verifica la firma con estado `G` y las 5 filas de `AUD-003`, `AUD-004`, `AUD-005`, `AUD-037` y `AUD-053` constan en `cerrado por ratificación` con ese identificador | PASADO |
 | `RF-015` | `CA-016` | Contraste de `docs/Flujo_de_Trabajo_Git.md` y del registro de releases | `:16` fija la secuencia G5, auditoría sobre el estado integrado en `dev` y G6, con la exigencia de `CONFORME`; `:12` incorpora la condición a G6; `:232` repite la validación de release; `:414` ordena las 3 verificaciones; `CHANGELOG.md` no porta entrada `v0.7.2` y `specs/INDEX.md` no declara release para `SPEC-016`, de modo que la condición rige y el release no está publicado | PASADO |
+| `RF-016` | `CA-018` | `python -m unittest tools.sdd.tests.test_agent_permissions -q` (`test_escritura_unica_del_reviewer`) y contraste de §12 del rango 3 con `.opencode/agents/reviewer.md` | `docs/sdd/PROTOCOLO_OPERATIVO.md:296` declara que la nota de un reporte de validación publicado se añade al final de ese reporte, la redacta el `documenter` y la firma el propietario en 1 commit firmado con una clave de `docs/sdd/firmantes_autorizados`, y que el `reviewer` escribe solo el reporte de la spec en curso, no escribe la nota de un reporte publicado ni el reporte de una spec ajena, y su concesión no alcanza `specs/*/validation_report.md` sin límite de spec; la descripción de `.opencode/agents/reviewer.md:2`, la concesión de `:48-49` y la prosa de `:104` y `:109` declaran el mismo límite y la misma autoría; la suite de permisos devuelve «Ran 61 tests» y «OK» | PASADO |
+| `RF-017` | `CA-019` | Contraste de `MEMORY.md:13`, del frontmatter de `spec.md` y de la fila de `specs/INDEX.md:22` | `MEMORY.md:13` declara `SPEC-016` en estado `implementing`, con release pendiente y sin tag de release, conforme a `specs/INDEX.md:22`; `spec.md:4` porta `status: implementing` y `:10` porta `release: ""`; `specs/INDEX.md:22` declara `implementing` y un guion en la columna del release; `spec.md:454` registra la corrección en la fila 0.9.1 del historial de cambios; el número de estados de `MEMORY.md` que contradicen las otras 2 fuentes es 0 | PASADO |
 | `RNF-001` | `CA-011` | `test_autorreferencia` sobre `spec.md` y `tasks.md` de `SPEC-016` y `C-24` | La comprobación recorre el contrato de la spec y devuelve 0 coincidencias sobre los 15 requisitos funcionales, los 9 no funcionales, los 13 casos borde y las 34 tareas; `C-24` no registra hallazgo sobre el contrato ni sobre las tareas; el caso sintético que fija el veredicto de conformidad produce 1 error | PASADO |
 | `RNF-002` | `CA-011` | Contraste de las 3 specs regularizadas y `C-23` | `SPEC-013` en 0.8.1, `SPEC-014` en 0.8.2 y `SPEC-015` en 0.8.1, con 1 fila de motivo por corrección; el número de requisitos renumerados es 0; las 2 filas T7 conservan `released`, el campo `release` y el identificador del release; las excepciones declaradas son las 2 filas T7, las 3 notas append-only y las filas de motivo | PASADO |
 | `RNF-003` | `CA-011` | `python tools\sdd\validate.py --all` | La validación agregada completa con código de salida 0 y 17 comprobaciones ejecutadas dentro del límite de 300 segundos del corte; la ejecución de la suite del mecanismo transcribe 1.269 s para 222 pruebas | PASADO |
@@ -62,11 +64,11 @@ Registro de ejecución:
 | `CB-012` | `CA-016` | Contraste de `docs/Flujo_de_Trabajo_Git.md:16` y del estado de la spec | Un veredicto distinto de `CONFORME` impide la publicación, conserva la spec en `validated` y transcribe el motivo con el hallazgo que lo sostiene; el release `v0.7.2` no consta publicado y la condición de auditoría previa rige sobre el estado integrado en `dev` | PASADO |
 | `CB-013` | `CA-012` | `test_fila_del_inventario_en_el_corpus` y `C-19` | La verificación queda en rojo con la ruta del archivo de informe sin fila y la integración se detiene; las 5 filas de los informes de auditoría constan en `docs/sdd/README.md:60-64` y el corpus no conserva archivo de informe sin fila | PASADO |
 
-Las 37 filas declaran `PASADO`, que es el único valor que converge; ninguna abre brecha en la sección siguiente.
+Las 39 filas declaran `PASADO`, que es el único valor que converge; ninguna abre brecha en la sección siguiente.
 
 ## Brechas
 
-- Sin brechas abiertas: las 37 filas de `RF-001` a `RF-015`, `RNF-001` a `RNF-009` y `CB-001` a `CB-013` constan con evidencia `PASADO` sobre el commit `e2ede7a`, y el número de requisitos y de casos borde sin evidencia es 0.
+- Sin brechas abiertas: las 39 filas de `RF-001` a `RF-017`, `RNF-001` a `RNF-009` y `CB-001` a `CB-013` constan con evidencia `PASADO`; 37 acreditan el commit `e2ede7a` y las 2 de la reapertura acreditan el commit `58d67d5` de la rama `feat/reapertura-spec-016`, y el número de requisitos y de casos borde sin evidencia es 0.
 - Nota 1 — Ratificación: las 5 exenciones `AUD-003`, `AUD-004`, `AUD-005`, `AUD-037` y `AUD-053` y las 2 modificaciones sin firma de los commits `494db2e` y `564bac4` se cierran con el acta de `docs/sdd/ratificacion_historica.md`, introducida en el commit firmado `9042ae6` con estado `G` y con la huella de `docs/sdd/firmantes_autorizados`; el efecto es retroactivo y limitado al régimen, el contenido publicado se conserva y las 5 filas del inventario declaran `cerrado por ratificación` con ese identificador.
 - Nota 2 — Regla de autorreferencia: §16 del protocolo en `docs/sdd/PROTOCOLO_OPERATIVO.md:378` y la lista de prohibiciones de `docs/sdd/plantillas/spec.md:80` impiden que una spec fije el veredicto, el recuento de hallazgos o el conjunto de dimensiones de un informe posterior a su aprobación; las notas append-only de `SPEC-013` y de `SPEC-015` declaran que el veredicto y el recuento los emite el rol de auditoría desde `docs/sdd/inventario_hallazgos.md`, y `C-24` no registra hallazgo sobre las 3 specs alcanzadas.
 - Nota 3 — Instrumentos: `plan.md` nombra `test_registro_del_release` y `test_cauce_de_inventario`, y la suite del mecanismo no porta esos nombres; la evidencia de `RF-005` y de `RF-007` se acreditó por contraste directo de los 2 soportes y de los 3 artefactos del cauce, y por las comprobaciones `C-19` y `C-24` del validador. La nota describe el instrumento y no altera el estado de las filas.
@@ -76,7 +78,7 @@ Las 37 filas declaran `PASADO`, que es el único valor que converge; ninguna abr
 - [x] CONVERGIDO (100 % de requisitos y casos borde con evidencia PASADO).
 - [ ] NO CONVERGIDO.
 
-El dictamen se calcula desde la matriz: 37 de 37 filas en `PASADO` y 0 brechas abiertas. Este reporte no declara compuerta alguna; la aprobación de G4 corresponde al propietario y se registra solo en la sección de aprobaciones de `spec.md`.
+El dictamen se calcula desde la matriz: 39 de 39 filas en `PASADO` y 0 brechas abiertas. Este reporte no declara compuerta alguna; la aprobación de G4 corresponde al propietario y se registra solo en la sección de aprobaciones de `spec.md`.
 
 ## Cierre de integración
 
@@ -84,3 +86,16 @@ Merge: 79bcd83
 Release:
 
 - G5: merge 79bcd83 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-v0-7-1 eliminada en local y en remoto.
+
+## Nota de reapertura
+
+Nota append-only añadida sin retirar contenido anterior. Registra la reapertura declarada como `T9` en `spec.md:467`, que devolvió la spec de `validated` a `implementing` por los hallazgos H-01, H-02 y H-03 de `docs/sdd/auditoria_previa_v0_7_2.md`. La reapertura suspende la condición append-only del corte anterior: la actualización de la matriz la autoriza el propietario y esta nota la registra.
+
+- Motivo: corrección de la autorreferencia de `RF-015` y `CA-016`, del alcance del inventario a los informes presentes en `docs/sdd/`, del permiso del `reviewer` para escribir notas en reportes publicados —restringido a la spec en curso— y de las observaciones `OBS-001` a `OBS-004`.
+- Transición: `T9`, de `validated` a `implementing`; la autoriza el propietario y la registra el `planner` en el historial de transiciones.
+- Versión: 0.9.0 declarada en la fila de `spec.md:453` y 0.9.1 en el frontmatter de `spec.md:5`; la versión vigente es 0.9.1.
+- Rama y commit de la reapertura: `feat/reapertura-spec-016`, commit `58d67d5`.
+- Matriz: pasa de 37 a 39 filas con `RF-016` y `CA-018` sobre la autoría del `documenter`, la firma del propietario y el límite del `reviewer`, y con `RF-017` y `CA-019` sobre la consistencia de `MEMORY.md`; las 2 filas constan en `PASADO`.
+- Dictamen: se conserva `CONVERGIDO`; las 39 de 39 filas constan en `PASADO` y el número de brechas abiertas es 0. Las 37 filas anteriores conservan su contenido.
+- Compuertas: esta nota no declara compuerta alguna. G1 y G4 corresponden al propietario y se registran solo en la sección de aprobaciones de `spec.md`.
+

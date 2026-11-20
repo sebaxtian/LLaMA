@@ -1,6 +1,6 @@
 # Tareas — SPEC-016
 
-*Artefacto de rango 6: descomposición de `SPEC-016` en treinta y cuatro tareas atómicas con los ocho campos de la plantilla, dependencias acíclicas y cobertura completa de los 15 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 17 criterios de aceptación.*
+*Artefacto de rango 6: descomposición de `SPEC-016` en treinta y seis tareas atómicas con los ocho campos de la plantilla, dependencias acíclicas y cobertura completa de los 17 requisitos funcionales, los 9 requisitos no funcionales, los 13 casos borde y los 19 criterios de aceptación; las 2 últimas tareas corresponden a la reapertura 0.9.0.*
 
 ## Regla de ejecución
 
@@ -33,8 +33,8 @@ Reglas adicionales:
 
 ## Progreso
 
-- Cerradas: 34 de 34 tareas (`T-001` a `T-034`).
-- Abiertas: 0 de 34 tareas; la secuencia se cierra tras la viñeta de `RF-004` en la entrada `Unreleased` de `CHANGELOG.md` y la firma del commit `d0126ce` de las modificaciones publicadas, con estado de firma `G`.
+- Cerradas: 36 de 36 tareas (`T-001` a `T-036`).
+- Abiertas: 0 de 36 tareas, tras el cierre de `T-035` y `T-036` en la etapa Implement de la reapertura 0.9.0 por los hallazgos H-02 y H-03 del informe previo al release v0.7.2.
 
 ## Archivos de la etapa y escritor
 
@@ -55,6 +55,7 @@ Reglas adicionales:
 | 13 | `specs/014-cierre-observaciones-finales/spec.md` y `specs/015-cierre-auditoria-posterior/spec.md` | `T-030` | `planner` |
 | 14 | `specs/013-cierre-reauditoria-conformidad/validation_report.md` y `specs/015-cierre-auditoria-posterior/validation_report.md` | `T-031` y `T-032` | `reviewer`, por delegación escrita del propietario |
 | 15 | `specs/016-cierre-auditoria-v0-7-1/tasks.md` | evidencia de cada tarea y `T-034` | `coder` y `planner` |
+| 16 | `docs/sdd/PROTOCOLO_OPERATIVO.md`, `.opencode/agents/reviewer.md` y `MEMORY.md` | `T-035` y `T-036` | `documenter` y propietario |
 
 ## Tareas
 
@@ -430,4 +431,26 @@ Reglas adicionales:
 - **Estimación:** 30 min.
 - **Validación:** `python tools\sdd\validate.py --all` con código de salida 0 en 300 segundos o menos, 0 hallazgos sin fila, 0 campos obligatorios vacíos, 0 filas sin regla citada, 0 diferencias de veredicto, 0 violaciones históricas sin ratificación firmada y 0 requisitos de esta spec que fijen el veredicto de un informe posterior.
 - **Evidencia:** `python -m unittest discover -s tools\sdd\tests -q`: «Ran 222 tests» y «OK». `python -m unittest discover -s tools\git\tests -q`: «Ran 48 tests» y «OK». `python tools\sdd\validate.py --all`: código 0 en 300 segundos o menos, con las 17 comprobaciones ejecutadas y sin error de `C-19`, `C-20`, `C-21`, `C-22`, `C-23`, `C-24`, `C-25` ni `C-26`; las advertencias corresponden a las cláusulas de legado de `SPEC-001` a `SPEC-009` y a la ausencia del reporte de `SPEC-016`. Los 7 recuentos de `CA-017` quedan en 0: 0 hallazgos sin fila, 0 campos obligatorios vacíos, 0 hallazgos sin regla citada, 0 veredictos divergentes del cálculo del inventario, 0 hallazgos abiertos bajo `CONFORME`, 0 violaciones históricas cerradas sin ratificación firmada y 0 releases publicados sin auditoría previa. El commit de las modificaciones publicadas es `d0126ce` y su estado de firma es `G`, con la clave `SHA256:strw3vZ7xct0YMz+hGHAYjDOfv/zO0JyAI9Om3Olhqc` declarada en `docs/sdd/firmantes_autorizados`.
+- [x] Completada.
+
+### T-035
+
+- **Dependencias:** `T-012`.
+- **Requisitos cubiertos:** `RF-016`.
+- **Criterio de aceptación:** `CA-018`.
+- **Archivos:** `docs/sdd/PROTOCOLO_OPERATIVO.md`, `.opencode/agents/reviewer.md`.
+- **Estimación:** 25 min.
+- **Validación:** `§12` del protocolo y la configuración del rol declaran que la nota append-only de un reporte publicado la escribe el `documenter` y la firma el propietario, y que el `reviewer` escribe solo el reporte de la spec en curso; la matriz de permisos no concede `specs/*/validation_report.md` sin límite de spec.
+- **Evidencia:** `docs/sdd/PROTOCOLO_OPERATIVO.md:296` declara la regla de la matriz: «La nota que requiere el reporte de validación de una spec publicada se añade al final de ese reporte, la redacta el `documenter` y la firma el propietario en 1 commit firmado con una clave de `docs/sdd/firmantes_autorizados`; el `reviewer` escribe solo el reporte de validación de la spec en curso, no escribe la nota de un reporte publicado ni el reporte de una spec ajena, y su concesión no alcanza `specs/*/validation_report.md` sin límite de spec.» La descripción de `.opencode/agents/reviewer.md:2` declara «Solo lectura; escribe unicamente el validation_report.md de la spec en curso» y la prosa de `:104` limita la escritura a «`specs/NNN-slug/validation_report.md` de la spec en curso»; `:109` atribuye la nota de un reporte publicado al `documenter` y su firma al propietario. Suite de permisos: `python -m unittest tools.sdd.tests.test_agent_permissions -q` devuelve «Ran 61 tests in 0.122s» y «OK», con `test_escritura_unica_del_reviewer` en verde.
+- [x] Completada.
+
+### T-036
+
+- **Dependencias:** ninguna.
+- **Requisitos cubiertos:** `RF-017`.
+- **Criterio de aceptación:** `CA-019`.
+- **Archivos:** `MEMORY.md`.
+- **Estimación:** 20 min.
+- **Validación:** `MEMORY.md` declara el estado `implementing` de `SPEC-016` con su release pendiente, cita `specs/INDEX.md` como fuente del estado y no conserva el estado `tasked` ni la atribución de ese estado al índice.
+- **Evidencia:** `MEMORY.md:13` declara: «Estado de specs: `SPEC-001` a `SPEC-007` publicadas con sus releases anteriores; `SPEC-008` a `SPEC-014` publicadas con el release v0.7.0; `SPEC-015` publicada con el release v0.7.1; `SPEC-016` consta en estado `implementing`, con release pendiente y sin tag de release, conforme a `specs/INDEX.md:22`.» El contraste con el frontmatter de `spec.md` devuelve `status: implementing` en `:4` y `release: ""` en `:10`; `specs/INDEX.md:22` declara el estado `implementing` y el guion en la columna del release. `spec.md:454` registra la corrección en la fila 0.9.1: «Corrección de MEMORY.md para declarar el estado implementing de SPEC-016 conforme al índice». La línea no conserva el estado `tasked` ni la atribución de ese estado al índice.
 - [x] Completada.
