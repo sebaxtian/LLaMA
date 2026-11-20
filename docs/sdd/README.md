@@ -67,6 +67,7 @@ Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la na
 | `ratificacion_historica.md` | `docs/sdd/ratificacion_historica.md` | Acta de ratificación histórica del propietario | 38 | Sin rango |
 | `auditoria_previa_v0_7_2.md` | `docs/sdd/auditoria_previa_v0_7_2.md` | Informe de auditoría previa al release v0.7.2 | 39 | Sin rango |
 | `ratificacion_interpretacion.md` | `docs/sdd/ratificacion_interpretacion.md` | Acta de interpretación normativa del propietario | 40 | Sin rango |
+| `auditoria_final_v0_7_2.md` | `docs/sdd/auditoria_final_v0_7_2.md` | Informe de auditoría final previa al release v0.7.2 | 41 | Sin rango |
 
 ## Regla de inventario
 
