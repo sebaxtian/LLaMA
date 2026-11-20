@@ -83,7 +83,7 @@ El dictamen se calcula desde la matriz: 39 de 39 filas en `PASADO` y 0 brechas a
 ## Cierre de integración
 
 Merge: 6b85789
-Release:
+Release: v0.7.2
 
 - G5: merge 6b85789 con dos padres (`922ee68` y `0283833`); validación posterior a la integración sin hallazgos; rama feat/reapertura-spec-016 eliminada en local y en remoto.
 - G5: merge 79bcd83 con dos padres; validación posterior a la integración sin hallazgos; rama feat/cierre-auditoria-v0-7-1 eliminada en local y en remoto.
@@ -111,4 +111,16 @@ Nota append-only añadida sin retirar contenido anterior. Registra la integraci�
 - Líneas de la sección: `Merge:` transcribe el merge del ciclo reabierto y `Release:` permanece vacía, conforme al estado `validated` de la spec.
 - Conservación: la matriz de 39 filas, las brechas, el dictamen `CONVERGIDO`, la nota de reapertura y las notas anteriores conservan su contenido.
 - Compuertas: esta nota no declara compuerta alguna; G5 y G6 corresponden al propietario y su registro no se escribe en este documento.
+
+## Nota de autorreferencia
+
+Nota append-only añadida al final de este reporte sin retirar contenido anterior. Fecha de la nota: 2026-11-21 (UTC).
+
+- Interpretación ratificada: el propietario fijó la lectura de §16 del protocolo en `docs/sdd/ratificacion_interpretacion.md`, acta firmada en el commit `8c8a2a3`, y esa acta es la que admite esta nota.
+- Objeto: `RF-015` y `CA-016` condicionan la publicación del release al estado del inventario en el momento de publicar; no fijan el veredicto ni el recuento de 1 informe futuro.
+- Alcance: la condición se comprueba sobre las filas existentes de `docs/sdd/inventario_hallazgos.md` y no predice el contenido de 1 informe de auditoría posterior; la prohibición de `RF-001` y de §16 rige sobre la declaración anticipada del veredicto, del recuento y del conjunto de dimensiones.
+- Emisión: el veredicto y el recuento los emite el rol de auditoría desde el inventario de hallazgos, de modo que esta nota no declara valor de veredicto ni cifra de recuento para informe venidero.
+- Conservación: la matriz de 39 filas, el dictamen `CONVERGIDO`, el cierre de integración y las notas anteriores conservan su contenido y su texto.
+
+Esta nota no declara compuerta alguna: no registra G1, G2, G3, G4, G5 ni G6, no emite línea de aprobación y no sustituye la firma del propietario.
 

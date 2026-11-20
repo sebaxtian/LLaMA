@@ -1,13 +1,13 @@
 ---
 id: SPEC-016
 title: Cierre de la auditoría de v0.7.1
-status: validated
-version: 0.9.3
+status: released
+version: 0.9.4
 created: 2026-11-21
 updated: 2026-11-21
 owner: Agent Sebaxtian
 branch: feat/reapertura-spec-016
-release: ""
+release: "v0.7.2"
 supersedes: ""
 superseded_by: ""
 ---
@@ -454,6 +454,7 @@ Cubre: `RF-017`.
 | 0.9.1 | 2026-11-21 | Corrección de MEMORY.md para declarar el estado implementing de SPEC-016 conforme al índice |
 | 0.9.2 | 2026-11-21 | Cierre de la implementación de la reapertura |
 | 0.9.3 | 2026-11-21 | Validación e integración de la reapertura |
+| 0.9.4 | 2026-11-21 | Release v0.7.2 |
 
 ### Historial de transiciones
 
@@ -469,5 +470,6 @@ Cubre: `RF-017`.
 | 2026-11-21 | T9 | `validated` | `implementing` | propietario | reapertura autorizada por el propietario por los hallazgos H-01, H-02 y H-03 de docs/sdd/auditoria_previa_v0_7_2.md |
 | 2026-11-21 | T5 | `implementing` | `implemented` | `planner` | G3 verificada en el commit `58d67d5` con treinta y seis tareas cerradas y 222 pruebas en verde |
 | 2026-11-21 | T6 | `implemented` | `validated` | `planner` | G4 del ciclo reabierto, 39 filas en PASADO e integración `6b85789` con dos padres y rama eliminada |
+| 2026-11-21 | T7 | `validated` | `released` | `planner` | release v0.7.2 tras la verificación del inventario sin hallazgos abiertos, con el tag anotado pendiente de la firma de G6 |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones son documentales y se declaran en UTC con la forma `YYYY-MM-DD`.
