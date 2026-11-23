@@ -2,9 +2,9 @@
 id: SPEC-017
 title: Configuración ejecutable y medible de Gemma-4-26B-A4B-it-qat-GGUF
 status: clarified
-version: 0.2.0
+version: 0.6.0
 created: 2026-11-20
-updated: 2026-11-20
+updated: 2026-11-23
 owner: Agent Sebaxtian
 branch: feat/gemma-4-26b-a4b-it-qat-gguf
 release: ""
@@ -68,7 +68,7 @@ La feature no declara la configuración aprobada: la aprobación corresponde al 
 
 ### RF-006
 
-`El sistema DEBE registrar en cada prueba 1 valor conforme a la columna de contenido obligatorio de la tabla de este requisito, o 1 marca de no disponible, en los 21 campos, y DEBE declarar la unidad en los 12 campos de magnitud: 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 y 19.`
+`El sistema DEBE registrar en cada prueba 1 valor conforme a la columna de contenido obligatorio de la tabla de este requisito, o 1 marca de no disponible, en los 22 campos, y DEBE declarar la unidad en los 13 campos de magnitud: 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22.`
 
 Campos obligatorios de cada prueba:
 
@@ -95,6 +95,7 @@ Campos obligatorios de cada prueba:
 | 19  | Desbordamiento hacia memoria compartida | valor en MiB                                                       |
 | 20  | Calidad funcional de la respuesta       | valoración declarada con su criterio                               |
 | 21  | Errores y advertencias                  | mensajes registrados o marca de ausencia                           |
+| 22  | Memoria de expertos en host             | valor en MiB                                                       |
 
 ### RF-007
 
@@ -140,7 +141,7 @@ Campos obligatorios de cada prueba:
 
 ### RNF-003
 
-`El desbordamiento hacia memoria compartida del perfil aprobado DEBE ser 0 MiB en la carga registrada.`
+`El sistema DEBE declarar y sostener 1 derrame no intencional hacia memoria compartida de como máximo 512 MiB, entendido como la diferencia entre el «Shared Usage» del árbol de procesos del servidor y la memoria de expertos en host declarada en el campo 22 de RF-006, y NO DEBE contar como derrame la descarga intencional de expertos a la CPU.`
 
 ### RNF-004
 
@@ -148,7 +149,7 @@ Campos obligatorios de cada prueba:
 
 ### RNF-005
 
-`El 100 % de los campos de la tabla de RF-006 DEBE declarar 1 valor conforme a la columna de contenido obligatorio o 1 marca de no disponible, el número de campos vacíos DEBE ser 0, y los 12 campos de magnitud DEBEN declarar su unidad.`
+`El 100 % de los campos de la tabla de RF-006 DEBE declarar 1 valor conforme a la columna de contenido obligatorio o 1 marca de no disponible, el número de campos vacíos DEBE ser 0, y los 13 campos de magnitud DEBEN declarar su unidad.`
 
 ### RNF-006
 
@@ -174,7 +175,7 @@ Campos obligatorios de cada prueba:
 
 ### CB-004
 
-`SI la carga registra desbordamiento hacia memoria compartida distinto de 0 MiB o menos de 512 MiB de VRAM libre sobre la GPU dedicada, ENTONCES el perfil NO DEBE promoverse a aprobado y la medición DEBE conservarse con el valor registrado.`
+`SI la carga registra 1 derrame no intencional hacia memoria compartida superior a 512 MiB o menos de 512 MiB de VRAM libre sobre la GPU dedicada, ENTONCES el perfil NO DEBE promoverse a aprobado y la medición DEBE conservarse con el valor registrado.`
 
 ### CB-005
 
@@ -233,7 +234,7 @@ Cubre: `RF-005`, `RF-007`, `CB-006`.
 
 ### CA-005
 
-`DADA 1 prueba ejecutada, CUANDO se registra su resultado, ENTONCES consta 1 valor conforme a la columna de contenido obligatorio de la tabla de RF-006, o 1 marca de no disponible, en el 100 % de los 21 campos, los 12 campos de magnitud declaran su unidad, el número de campos vacíos es 0, y la prueba declara su fecha y su nombre.`
+`DADA 1 prueba ejecutada, CUANDO se registra su resultado, ENTONCES consta 1 valor conforme a la columna de contenido obligatorio de la tabla de RF-006, o 1 marca de no disponible, en el 100 % de los 22 campos, los 13 campos de magnitud declaran su unidad, el número de campos vacíos es 0, y la prueba declara su fecha y su nombre.`
 
 Cubre: `RF-006`, `RNF-005`.
 
@@ -245,7 +246,7 @@ Cubre: `RNF-002`, `CB-005`.
 
 ### CA-007
 
-`DADO el perfil propuesto para aprobación, CUANDO el servidor completa la carga del modelo, ENTONCES la VRAM asignada, la VRAM libre y la VRAM total reportada por la GPU constan en MiB, la VRAM asignada es menor o igual a la VRAM total reportada por la GPU, la VRAM libre es de al menos 512 MiB, el desbordamiento del perfil aprobado es 0 MiB, y una carga con desbordamiento distinto de 0 MiB o con menos de 512 MiB de VRAM libre no promueve el perfil a aprobado y conserva el valor registrado.`
+`DADO el perfil propuesto para aprobación, CUANDO el servidor completa la carga del modelo, ENTONCES la VRAM asignada, la VRAM libre y la VRAM total reportada por la GPU constan en MiB, la VRAM asignada es menor o igual a la VRAM total reportada por la GPU, la VRAM libre es de al menos 512 MiB, 1 derrame no intencional del perfil aprobado es de como máximo 512 MiB, y una carga con 1 derrame no intencional superior a 512 MiB o con menos de 512 MiB de VRAM libre no promueve el perfil a aprobado y conserva el valor registrado.`
 
 Cubre: `RF-008`, `RNF-003`, `RNF-007`, `CB-004`.
 
@@ -306,16 +307,24 @@ Cubre: `RNF-006`.
 
 ## Historial de cambios
 
-| Versión | Fecha      | Cambio                                                                                                        |
-| ------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
-| 0.1.0   | 2026-11-20 | Redacción inicial de la spec                                                                                  |
-| 0.2.0   | 2026-11-20 | Clarificación cerrada: doce ambigüedades resueltas y parches aplicados a los requisitos y criterios afectados |
+| Versión | Fecha      | Cambio                                                                                                                                                                                                                                                                    |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1.0   | 2026-11-20 | Redacción inicial de la spec                                                                                                                                                                                                                                              |
+| 0.2.0   | 2026-11-20 | Clarificación cerrada: doce ambigüedades resueltas y parches aplicados a los requisitos y criterios afectados                                                                                                                                                             |
+| 0.3.0   | 2026-11-20 | Plan técnico redactado: catorce decisiones, diez contratos, estrategia de testing y matriz de cobertura de los veintinueve requisitos y casos borde                                                                                                                       |
+| 0.4.0   | 2026-11-20 | Tareas redactadas: cuarenta y dos tareas atómicas con dependencias acíclicas, reparto de roles y cobertura de los catorce requisitos funcionales, los siete no funcionales, los ocho casos borde y los quince criterios de aceptación                                     |
+| 0.5.0   | 2026-11-23 | Reformulación de `RNF-003` como derrame no intencional de como máximo 512 MiB y ampliación de `RF-006` a 22 campos con la memoria de expertos en host en MiB, aprobadas por el propietario; la spec vuelve a `draft` y exige nueva clarificación y nueva aprobación de G1 |
+| 0.6.0   | 2026-11-23 | Cierre de la clarificación reabierta por `T11`: `RNF-003` reformulado como derrame no intencional de 512 MiB y `RF-006` ampliado a 22 campos                                                                                                                              |
 
 ### Historial de transiciones
 
-| Fecha (UTC) | Transición | Origen  | Destino     | Responsable | Evidencia                                                                                                                                          |
-| ----------- | ---------- | ------- | ----------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-20  | creación   | —       | `draft`     | `planner`   | redacción inicial de `spec.md` con trece requisitos funcionales, cinco requisitos no funcionales, ocho casos borde y trece criterios de aceptación |
-| 2026-11-20  | T1         | `draft` | `clarified` | `planner`   | `clarify.md` cerrado sin casillas pendientes, doce ambigüedades resueltas y parches aplicados a `spec.md`                                          |
+| Fecha (UTC) | Transición             | Origen      | Destino     | Responsable   | Evidencia                                                                                                                                                                                                                                                                                            |
+| ----------- | ---------------------- | ----------- | ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-20  | creación               | —           | `draft`     | `planner`     | redacción inicial de `spec.md` con trece requisitos funcionales, cinco requisitos no funcionales, ocho casos borde y trece criterios de aceptación                                                                                                                                                   |
+| 2026-11-20  | T1                     | `draft`     | `clarified` | `planner`     | `clarify.md` cerrado sin casillas pendientes, doce ambigüedades resueltas y parches aplicados a `spec.md`                                                                                                                                                                                            |
+| 2026-11-20  | T2                     | `clarified` | `planned`   | `planner`     | G1 firmada en la sección de aprobaciones de `spec.md` y verificada en el commit `eccae87`; `plan.md` redactado con catorce decisiones, diez contratos, estrategia de testing y matriz de cobertura de los catorce requisitos funcionales, los siete requisitos no funcionales y los ocho casos borde |
+| 2026-11-20  | T3                     | `planned`   | `tasked`    | `planner`     | `tasks.md` redactado con cuarenta y dos tareas atómicas, los ocho campos por tarea, dependencias acíclicas, reparto de roles y cobertura de los catorce requisitos funcionales, los siete requisitos no funcionales, los ocho casos borde y los quince criterios de aceptación                       |
+| 2026-11-23  | reversión de requisito | `tasked`    | `draft`     | `planner`     | reformulación de `RNF-003` y ampliación de `RF-006` a 22 campos aprobadas por el propietario; la spec reabre la clarificación y G1 queda pendiente de nueva aprobación firmada                                                                                                                       |
+| 2026-11-23  | T1                     | `draft`     | `clarified` | `propietario` | cierre de la clarificación con la reformulación aprobada; G1 pendiente de firma en el commit de aprobación                                                                                                                                                                                           |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.

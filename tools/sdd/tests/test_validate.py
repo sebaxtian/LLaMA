@@ -990,11 +990,74 @@ class TestTransiciones(unittest.TestCase):
 
     def test_tabla_transitions_coincide_con_protocolo(self):
         esperado = protocol_transitions()
-        self.assertEqual(len(esperado), 10, f"la tabla de §5 debe declarar diez transiciones: {esperado}")
+        self.assertEqual(len(esperado), 11, f"la tabla de §5 debe declarar once transiciones: {esperado}")
+        self.assertEqual(
+            esperado.get("T11"),
+            (frozenset({"tasked", "implementing", "implemented", "validated"}), "draft"),
+            "la tabla de §5 debe declarar T11 con sus cuatro estados de origen y destino `draft`",
+        )
         declarado = getattr(v, "TRANSITIONS", None)
         self.assertIsNotNone(declarado, "el validador debe declarar la constante TRANSITIONS")
         self.assertEqual(normalized_transitions(declarado), esperado,
                          "TRANSITIONS debe coincidir con la tabla de §5 del protocolo")
+
+    def test_t11_reapertura_por_cambio_de_requisito(self):
+        """T11: el cambio de requisito reabre la spec a `draft` desde los cuatro estados.
+
+        `draft` y `clarified` no son origen de T11. La spec reabierta conserva la fila del
+        historial y su incremento de versión, y G1 solo se evalúa en `clarified`.
+        """
+        declarada = v.TRANSITIONS.get("T11")
+        self.assertIsNotNone(declarada, "TRANSITIONS debe declarar la transición T11")
+        origins, destino = declarada
+        self.assertEqual(destino, "draft", "T11 debe llevar a `draft`")
+        self.assertEqual(set(origins), {"tasked", "implementing", "implemented", "validated"},
+                         "T11 debe admitir los cuatro estados posteriores a Tasks")
+        for origen in ("tasked", "implementing", "implemented", "validated"):
+            self.assertTrue(v.transition_admitted(origen, "draft"),
+                            f"T11 debe admitir `{origen}` → `draft`")
+        for origen in ("draft", "clarified"):
+            self.assertFalse(v.transition_admitted(origen, "draft"),
+                             f"T11 no debe admitir `{origen}` → `draft`")
+
+        root, spec_dir = self.reopened_spec("implemented")
+        reabierta = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+        self.assertEqual(reabierta.code, 0, f"hallazgos: {reabierta.reporter.findings}")
+        self.assertFalse([m for m in reabierta.messages("ERROR") if "transic" in m.lower()],
+                         f"el historial con T11 no debe producir hallazgos: {reabierta.reporter.findings}")
+
+        root, spec_dir = self.reopened_spec("clarified")
+        no_admitida = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010"], git_stub())
+        assert_error(self, no_admitida, "clarified", "draft")
+
+        root, spec_dir = self.reopened_spec("implemented")
+        con_g1 = run_in(root, [("SPEC-010", spec_dir)], ["--spec", "SPEC-010", "--gate", "G1"],
+                        git_stub())
+        self.assertEqual(con_g1.code, 1,
+                         f"en `draft` la compuerta G1 no se evalúa: {con_g1.reporter.findings}")
+        self.assertTrue([f for f in con_g1.errors if "no habilita la compuerta G1" in f.message],
+                        f"G1 solo se evalúa en `clarified`: {con_g1.reporter.findings}")
+
+    def reopened_spec(self, origin: str) -> tuple[Path, Path]:
+        """Spec reabierta a `draft` mediante T11 desde el estado de origen indicado."""
+        root = make_repo(self)
+        text = read_fixture("transiciones", "historial-coherente", "spec.md")
+        text = set_frontmatter(text, status="draft", version="0.2.0")
+        text = text.replace(
+            "| 0.1.0 | 2026-11-14 | Redacción inicial |",
+            "| 0.1.0 | 2026-11-14 | Redacción inicial |\n"
+            "| 0.2.0 | 2026-11-23 | Cambio de requisito aprobado por el propietario |",
+            1,
+        )
+        chain = transition_rows(origin) + [
+            f"| 2026-11-23 | T11 | `{origin}` | `draft` | propietario | "
+            "cambio de requisito aprobado por el propietario |"
+        ]
+        heading = "### Historial de transiciones"
+        text = (text.split(heading, 1)[0] + heading + "\n\n"
+                + TRANSITION_HEADER + "\n".join(chain) + "\n")
+        spec_dir = add_spec(root, "SPEC-010", text, slug=f"reapertura-{origin}")
+        return root, spec_dir
 
     def test_gate_desde_estado_incorrecto_falla(self):
         root = make_repo(self)

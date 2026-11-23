@@ -1,6 +1,6 @@
 # Clarificación — SPEC-017
 
-*Artefacto de rango 6: registro de las doce ambigüedades de `SPEC-017` resueltas con el propietario antes de abrir Plan. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1.*
+*Artefacto de rango 6: registro de las trece ambigüedades de `SPEC-017` resueltas con el propietario antes de abrir Plan, y de la reapertura de la clarificación del 2026-11-23. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1. La reapertura no declara G1: la aprobación anterior queda sin efecto sobre el contrato reformulado y la nueva aprobación firmada corresponde al propietario.*
 
 ## Hallazgos de ambigüedad
 
@@ -112,9 +112,18 @@
 - **Fecha:** 2026-11-20 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-013
+
+- **Descripción:** `RNF-003` fijaba el desbordamiento hacia memoria compartida del perfil aprobado en `0 MiB`, y `CB-004` y `CA-007` repetían ese umbral. Con el proyector multimodal y el modelo draft obligatorios, los 16 GB de VRAM de la GPU objetivo no permiten cargar el modelo sin descargar capas de expertos a la CPU: la medición de la máquina objetivo con `ncmoe` `0` deja `56 MiB` de VRAM libre y `1016 MiB` de «Shared Usage», y con `ncmoe` `9` deja `3175 MiB` de VRAM libre y `4374 MiB` de «Shared Usage», de los cuales `4071 MiB` son `CUDA_Host model buffer` de expertos descargados intencionalmente. Como el «Shared Usage» incluye la descarga intencional, el umbral de `0 MiB` es inalcanzable con el requisito de proyector y la capacidad de la GPU, y el registro no distingue la memoria de expertos en host del derrame no intencional.
+- **Pregunta:** ¿Cómo se distingue el derrame no intencional hacia memoria compartida de la descarga intencional de expertos a la CPU y qué umbral se exige al perfil aprobado?
+- **Respuesta:** el derrame no intencional es la diferencia entre el «Shared Usage» del árbol de procesos del servidor y la memoria de expertos en host declarada; su umbral es `512 MiB` como máximo y la descarga intencional de expertos a la CPU no cuenta como derrame. Esa memoria de expertos en host se registra en un campo propio del registro de cada prueba.
+- **Decisión:** reformulación de `RNF-003` con el derrame no intencional de como máximo `512 MiB` y su definición operativa; ampliación de `RF-006` de 21 a 22 campos con el campo 22 «Memoria de expertos en host» en `MiB`; parches a `RNF-005`, `CB-004`, `CA-005` y `CA-007` para retirar el umbral de `0 MiB` y contar los 22 campos y los 13 campos de magnitud. Aprobada por el propietario el 2026-11-23. La spec vuelve a `draft`, la clarificación se reabre y G1 queda pendiente de nueva aprobación firmada.
+- **Fecha:** 2026-11-23 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
-Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su efecto sobre la promoción del perfil, y su umbral se alinea con `RNF-007` conforme a `AMB-008`.
+Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su efecto sobre la promoción del perfil, y su umbral de derrame no intencional se alinea con `RNF-003` conforme a `AMB-013`.
 
 ## Parches aplicados a `spec.md`
 
@@ -130,17 +139,22 @@ Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su
 - [x] `CA-014` y `CA-015` al final de `## Criterios de aceptación`, con la numeración existente conservada — afecta a `CA-014` y `CA-015`.
 - [x] Resultado esperado de `## Contexto y objetivo` con la carga dentro de la VRAM total reportada por la GPU y con al menos 512 MiB de VRAM libre, alineado con `RF-008` y `RNF-007` — afecta a `RF-008` y `RNF-007`.
 - [x] Frontmatter con `status` `clarified`, `version` `0.2.0` y `updated` 2026-11-20; fila 0.2.0 en `## Historial de cambios`; fila T1 en `### Historial de transiciones` con la evidencia del cierre de esta clarificación — afecta a la estructura de `spec.md`.
+- [x] `RNF-003` reformulado con el derrame no intencional de como máximo 512 MiB, medido como la diferencia entre el «Shared Usage» del árbol de procesos del servidor y la memoria de expertos en host declarada, y con la descarga intencional de expertos a la CPU fuera del cómputo del derrame — afecta a `RNF-003` y a `CA-007`.
+- [x] `RF-006` ampliado de 21 a 22 campos con el campo 22 «Memoria de expertos en host» en MiB y con los 13 campos de magnitud 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22; `RNF-005` y `CA-005` alineados con los 22 campos y los 13 campos de magnitud — afecta a `RF-006`, `RNF-005` y `CA-005`.
+- [x] `CB-004` y `CA-007` con el umbral de derrame no intencional de como máximo 512 MiB en lugar de 0 MiB de desbordamiento, con la conservación de la medición registrada y de los 512 MiB de VRAM libre de `RNF-007` — afecta a `CB-004` y `CA-007`.
+- [x] Frontmatter con `status` `draft`, `version` `0.5.0` y `updated` 2026-11-23; fila 0.5.0 en `## Historial de cambios`; fila de reversión `tasked` → `draft` en `### Historial de transiciones` — afecta a la estructura de `spec.md`.
 
 ## Decisiones de negocio
 
 - Ningún perfil es canónico mientras el propietario no lo confirme por escrito; hasta entonces cada perfil de la línea base documental es candidato y la designación no se escribe como valor de la spec. La promoción exige medición registrada y confirmación escrita, y ningún agente designa el perfil canónico.
 - El contexto de 131 072 tokens es requisito del caso de uso y no parámetro inicial: `CB-007` mantiene la prohibición de iniciar cuando el contexto excede la VRAM disponible y la medición registra además la alternativa de contexto menor como comparación.
 - El umbral mínimo de velocidad de generación se fija después de medir y no se escribe en la spec: la cifra la declara el propietario a partir de 1 medición registrada, y la aprobación no se declara sin ese umbral.
-- La aprobación de 1 configuración exige al menos 512 MiB de VRAM libre sobre la GPU dedicada tras la carga, además de 0 MiB de desbordamiento hacia memoria compartida. El margen evita que la reserva del servicio consuma la memoria que el desbordamiento todavía no registra.
+- La aprobación de 1 configuración exige al menos 512 MiB de VRAM libre sobre la GPU dedicada tras la carga y 1 derrame no intencional hacia memoria compartida de como máximo 512 MiB. El derrame se mide como la diferencia entre el «Shared Usage» del árbol de procesos del servidor y la memoria de expertos en host declarada en el campo 22 del registro; la descarga intencional de expertos a la CPU no cuenta como derrame.
 - Los parámetros heredados de la línea base documental —atención rápida activada, micro-lote de 1 120 tokens y capas de expertos en CPU— son candidatos sujetos a comparación y no requisitos. Mientras la comparación no conste registrada rige el parámetro inicial del proyecto.
 - La prueba multimodal es cobertura opcional y no condiciona la aprobación; el proyector multimodal permanece exigido como artefacto cuya existencia se comprueba antes de iniciar.
 - La corrección de la línea base documental se limita a la codificación: no se altera ningún valor medido histórico ni ningún identificador de prueba, y la corrección se registra como 1 cambio editorial.
 - El registro de cada ejecución queda fuera del control de versiones, en la carpeta de resultados locales del proyecto. La spec exige 1 registro propio por ejecución y no nombra rutas ni comandos.
 - El destino de la feature permanece abierto hasta la confirmación del propietario y el release se decide después de esa confirmación; el campo `release` del frontmatter permanece vacío y la publicación queda fuera de alcance.
 - El modelo draft es opcional: habilita la alternativa sin decodificación especulativa y no integra el perfil canónico. Su ausencia no impide iniciar el perfil alternativo.
+- La reformulación de `RNF-003` y la ampliación de `RF-006` a 22 campos reabren la clarificación y devuelven la spec a `draft`: la aprobación de G1 registrada el 2026-11-20 no cubre el contrato reformulado y la nueva aprobación firmada queda pendiente del propietario.
 - Esta clarificación no declara compuerta alguna ni la aprobación de la configuración. El cierre de `clarify.md` habilita la lectura de G1 por el propietario y no sustituye su firma.

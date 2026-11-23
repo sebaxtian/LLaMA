@@ -1,0 +1,47 @@
+{
+  "id": "resiliencia",
+  "nombre": "Resiliencia",
+  "modelo": "Gemma-4-26B-A4B-it-qat-GGUF",
+  "cuantizacion": {
+    "declarada": "UD-Q4_K_XL",
+    "nombre_gguf": "Gemma-4 26B-A4B IT (smart Q4_0, QAT-lossless)",
+    "tipo_gguf": null,
+    "tamano_bytes": 14249047104
+  },
+  "artefactos": {
+    "ejecutable": "bin/llama-master-bin-win-rtx5060ti-cuda-13.5-x64/llama-server.exe",
+    "modelo": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf",
+    "mmproj": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/mmproj-BF16.gguf",
+    "draft": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/mtp-gemma-4-26B-A4B-it-Q4_0.gguf"
+  },
+  "opciones": {
+    "gpu_layers": "all",
+    "flash_attn": "off",
+    "ctx_size": 4096,
+    "ubatch": 512,
+    "ncmoe": 0,
+    "load_mode": "none",
+    "parallel": 1
+  },
+  "desviaciones": [
+    {
+      "parametro": "ncmoe",
+      "valor_inicial": 0,
+      "valor_propuesto": 9,
+      "comparacion": null
+    }
+  ],
+  "especulativa": {
+    "tipo": "draft-mtp",
+    "techo": 3
+  },
+  "presupuesto_vram": {
+    "pesos_en_vram_mib": null,
+    "kv_por_1024_tokens_mib": null,
+    "buffer_computo_mib": null,
+    "pendiente": "T-059"
+  },
+  "estado": "candidato",
+  "aprobacion": null,
+  "designacion": null
+}

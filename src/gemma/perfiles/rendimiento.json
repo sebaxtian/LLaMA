@@ -1,0 +1,64 @@
+{
+  "id": "rendimiento",
+  "nombre": "Rendimiento",
+  "modelo": "Gemma-4-26B-A4B-it-qat-GGUF",
+  "cuantizacion": {
+    "declarada": "UD-Q4_K_XL",
+    "nombre_gguf": "Gemma-4 26B-A4B IT (smart Q4_0, QAT-lossless)",
+    "tipo_gguf": null,
+    "tamano_bytes": 14249047104
+  },
+  "artefactos": {
+    "ejecutable": "bin/llama-master-bin-win-rtx5060ti-cuda-13.5-x64/llama-server.exe",
+    "modelo": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf",
+    "mmproj": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/mmproj-BF16.gguf",
+    "draft": "models/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF/mtp-gemma-4-26B-A4B-it-Q4_0.gguf"
+  },
+  "opciones": {
+    "gpu_layers": "all",
+    "flash_attn": "on",
+    "ctx_size": 131072,
+    "ubatch": 1120,
+    "ncmoe": 9,
+    "load_mode": "none",
+    "parallel": 1
+  },
+  "desviaciones": [
+    {
+      "parametro": "flash_attn",
+      "valor_inicial": "off",
+      "valor_propuesto": "on",
+      "comparacion": null
+    },
+    {
+      "parametro": "ubatch",
+      "valor_inicial": 512,
+      "valor_propuesto": 1120,
+      "comparacion": null
+    },
+    {
+      "parametro": "ncmoe",
+      "valor_inicial": 0,
+      "valor_propuesto": 9,
+      "comparacion": null
+    },
+    {
+      "parametro": "ctx_size",
+      "valor_inicial": 4096,
+      "valor_propuesto": 131072,
+      "comparacion": null
+    }
+  ],
+  "especulativa": {
+    "tipo": "draft-mtp",
+    "techo": 3
+  },
+  "presupuesto_vram": {
+    "pesos_en_vram_mib": 14938.59,
+    "kv_por_1024_tokens_mib": 120.0,
+    "buffer_computo_mib": 782.03
+  },
+  "estado": "candidato",
+  "aprobacion": null,
+  "designacion": null
+}
