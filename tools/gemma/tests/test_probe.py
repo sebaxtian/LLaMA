@@ -27,19 +27,30 @@ Interfaz que fija esta suite:
   lee `bin/`, `models/` o la GPU.
 - 1 sola llamada a `post_flujo`, a la ruta `/completion`, con `stream`
   verdadero, `n_predict` igual a `tokens_objetivo` —2400 por defecto y nunca
-  menos de 2400— y 1 prompt fijo, conforme a `DEC-011`.
+  menos de 2400—, 1 prompt fijo e `ignore_eos` verdadero, conforme a
+  `DEC-011`.
 - Resultado con las claves `estado` en `superada` o `fallida`, `fragmentos`
   con el número de fragmentos de contenido no vacío, `tokens_generados`,
   `tokens_por_segundo` leído de `timings.predicted_per_second` o `None` cuando
   el bloque no aparece, y `servidor` en `continúa en servicio` o `se detuvo`.
   En `fallida` añade `motivo` de texto no vacío, y `tokens_generados` conserva
   el número contado hasta el corte.
-- Si la transcripción se corta antes de `[DONE]`, el estado es `fallida` con
-  el número de tokens contados, `tokens_por_segundo` en `None` y 1 `motivo`
-  que nombra el corte con la raíz `cort`; nada se promueve. Si llega a `[DONE]`
-  sin bloque `timings`, el estado es `fallida` con `tokens_generados` por
-  conteo de fragmentos, `tokens_por_segundo` en `None` y 1 `motivo` que nombra
-  `timings`, conforme al riesgo de `DEC-011` sobre el binario sin bloque.
+- La única solicitud declara `ignore_eos` verdadero, además de `prompt`,
+  `n_predict` y `stream`: la generación llega a `n_predict` y no se detiene en
+  el token de fin de turno, que es lo que la ejecución real sobre la máquina
+  objetivo acreditó con `stop processing: n_tokens = 916, truncated = 0` y 908
+  tokens generados de 2400 pedidos. El indicador va en la petición y no en el
+  manifiesto del perfil.
+- El final del flujo se clasifica por `timings` y no por `[DONE]`: si el flujo
+  termina y el fragmento final declara `timings`, el estado es `superada`
+  aunque no llegue `data: [DONE]`, que es la forma real de 909 líneas con la
+  última vacía. Si la transcripción se corta sin `timings`, el estado es
+  `fallida` con el número de tokens contados, `tokens_por_segundo` en `None` y
+  1 `motivo` que nombra el corte con la raíz `cort`; nada se promueve. Si llega
+  a `[DONE]` sin bloque `timings`, el estado es `fallida` con
+  `tokens_generados` por conteo de fragmentos, `tokens_por_segundo` en `None` y
+  1 `motivo` que nombra `timings`, conforme al riesgo de `DEC-011` sobre el
+  binario sin bloque. La falta de `[DONE]` con `timings` no produce `fallida`.
 - La sonda no escribe registro ni archivo alguno y no toca `results/`: la
   carpeta de registros la escribe la campaña del operador local, no la sonda.
 
@@ -223,6 +234,29 @@ class SolicitudUnicaTest(CasoDeSonda):
         self.verificar_resultado(resultado, ESTADO_SUPERADA)
         self.assertEqual(resultado["tokens_generados"], PREDICTED_N)
 
+    def test_solicitud_declara_ignore_eos(self):
+        """`CA-008`: la solicitud ignora el fin de turno y agota `n_predict`.
+
+        La ejecución real sobre la máquina objetivo generó 908 de 2400 tokens y
+        el servidor cerró con `stop processing: n_tokens = 916, truncated = 0`
+        al detenerse en el token de fin de turno; con `ignore_eos` verdadero en
+        la petición la generación llega al objetivo de `DEC-011`. La clave va en
+        el cuerpo de la solicitud y no en el manifiesto del perfil.
+        """
+        modulo = _cargar_modulo()
+        doble = ClienteDoble(_flujo(fragmentos=PREDICTED_N))
+
+        resultado = modulo.sondear(BASE_URL, cliente=doble)
+
+        self.assertEqual(len(doble.llamadas_post), 1)
+        ruta, cuerpo = doble.llamadas_post[0]
+        self.assertEqual(ruta, RUTA_COMPLETION)
+        self.assertIn("ignore_eos", cuerpo)
+        self.assertIs(cuerpo["ignore_eos"], True)
+        self.assertIs(cuerpo["stream"], True)
+        self.assertEqual(cuerpo["n_predict"], TOKENS_OBJETIVO)
+        self.verificar_resultado(resultado, ESTADO_SUPERADA)
+
 
 class ConteoTest(CasoDeSonda):
     """`RF-009`: conteo de fragmentos y lectura del bloque `timings`."""
@@ -238,6 +272,47 @@ class ConteoTest(CasoDeSonda):
         self.assertEqual(resultado["tokens_generados"], PREDICTED_N)
         self.assertIsInstance(resultado["tokens_por_segundo"], float)
         self.assertEqual(resultado["tokens_por_segundo"], PREDICTED_PER_SECOND)
+
+
+class FlujoSinCierreTest(CasoDeSonda):
+    """`CB-003`: el final del flujo se clasifica por `timings`, no por `[DONE]`.
+
+    La ejecución real sobre la máquina objetivo terminó con 909 líneas cuya
+    última está vacía y sin `data: [DONE]`; el fragmento final declaró el bloque
+    `timings` y el servidor generó 908 tokens de 2400 pedidos. Por eso la
+    ausencia de `[DONE]` con `timings` no rebaja el veredicto: `fallida` queda
+    reservada al corte sin `timings` y al error de conexión. El corte sin
+    `timings` conserva su veredicto dentro de este mismo caso.
+    """
+
+    def test_flujo_sin_cierre_con_timings_es_superada(self):
+        modulo = _cargar_modulo()
+        doble = ClienteDoble(_flujo(fragmentos=PREDICTED_N, con_cierre=False))
+
+        resultado = modulo.sondear(BASE_URL, cliente=doble)
+
+        self.verificar_resultado(resultado, ESTADO_SUPERADA)
+        self.assertNotIn("motivo", resultado)
+        self.assertEqual(resultado["fragmentos"], PREDICTED_N)
+        self.assertEqual(resultado["tokens_generados"], PREDICTED_N)
+        self.assertEqual(resultado["tokens_por_segundo"], PREDICTED_PER_SECOND)
+        self.assertEqual(resultado["servidor"], SERVIDOR_EN_SERVICIO)
+
+        tokens_antes_del_corte = 3
+        corte = ClienteDoble(
+            _flujo(
+                fragmentos=tokens_antes_del_corte,
+                con_timings=False,
+                con_cierre=False,
+            )
+        )
+
+        resultado_corte = modulo.sondear(BASE_URL, cliente=corte)
+
+        self.verificar_resultado(resultado_corte, ESTADO_FALLIDA)
+        self.assertEqual(resultado_corte["tokens_generados"], tokens_antes_del_corte)
+        self.assertIsNone(resultado_corte["tokens_por_segundo"])
+        self.assertIn("cort", resultado_corte["motivo"].lower())
 
 
 class VelocidadDePromptTest(CasoDeSonda):

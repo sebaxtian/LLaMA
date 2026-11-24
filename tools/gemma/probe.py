@@ -1,14 +1,20 @@
 """Sonda de contexto sostenido de SPEC-017.
 
 Implementa `RF-009`, `CB-003` y `CA-008` conforme a `DEC-011`: 1 sola solicitud
-``POST /completion`` en flujo, con ``stream`` verdadero y 1 prompt fijo, cuenta
-los fragmentos con contenido y lee el bloque ``timings`` del último fragmento
-para obtener los tokens generados y la velocidad. La estabilidad se comprueba
-con ``GET /health`` al cierre y la detención del servidor se clasifica como
-prueba fallida con el número de tokens contados hasta el corte, de modo que el
-perfil no se promueve. El acotado de `DEC-022` eleva a ``2400`` 1
-``tokens_objetivo`` menor y continúa sin ``ValueError``; 1 valor mayor o igual se
-usa tal cual.
+``POST /completion`` en flujo, con ``stream`` verdadero, ``ignore_eos``
+verdadero y 1 prompt fijo, cuenta los fragmentos con contenido y lee el bloque
+``timings`` del último fragmento para obtener los tokens generados y la
+velocidad. La estabilidad se comprueba con ``GET /health`` al cierre. El
+veredicto se decide por el bloque ``timings`` del final del flujo y no por la
+marca ``[DONE]``: si el flujo termina y se leyó ``timings``, la prueba se declara
+superada aunque la última línea no sea ``data: [DONE]``, que es la forma real de
+la ejecución sobre la máquina objetivo —909 líneas con la última vacía, 908
+tokens generados de 2400 pedidos y ``stop processing: n_tokens = 916,
+truncated = 0``—; ``fallida`` queda reservada al corte sin ``timings``, al error
+de conexión del iterable y a la falta de respuesta de ``/health``, y en ese caso
+se registra el número de tokens contados hasta el corte para que el perfil no se
+promueva. El acotado de `DEC-022` eleva a ``2400`` 1 ``tokens_objetivo`` menor y
+continúa sin ``ValueError``; 1 valor mayor o igual se usa tal cual.
 
 Contrato:
 
@@ -149,6 +155,11 @@ def sondear(base_url, *, cliente=None, tokens_objetivo=2400):
         "prompt": PROMPT_FIJO,
         "n_predict": _acotar_tokens(tokens_objetivo),
         "stream": True,
+        # `CA-008`: sin el indicador la generación se detiene en el token de fin
+        # de turno y no llega al objetivo de `DEC-011`; la ejecución real sobre
+        # la máquina objetivo cerró con `n_tokens = 916, truncated = 0` tras
+        # generar 908 de los 2400 tokens pedidos.
+        "ignore_eos": True,
     }
 
     fragmentos, timings, cierre, interrupcion = _consumir_flujo(
@@ -161,7 +172,9 @@ def sondear(base_url, *, cliente=None, tokens_objetivo=2400):
             f"transcripción cortada por la detención del servidor en "
             f"{url}{RUTA_COMPLETION}: {interrupcion}"
         )
-    elif not cierre:
+    elif timings is None and not cierre:
+        # Sin `timings` no hay veredicto que leer: la falta de `[DONE]` solo se
+        # nombra como corte cuando tampoco llegó el bloque de medición.
         causas.append(
             f"transcripción cortada antes de {MARCA_CIERRE} en "
             f"{url}{RUTA_COMPLETION}: {fragmentos} fragmentos contados"

@@ -5,14 +5,14 @@ conforme a `CA-003` y `CA-005`, y para `RNF-004` y `RNF-005`, sobre los
 contratos `C-5` y `C-6` de `plan.md` y las decisiones `DEC-002` y `DEC-020`:
 
 - 1 sola archivo Markdown por ejecución, con frontmatter de `C-5` y la tabla
-  de 21 campos de `C-6`, creado con `os.open(..., O_CREAT | O_EXCL)`; si la
+  de 22 campos de `C-6`, creado con `os.open(..., O_CREAT | O_EXCL)`; si la
   ruta existe, el identificador y el nombre del archivo reciben el sufijo
   `-2`, `-3` y siguientes, y ninguna ejecución sobrescribe un registro previo
   (`RNF-004`).
-- Las 21 filas se declaran en el orden de `RF-006`. Los 12 campos de magnitud
-  —6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 y 19— declaran su unidad, y cuando
-  la fuente no está disponible la fila lleva la marca `no disponible`; el
-  número de campos vacíos es 0 (`RNF-005`).
+- Las 22 filas se declaran en el orden de `RF-006`. Los 13 campos de magnitud
+  —6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22— declaran su unidad, y
+  cuando la fuente no está disponible la fila lleva la marca `no disponible`;
+  el número de campos vacíos es 0 (`RNF-005`).
 - La huella de `C-5` es la de las `opciones` declaradas en el manifiesto del
   perfil, no la de las opciones efectivas, conforme a `DEC-020`; el registro
   la transcribe como 1 dato recibido y esta suite no la recalcula.
@@ -26,7 +26,7 @@ Interfaz que fija esta suite:
   `frontmatter` el mapa con las 6 claves que aporta el orquestador
   —`huella_opciones`, `opciones_efectivas`, `vram_total_mib`,
   `version_binario`, `commit_llama_cpp` y `registro_anterior`— y `campos` el
-  mapa ordenado de las 21 etiquetas de `C-6` a su valor de texto. `instante`
+  mapa ordenado de las 22 etiquetas de `C-6` a su valor de texto. `instante`
   es 1 `datetime` inyectable para fijar el reloj UTC; ausente, se toma
   `datetime.now(timezone.utc)`, y 1 valor sin zona horaria se interpreta como
   UTC. El resultado declara exactamente las 3 claves `id`, `frontmatter` y
@@ -43,12 +43,12 @@ Interfaz que fija esta suite:
   el resto transcrito del mapa recibido. 1 clave ausente del mapa, 1 valor
   vacío o 1 `proposito` fuera de su vocabulario produce `ValueError` que nombra
   la clave.
-- `filas` es la lista de 21 entradas en el orden de `C-6`, cada una con
-  `numero` entero de 1 a 21, `campo` con la etiqueta de `C-6` y `valor` con el
+- `filas` es la lista de 22 entradas en el orden de `C-6`, cada una con
+  `numero` entero de 1 a 22, `campo` con la etiqueta de `C-6` y `valor` con el
   texto declarado. El valor de 1 campo de magnitud tiene la forma
   `<número> <unidad>` con la unidad de `C-6`: `tokens` en 6 y 9, `ranuras` en
-  7, `capas` en 8, `s` en 12, `MiB` en 13, 14, 15 y 19, y `tokens/s` en 16 y
-  17. El campo 11 no declara unidad de magnitud independiente: su vocabulario
+  7, `capas` en 8, `s` en 12, `MiB` en 13, 14, 15, 19 y 22, y `tokens/s` en 16
+  y 17. El campo 11 no declara unidad de magnitud independiente: su vocabulario
   es `activado (techo de borrador N tokens)` o
   `desactivado (sin techo de borrador)`, y una forma como `activado` a secas
   se rechaza. El campo 18 admite solo `continúa en servicio` o `se detuvo`.
@@ -62,7 +62,7 @@ Interfaz que fija esta suite:
   `-3` y siguientes al identificador y al nombre del archivo, de modo que el
   archivo creado declara en su frontmatter el identificador con sufijo. El
   archivo abre con 1 línea `---`, el frontmatter con 1 línea `clave: valor`
-  por clave y el cierre `---`, seguido de la tabla de 21 filas con las 3
+  por clave y el cierre `---`, seguido de la tabla de 22 filas con las 3
   columnas `N.º`, `Campo` y `Valor`; `opciones_efectivas` se serializa como
   JSON en su línea.
 
@@ -136,7 +136,7 @@ PROPOSITOS = ("carga", "medicion", "comparacion")
 
 NO_DISPONIBLE = "no disponible"
 
-# Las 21 etiquetas de `C-6`, en el orden de `RF-006`.
+# Las 22 etiquetas de `C-6`, en el orden de `RF-006`.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -159,10 +159,11 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
-# Las 11 magnitudes con unidad propia de `C-6`, por número de fila; la
-# duodécima es el campo 11, cuyo vocabulario porta el techo en tokens.
+# Las 12 magnitudes con unidad propia de `C-6`, por número de fila; la
+# decimotercera es el campo 11, cuyo vocabulario porta el techo en tokens.
 UNIDADES_POR_NUMERO = {
     6: "tokens",
     7: "ranuras",
@@ -175,6 +176,7 @@ UNIDADES_POR_NUMERO = {
     16: "tokens/s",
     17: "tokens/s",
     19: "MiB",
+    22: "MiB",
 }
 
 CAMPO_11_ACTIVADO = "activado (techo de borrador 64 tokens)"
@@ -208,6 +210,8 @@ VALORES_C6 = {
     # Sin `--calidad` no hay fuente: la fila lleva la marca de `C-6`.
     "Calidad funcional de la respuesta": NO_DISPONIBLE,
     "Errores y advertencias": "sin errores",
+    # `DEC-026`: descarga intencional de expertos a la CPU, en MiB.
+    "Memoria de expertos en host": "2846.25 MiB",
 }
 
 # `C-7`: las 10 claves del bloque de comparación, en el orden del contrato.
@@ -288,7 +292,7 @@ def _cargar_modulo():
 def _cargar_comparar():
     """Importa el comparador para leer de vuelta el registro escrito.
 
-    `comparar.leer_registro` lee las 11 claves de `C-5` y las 21 filas de `C-6`
+    `comparar.leer_registro` lee las 11 claves de `C-5` y las 22 filas de `C-6`
     e ignora la clave adicional `comparacion` de `C-7`, de modo que la lectura
     de vuelta acredita que el bloque no rompe el formato del registro.
     """
@@ -318,7 +322,7 @@ def _frontmatter(**cambios):
 
 
 def _campos(reemplazos=None):
-    """Mapa ordenado de las 21 etiquetas de `C-6` a su valor de texto."""
+    """Mapa ordenado de las 22 etiquetas de `C-6` a su valor de texto."""
     campos = {campo: VALORES_C6[campo] for campo in CAMPOS_C6}
     if reemplazos:
         campos.update(reemplazos)
@@ -370,7 +374,7 @@ def _filas_del_archivo(texto):
 
 
 def _texto_esperado_sin_comparacion():
-    """Archivo de registro de `T-025`: 11 claves de `C-5` y 21 filas de `C-6`.
+    """Archivo de registro de `T-025`: 11 claves de `C-5` y 22 filas de `C-6`.
 
     Se compone desde los datos declarados en esta suite, no desde el módulo
     bajo prueba, de modo que 1 cambio de formato en `registro.py` se detecta
@@ -442,9 +446,9 @@ class DosEjecucionesTest(unittest.TestCase):
 
 
 class FilasTest(unittest.TestCase):
-    """`RF-006` y `RNF-005`: 21 filas en orden, 12 magnitudes con unidad."""
+    """`RF-006` y `RNF-005`: 22 filas en orden, 13 magnitudes con unidad."""
 
-    def test_21_filas_en_orden_con_unidades(self):
+    def test_22_filas_en_orden_con_unidades(self):
         modulo = _cargar_modulo()
         _preparar_tmp()
 
@@ -456,8 +460,8 @@ class FilasTest(unittest.TestCase):
             filas = _filas_del_archivo(texto)
             self.assertEqual(
                 [numero for numero, _, _ in filas],
-                list(range(1, 22)),
-                "la tabla declara las 21 filas de C-6 en el orden de RF-006",
+                list(range(1, 23)),
+                "la tabla declara las 22 filas de C-6 en el orden de RF-006",
             )
             self.assertEqual([campo for _, campo, _ in filas], list(CAMPOS_C6))
 
@@ -466,9 +470,9 @@ class FilasTest(unittest.TestCase):
             self.assertEqual(texto.splitlines()[0].strip(), "---")
             self.assertIn("| N.º | Campo | Valor |", texto)
 
-            # Las 11 magnitudes con unidad propia más el campo 11 forman las
-            # 12 magnitudes de `RF-006`.
-            self.assertEqual(len(UNIDADES_POR_NUMERO) + 1, 12)
+            # Las 12 magnitudes con unidad propia más el campo 11 forman las
+            # 13 magnitudes de `RF-006`.
+            self.assertEqual(len(UNIDADES_POR_NUMERO) + 1, 13)
             for numero, unidad in UNIDADES_POR_NUMERO.items():
                 valor = filas[numero - 1][2]
                 self.assertTrue(
@@ -491,11 +495,63 @@ class FilasTest(unittest.TestCase):
             self.assertEqual(registro["filas"][19]["valor"], NO_DISPONIBLE)
             self.assertEqual(
                 [fila["numero"] for fila in registro["filas"]],
-                list(range(1, 22)),
+                list(range(1, 23)),
             )
             self.assertEqual(
                 [fila["campo"] for fila in registro["filas"]], list(CAMPOS_C6)
             )
+
+
+class MemoriaExpertosEnHostTest(unittest.TestCase):
+    """`C-6` y `RF-006`: la fila 22 declara MiB y la exige como las demás."""
+
+    def test_fila_22_declara_mib_y_su_unidad_es_obligatoria(self):
+        modulo = _cargar_modulo()
+        _preparar_tmp()
+
+        with tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP)) as temporal:
+            registro = _construir(modulo)
+            ruta = modulo.escribir_registro(Path(temporal), registro)
+            filas = _filas_del_archivo(ruta.read_text(encoding="utf-8"))
+
+            self.assertEqual(
+                filas[-1],
+                (22, "Memoria de expertos en host", "2846.25 MiB"),
+                "la fila 22 cierra la tabla con la memoria de expertos en host "
+                "en MiB, conforme a DEC-026",
+            )
+            self.assertEqual(
+                UNIDADES_POR_NUMERO[22],
+                "MiB",
+                "la fila 22 es la decimotercera magnitud de RF-006",
+            )
+
+        # 1 magnitud sin su unidad se rechaza igual que en las demás filas.
+        for sin_unidad in ("2846.25", "2846.25 MiB."):
+            with self.assertRaises(ValueError) as capturado:
+                _construir(
+                    modulo,
+                    campos=_campos({"Memoria de expertos en host": sin_unidad}),
+                )
+            self.assertIn("Memoria de expertos en host", str(capturado.exception))
+
+        # 1 valor vacío se rechaza igual que en las demás filas.
+        for vacio in ("", "   "):
+            with self.assertRaises(ValueError) as capturado:
+                _construir(
+                    modulo,
+                    campos=_campos({"Memoria de expertos en host": vacio}),
+                )
+            self.assertIn("Memoria de expertos en host", str(capturado.exception))
+
+        # El mapa de 21 entradas se rechaza nombrando la fila que falta.
+        campos = _campos()
+        del campos["Memoria de expertos en host"]
+        with self.assertRaises(ValueError) as capturado:
+            _construir(modulo, campos=campos)
+        self.assertIn(
+            "Memoria de expertos en host", str(capturado.exception)
+        )
 
 
 class CampoVacioTest(unittest.TestCase):
@@ -771,7 +827,7 @@ class ComparacionTest(unittest.TestCase):
 
             filas = _filas_del_archivo(texto)
             self.assertEqual(
-                [numero for numero, _, _ in filas], list(range(1, 22))
+                [numero for numero, _, _ in filas], list(range(1, 23))
             )
             self.assertEqual([campo for _, campo, _ in filas], list(CAMPOS_C6))
 

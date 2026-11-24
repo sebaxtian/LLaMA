@@ -14,9 +14,12 @@ ejecución:
   `medir.medir_memoria` sobre el árbol del proceso, cierra el servidor y
   escribe 0 registros; devuelve el código de `C-8`.
 - `--modo medir --prueba carga --calidad "<texto>"` hace lo anterior, ejecuta la
-  sonda cuando la prueba la requiere y deja 1 registro propio de 21 campos con
+  sonda cuando la prueba la requiere y deja 1 registro propio de 22 campos con
   el tiempo de carga en segundos, la memoria en MiB, la estabilidad y la marca
-  `no disponible` donde falta la fuente; `proposito` es `carga` y el código `0`.
+  `no disponible` donde falta la fuente; el campo 22 «Memoria de expertos en
+  host» transcribe la línea `CUDA_Host model buffer size` del modelo principal
+  en la salida capturada del servidor, conforme a `DEC-026`; `proposito` es
+  `carga` y el código `0`.
 - El manifiesto del árbol temporal declara su bloque `presupuesto_vram` medido
   —el estado que `T-036` dejó en el perfil `rendimiento`—, de modo que el cierre
   es `COMPROBACIÓN PREVIA: 5 de 5 comprobaciones superadas` y la comprobación 4
@@ -66,7 +69,8 @@ PERFIL = "rendimiento"
 MODO_SERVIR = "servir"
 MODO_MEDIR = "medir"
 
-# Forma que el binario enumera para cada eje, según el doble de `T-014`.
+# Forma que el binario enumera para cada eje de `C-2`, según el doble de `T-014`,
+# con los 9 ejes de `DEC-028`.
 OPCIONES_ACEPTADAS = {
     "gpu_layers": "--n-gpu-layers",
     "flash_attn": "--flash-attn",
@@ -75,6 +79,8 @@ OPCIONES_ACEPTADAS = {
     "ncmoe": "--n-cpu-moe",
     "load_mode": "--load-mode",
     "parallel": "--parallel",
+    "cache_type_k": "--cache-type-k",
+    "cache_type_v": "--cache-type-v",
 }
 
 VERSION_BINARIO = "b8796"
@@ -101,6 +107,31 @@ SONDA_SUPERADA = {
     "servidor": "continúa en servicio",
 }
 
+# Resultado sintético de la sonda de `T-037` sobre la prueba `contexto-sostenido`:
+# declara las 2 velocidades del bloque de tiempos, que son las fuentes de los
+# campos 16 y 17 de `C-6`.
+SONDA_CONTEXTO_SOSTENIDO = {
+    "estado": "superada",
+    "fragmentos": 2400,
+    "tokens_generados": 2400,
+    "tokens_por_segundo": 41.75,
+    "velocidad_prompt_tokens_por_segundo": 512.5,
+    "servidor": "continúa en servicio",
+}
+
+# Resultado sintético de la sonda de `T-080` sobre la prueba
+# `alternativa-contexto-menor` de `T-041`: declara las 2 velocidades del bloque de
+# tiempos, que son las fuentes de los campos 16 y 17 de `C-6`, con valores propios
+# para acreditar que el registro los toma de la sonda y no de otro resultado.
+SONDA_ALTERNATIVA_CONTEXTO = {
+    "estado": "superada",
+    "fragmentos": 2400,
+    "tokens_generados": 2400,
+    "tokens_por_segundo": 88.25,
+    "velocidad_prompt_tokens_por_segundo": 431.5,
+    "servidor": "continúa en servicio",
+}
+
 # Resultado sintético de la sonda cuando la transcripción se corta: la prueba es
 # fallida, no declara velocidad y el servidor se detuvo, conforme a `CB-003`.
 SONDA_FALLIDA = {
@@ -119,16 +150,19 @@ CIERRE_COMPLETO = "COMPROBACIÓN PREVIA: 5 de 5 comprobaciones superadas"
 
 # Presupuesto completo del caso de 5 de 5: consumo de 238 MiB para los 131072
 # tokens de contexto declarados en el manifiesto, que cabe en la VRAM libre
-# sintética menos el margen de `RNF-007`.
+# sintética menos el margen de `RNF-007`. Declara las 4 claves de `C-1` y `DEC-028`
+# —caché no-SWA proporcional al contexto y caché SWA fija—, de modo que el bloque
+# es conforme y la comprobación 4 lo contrasta en lugar de rechazarlo.
 PRESUPUESTO_COMPLETO = {
-    "pesos_en_vram_mib": 100,
-    "kv_por_1024_tokens_mib": 1,
-    "buffer_computo_mib": 10,
+    "pesos_en_vram_mib": 100.0,
+    "kv_no_swa_por_1024_tokens_mib": 0.5,
+    "kv_swa_mib": 64.0,
+    "buffer_computo_mib": 10.0,
 }
 
 NO_DISPONIBLE = "no disponible"
 
-# Las 21 etiquetas de `C-6`, en el orden de `RF-006`.
+# Las 22 etiquetas de `C-6`, en el orden de `RF-006`.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -151,7 +185,24 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
+
+# `T-061` y `DEC-026`: registro sintético del servidor con la línea
+# `CUDA_Host model buffer size` del modelo principal primero y la del draft
+# después, de modo que el campo 22 toma solo la del modelo y no la suma.
+LOG_SERVIDOR = "\n".join(
+    (
+        "load_model: initializing, n_slots = 1, n_ctx_slot = 4096",
+        "load_tensors: CUDA0 model buffer size = 11123.66 MiB",
+        "load_tensors: CUDA_Host model buffer size = 2846.25 MiB",
+        "load_tensors: loading model tensors for the draft",
+        "load_tensors: CUDA_Host model buffer size = 96.50 MiB",
+    )
+) + "\n"
+
+# Valor del campo 22 que fija el registro sintético del modelo principal.
+MEMORIA_EXPERTOS_HOST = "2846.25 MiB"
 
 PATRON_TIEMPO_CARGA = re.compile(r"^\d+\.\d+ s$")
 PATRON_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -220,21 +271,30 @@ class _ServidorPrueba:
 
 
 class _ProcesoDoble:
-    """Doble del servidor lanzado: identificador, actividad y cierre.
+    """Doble del servidor lanzado: identificador, actividad, salida y cierre.
 
     `cerrar` apaga el servidor HTTP de prueba, de modo que la prueba acredita
-    que el lanzador lo cierra y que después no acepta conexiones.
+    que el lanzador lo cierra y que después no acepta conexiones. `leer_salida`
+    devuelve el registro sintético del binario, que es la fuente del campo 22 de
+    `C-6`, sin ejecutar el servidor real.
     """
 
-    def __init__(self, servidor):
+    def __init__(self, servidor, salida=LOG_SERVIDOR):
         self.pid = os.getpid()
         self._servidor = servidor
+        self._salida = salida
         self.cerrado = False
         self.consultas_activo = 0
+        self.lecturas = 0
 
     def activo(self):
         self.consultas_activo += 1
         return not self.cerrado
+
+    def leer_salida(self):
+        """Devuelve el texto capturado del binario, sin cerrar el proceso."""
+        self.lecturas += 1
+        return self._salida
 
     def cerrar(self):
         self.cerrado = True
@@ -298,21 +358,11 @@ def _manifiesto_versionado():
     )
 
 
-def _marca_pendiente_de_resiliencia():
-    """Marca `pendiente` del perfil que aún no escribe su presupuesto.
-
-    `T-057` devolvió el bloque `presupuesto_vram` de `resiliencia` a `pendiente`
-    conforme a `DEC-025`, y la marca nombra la tarea que lo escribe; la prueba la
-    lee del manifiesto y no de 1 literal del código.
-    """
-    manifiesto = json.loads(
-        (DIRECTORIO_PERFILES / "resiliencia.json").read_text(encoding="utf-8")
-    )
-    return manifiesto["presupuesto_vram"]["pendiente"]
-
-
-# Marca real del perfil con el presupuesto devuelto a `pendiente` por `DEC-025`.
-MARCA_PENDIENTE = _marca_pendiente_de_resiliencia()
+# Marca sintética del caso de presupuesto pendiente: los 3 manifiestos declaran ya sus
+# 3 valores medidos —`rendimiento`, `sin_especulativa` y `resiliencia` tras `T-059`—, de
+# modo que la prueba construye el bloque incompleto con 1 marca sintética que nombra 1
+# tarea y no la lee de ningún archivo, conforme a `DEC-018` y `DEC-025`.
+MARCA_PENDIENTE = "T-999"
 
 
 def _lineas_frontmatter(texto):
@@ -535,6 +585,8 @@ class ModosTest(unittest.TestCase):
             ("--ubatch-size", efectivas["ubatch"]),
             ("--n-cpu-moe", efectivas["ncmoe"]),
             ("--parallel", efectivas["parallel"]),
+            ("--cache-type-k", efectivas["cache_type_k"]),
+            ("--cache-type-v", efectivas["cache_type_v"]),
         ):
             self.assertIn(forma, argumentos, f"el lanzamiento declara {forma}")
             self.assertIn(
@@ -638,8 +690,8 @@ class ModosTest(unittest.TestCase):
         ruta, frontmatter, filas = self._unico_registro()
         self.assertEqual(
             [numero for numero, _, _ in filas],
-            list(range(1, 22)),
-            "el registro declara las 21 filas de C-6 en el orden de RF-006",
+            list(range(1, 23)),
+            "el registro declara las 22 filas de C-6 en el orden de RF-006",
         )
         self.assertEqual([campo for _, campo, _ in filas], list(CAMPOS_C6))
 
@@ -674,6 +726,17 @@ class ModosTest(unittest.TestCase):
         )
         self.assertEqual(CALIDAD, valores[20])
         self.assertEqual("sin errores", valores[21])
+        self.assertEqual(
+            MEMORIA_EXPERTOS_HOST,
+            valores[22],
+            "el campo 22 es la memoria de expertos en host del modelo principal "
+            "y no la suma con la línea del draft",
+        )
+        self.assertEqual(
+            1,
+            self.proceso.lecturas,
+            "el campo 22 lee la salida capturada del servidor 1 sola vez",
+        )
 
         import perfiles
 
@@ -705,6 +768,278 @@ class ModosTest(unittest.TestCase):
             f"proposito={frontmatter['proposito']} codigo={codigo}"
         )
 
+    def test_modo_medir_contexto_sostenido_invoca_la_sonda(self):
+        # `T-072`, `RF-009` y `CB-003`: la prueba `contexto-sostenido` de `T-037`
+        # requiere la sonda de `DEC-011`, de modo que el modo `medir` la invoca y
+        # los campos 16 y 17 toman las 2 velocidades del resultado.
+        self.sonda.resultado = dict(SONDA_CONTEXTO_SOSTENIDO)
+
+        codigo, salida, errores = self._ejecutar(
+            [
+                "--raiz",
+                str(self.raiz),
+                "--perfil",
+                PERFIL,
+                "--modo",
+                MODO_MEDIR,
+                "--prueba",
+                "contexto-sostenido",
+                "--calidad",
+                CALIDAD,
+            ]
+        )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(0, codigo, "el modo medir superado devuelve el código 0")
+        self.assertEqual(
+            1,
+            len(self.sonda.llamadas),
+            "la prueba contexto-sostenido requiere la sonda de RF-009 1 sola vez",
+        )
+        self.assertEqual(
+            f"http://127.0.0.1:{self.servidor.puerto}",
+            self.sonda.llamadas[0]["base_url"],
+            "la sonda recibe la URL base y el puerto de las constantes del módulo",
+        )
+        self.assertIn(CIERRE_COMPLETO, texto)
+
+        ruta, _, filas = self._unico_registro()
+        self.assertEqual(
+            [numero for numero, _, _ in filas],
+            list(range(1, 23)),
+            "el registro declara las 22 filas de C-6 en el orden de RF-006",
+        )
+        valores = {numero: valor for numero, _, valor in filas}
+        self.assertEqual(
+            f"{SONDA_CONTEXTO_SOSTENIDO['velocidad_prompt_tokens_por_segundo']:.2f} "
+            "tokens/s",
+            valores[16],
+            "el campo 16 toma la velocidad de prompt del resultado de la sonda",
+        )
+        self.assertEqual(
+            f"{SONDA_CONTEXTO_SOSTENIDO['tokens_por_segundo']:.2f} tokens/s",
+            valores[17],
+            "el campo 17 toma la velocidad de generación del resultado de la sonda",
+        )
+        self.assertEqual(
+            "sin errores",
+            valores[21],
+            "1 sonda declarada superada no declara error en el campo 21",
+        )
+
+        print(
+            "test_modo_medir_contexto_sostenido_invoca_la_sonda: registro="
+            f"{ruta.stem} campos={len(filas)} sonda={len(self.sonda.llamadas)} "
+            f"prompt={valores[16]} generacion={valores[17]} codigo={codigo}"
+        )
+
+    def test_modo_medir_alternativa_contexto_menor_invoca_la_sonda(self):
+        # `T-080`, `RF-009` y `RF-012`: la prueba `alternativa-contexto-menor` de
+        # `T-041` mide la alternativa de contexto menor de `C-7` y su registro
+        # exige las 2 velocidades del bloque de tiempos, de modo que el modo
+        # `medir` ejecuta la sonda de `DEC-011` 1 sola vez, puebla el campo 16 con
+        # la velocidad de prompt y el campo 17 con la de generación, y el campo 21
+        # no declara error de sonda. El propósito de `C-5` sigue siendo `medicion`.
+        self.sonda.resultado = dict(SONDA_ALTERNATIVA_CONTEXTO)
+
+        codigo, salida, errores = self._ejecutar(
+            [
+                "--raiz",
+                str(self.raiz),
+                "--perfil",
+                PERFIL,
+                "--modo",
+                MODO_MEDIR,
+                "--prueba",
+                "alternativa-contexto-menor",
+                "--calidad",
+                CALIDAD,
+            ]
+        )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(0, codigo, "el modo medir superado devuelve el código 0")
+        self.assertEqual(
+            1,
+            len(self.sonda.llamadas),
+            "la prueba alternativa-contexto-menor requiere la sonda de RF-009 "
+            "1 sola vez",
+        )
+        self.assertEqual(
+            f"http://127.0.0.1:{self.servidor.puerto}",
+            self.sonda.llamadas[0]["base_url"],
+            "la sonda recibe la URL base y el puerto de las constantes del módulo",
+        )
+        self.assertIn(CIERRE_COMPLETO, texto)
+
+        ruta, frontmatter, filas = self._unico_registro()
+        self.assertEqual(
+            [numero for numero, _, _ in filas],
+            list(range(1, 23)),
+            "el registro declara las 22 filas de C-6 en el orden de RF-006",
+        )
+        valores = {numero: valor for numero, _, valor in filas}
+        self.assertEqual(
+            "alternativa-contexto-menor",
+            frontmatter["prueba"],
+            "el registro declara el nombre de la prueba de T-041",
+        )
+        self.assertEqual(
+            "medicion",
+            frontmatter["proposito"],
+            "la alternativa de contexto menor conserva el propósito medicion de C-5",
+        )
+        self.assertEqual(
+            f"{SONDA_ALTERNATIVA_CONTEXTO['velocidad_prompt_tokens_por_segundo']:.2f} "
+            "tokens/s",
+            valores[16],
+            "el campo 16 toma la velocidad de prompt del resultado de la sonda",
+        )
+        self.assertEqual(
+            f"{SONDA_ALTERNATIVA_CONTEXTO['tokens_por_segundo']:.2f} tokens/s",
+            valores[17],
+            "el campo 17 toma la velocidad de generación del resultado de la sonda",
+        )
+        self.assertEqual(
+            "sin errores",
+            valores[21],
+            "1 sonda declarada superada no declara error en el campo 21",
+        )
+
+        print(
+            "test_modo_medir_alternativa_contexto_menor_invoca_la_sonda: registro="
+            f"{ruta.stem} campos={len(filas)} sonda={len(self.sonda.llamadas)} "
+            f"prompt={valores[16]} generacion={valores[17]} codigo={codigo}"
+        )
+
+    def test_modo_medir_imprime_el_conteo_de_la_sonda(self):
+        # `T-073`, `RF-009` y `CB-003`: el modo `medir` imprime el conteo de la
+        # sonda antes de la línea del registro, de modo que `T-037` transcribe el
+        # número de tokens generados desde la salida del lanzador: 1 línea
+        # `SONDA:` con los tokens, el tiempo medido alrededor de la sonda y la
+        # velocidad del resultado; con la sonda fallida, el conteo parcial con su
+        # motivo. El registro y el código de salida no cambian.
+        self.sonda.resultado = dict(SONDA_CONTEXTO_SOSTENIDO)
+
+        salida = io.StringIO()
+        with contextlib.redirect_stdout(salida):
+            codigo = self.modulo.main(
+                [
+                    "--raiz",
+                    str(self.raiz),
+                    "--perfil",
+                    PERFIL,
+                    "--modo",
+                    MODO_MEDIR,
+                    "--prueba",
+                    "contexto-sostenido",
+                    "--calidad",
+                    CALIDAD,
+                ]
+            )
+
+        self.assertEqual(0, codigo, "el modo medir superado devuelve el código 0")
+        texto = salida.getvalue()
+        patron = re.compile(
+            r"^SONDA: "
+            f"{SONDA_CONTEXTO_SOSTENIDO['tokens_generados']} tokens en "
+            r"\d+\.\d{2} s, "
+            f"{SONDA_CONTEXTO_SOSTENIDO['tokens_por_segundo']:.2f} tokens/s$",
+            re.MULTILINE,
+        )
+        coincidencia = patron.search(texto)
+        self.assertIsNotNone(
+            coincidencia,
+            "el modo medir imprime la línea SONDA con el conteo de la sonda y "
+            f"su velocidad: {texto!r}",
+        )
+        self.assertLess(
+            coincidencia.start(),
+            texto.index("REGISTRO:"),
+            "la línea SONDA se imprime antes de la línea del registro",
+        )
+
+        _, _, filas = self._unico_registro()
+        valores = {numero: valor for numero, _, valor in filas}
+        self.assertEqual(
+            f"{SONDA_CONTEXTO_SOSTENIDO['velocidad_prompt_tokens_por_segundo']:.2f} "
+            "tokens/s",
+            valores[16],
+            "el campo 16 conserva la velocidad de prompt del doble de la sonda",
+        )
+        self.assertEqual(
+            f"{SONDA_CONTEXTO_SOSTENIDO['tokens_por_segundo']:.2f} tokens/s",
+            valores[17],
+            "el campo 17 conserva la velocidad de generación del doble de la sonda",
+        )
+
+        # El caso fallido necesita 1 servidor de prueba propio, porque el lanzador
+        # ya cerró el del primer caso: la línea declara el conteo parcial antes del
+        # corte y el motivo del resultado, sin estimar velocidad alguna.
+        servidor_fallido = _ServidorPrueba()
+        self.addCleanup(servidor_fallido.cerrar)
+        proceso_fallido = _ProcesoDoble(servidor_fallido)
+        lanzar_fallido = _LanzarDoble(proceso_fallido)
+        self.sonda.resultado = dict(SONDA_FALLIDA)
+        salida_fallida = io.StringIO()
+        with contextlib.ExitStack() as pila:
+            pila.enter_context(
+                mock.patch.object(self.modulo, "LANZAR_SERVIDOR", lanzar_fallido)
+            )
+            pila.enter_context(
+                mock.patch.object(self.modulo, "PUERTO", servidor_fallido.puerto)
+            )
+            with contextlib.redirect_stdout(salida_fallida):
+                codigo_fallido = self.modulo.main(
+                    [
+                        "--raiz",
+                        str(self.raiz),
+                        "--perfil",
+                        PERFIL,
+                        "--modo",
+                        MODO_MEDIR,
+                        "--prueba",
+                        "carga",
+                        "--calidad",
+                        CALIDAD,
+                    ]
+                )
+
+        self.assertEqual(
+            0,
+            codigo_fallido,
+            "la sonda fallida no cambia el código de salida de C-8",
+        )
+        texto_fallido = salida_fallida.getvalue()
+        self.assertIn(
+            f"SONDA: {SONDA_FALLIDA['tokens_generados']} tokens contados antes "
+            "del corte",
+            texto_fallido,
+            "la sonda fallida declara el conteo parcial antes del corte",
+        )
+        self.assertIn(
+            SONDA_FALLIDA["motivo"],
+            texto_fallido,
+            "la línea de la sonda fallida declara el motivo del corte",
+        )
+        self.assertNotIn(
+            "tokens/s",
+            texto_fallido,
+            "la sonda fallida no estima velocidad alguna",
+        )
+        linea_fallida = re.search(r"^SONDA: .*$", texto_fallido, re.MULTILINE)
+        self.assertIsNotNone(
+            linea_fallida,
+            "la sonda fallida imprime su línea SONDA antes del registro",
+        )
+
+        print(
+            "test_modo_medir_imprime_el_conteo_de_la_sonda: "
+            f"linea={coincidencia.group(0)!r} "
+            f"linea_fallida={linea_fallida.group(0)!r} "
+            f"registro={len(self._registros())} codigo={codigo_fallido}"
+        )
+
     def test_cierre_cuatro_de_cinco_con_presupuesto_pendiente(self):
         # El caso del presupuesto pendiente se construye sobre el manifiesto temporal
         # con la marca que nombra la tarea que lo escribe: el bloque queda en `null`
@@ -712,7 +1047,8 @@ class ModosTest(unittest.TestCase):
         manifiesto = self._manifiesto()
         manifiesto["presupuesto_vram"] = {
             "pesos_en_vram_mib": None,
-            "kv_por_1024_tokens_mib": None,
+            "kv_no_swa_por_1024_tokens_mib": None,
+            "kv_swa_mib": None,
             "buffer_computo_mib": None,
             "pendiente": MARCA_PENDIENTE,
         }

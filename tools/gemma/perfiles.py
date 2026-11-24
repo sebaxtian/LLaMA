@@ -60,7 +60,7 @@ def _requerido(contenedor, clave, contexto):
 
 
 def opciones_iniciales():
-    """Valores iniciales de los 7 ejes de `C-2` declarados en el proyecto."""
+    """Valores iniciales de los 9 ejes de `C-2` declarados en el proyecto."""
     try:
         datos = json.loads(RUTA_PARAMETROS_INICIALES.read_text(encoding="utf-8"))
     except OSError as error:

@@ -3,7 +3,7 @@
 Implementa `RF-004`, `RF-006`, `RNF-004` y `RNF-005` conforme a `CA-003` y
 `CA-005`, sobre los contratos `C-5` y `C-6` de `plan.md` y las decisiones
 `DEC-002` y `DEC-020`: 1 solo archivo Markdown por ejecución con el frontmatter
-de 11 claves de `C-5` y la tabla de 21 filas de `C-6`, creado con
+de 11 claves de `C-5` y la tabla de 22 filas de `C-6`, creado con
 ``os.open(..., O_CREAT | O_EXCL)`` y con sufijo numérico ante colisión, de modo
 que ninguna ejecución sobrescribe 1 registro previo.
 
@@ -38,11 +38,11 @@ Contrato:
   línea y el registro conserva exactamente las 11 claves de `C-5`. 1 clave
   ausente de las 10, 1 clave ajena a `C-7` o 1 valor no serializable produce
   ``ValueError`` que nombra la clave.
-- ``campos`` es el mapa ordenado de las 21 etiquetas de `C-6` a su texto. Las
-  12 magnitudes —6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17 y 19— declaran su
+- ``campos`` es el mapa ordenado de las 22 etiquetas de `C-6` a su texto. Las
+  13 magnitudes —6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22— declaran su
   unidad en el valor: ``<número> <unidad>`` con ``tokens`` en 6 y 9,
-  ``ranuras`` en 7, ``capas`` en 8, ``s`` en 12, ``MiB`` en 13, 14, 15 y 19, y
-  ``tokens/s`` en 16 y 17; el campo 11 porta su unidad en el techo del
+  ``ranuras`` en 7, ``capas`` en 8, ``s`` en 12, ``MiB`` en 13, 14, 15, 19 y
+  22, y ``tokens/s`` en 16 y 17; el campo 11 porta su unidad en el techo del
   vocabulario ``activado (techo de borrador N tokens)`` o
   ``desactivado (sin techo de borrador)``, y el campo 18 admite solo
   ``continúa en servicio`` o ``se detuvo``. La marca ``no disponible`` se admite
@@ -135,7 +135,7 @@ CLAVES_DIFERENCIA_COMPARACION = tuple(
     clave for clave in CLAVES_COMPARACION if clave.startswith("delta_")
 )
 
-# `C-6` y `RF-006`: las 21 etiquetas en el orden de la tabla.
+# `C-6` y `RF-006`: las 22 etiquetas en el orden de la tabla.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -158,10 +158,11 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
-# `C-6`: las 11 filas con unidad de magnitud propia, por número de fila. La
-# duodécima es el campo 11, cuyo vocabulario porta el techo en tokens.
+# `C-6`: las 12 filas con unidad de magnitud propia, por número de fila. La
+# decimotercera es el campo 11, cuyo vocabulario porta el techo en tokens.
 UNIDADES_POR_NUMERO = {
     6: "tokens",
     7: "ranuras",
@@ -174,6 +175,7 @@ UNIDADES_POR_NUMERO = {
     16: "tokens/s",
     17: "tokens/s",
     19: "MiB",
+    22: "MiB",
 }
 
 # `C-6`: el campo 11 declara el estado y, si está activado, el techo del
@@ -217,7 +219,7 @@ def construir_registro(
     ``perfil`` y ``prueba`` forman el identificador junto con el instante UTC;
     ``proposito`` pertenece a ``PROPOSITOS``; ``frontmatter`` aporta las 6
     claves que calcula el orquestador, admite la clave opcional ``comparacion``
-    de `C-7` y ``campos`` el texto de las 21 filas de `C-6`. Toda irregularidad
+    de `C-7` y ``campos`` el texto de las 22 filas de `C-6`. Toda irregularidad
     lanza ``ValueError`` con la fila, la unidad, el vocabulario o la clave
     afectada.
     """
@@ -445,10 +447,10 @@ def _json_comparacion(bloque):
 
 
 def _filas_de_c6(campos):
-    """Valida y devuelve las 21 filas de `C-6` en el orden de `RF-006`."""
+    """Valida y devuelve las 22 filas de `C-6` en el orden de `RF-006`."""
     if not isinstance(campos, dict):
         raise ValueError(
-            "campos: se esperaba 1 mapa de etiqueta a texto con las 21 filas "
+            "campos: se esperaba 1 mapa de etiqueta a texto con las 22 filas "
             f"de C-6 y se recibió {type(campos).__name__}"
         )
     filas = []

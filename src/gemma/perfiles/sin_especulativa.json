@@ -16,12 +16,14 @@
   },
   "opciones": {
     "gpu_layers": "all",
-    "flash_attn": "off",
+    "flash_attn": "on",
     "ctx_size": 4096,
     "ubatch": 512,
     "ncmoe": 0,
     "load_mode": "none",
-    "parallel": 1
+    "parallel": 1,
+    "cache_type_k": "q8_0",
+    "cache_type_v": "q8_0"
   },
   "desviaciones": [],
   "especulativa": {
@@ -29,9 +31,10 @@
     "techo": null
   },
   "presupuesto_vram": {
-    "pesos_en_vram_mib": 14938.59,
-    "kv_por_1024_tokens_mib": 120.0,
-    "buffer_computo_mib": 782.03
+    "pesos_en_vram_mib": 11263.21,
+    "kv_no_swa_por_1024_tokens_mib": 10.625,
+    "kv_swa_mib": 159.38,
+    "buffer_computo_mib": 1661.77
   },
   "estado": "candidato",
   "aprobacion": null,

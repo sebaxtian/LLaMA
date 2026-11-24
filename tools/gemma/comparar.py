@@ -13,10 +13,20 @@ Contrato:
   ``frontmatter`` y ``filas``. ``frontmatter`` declara las 11 claves de `C-5`:
   ``opciones_efectivas`` se decodifica del JSON que el registro serializa,
   ``vram_total_mib`` se interpreta como número y las 9 restantes se leen como
-  texto; ``id`` es el ``stem`` del archivo. ``filas`` declara las 21 filas de
+  texto; ``id`` es el ``stem`` del archivo. ``filas`` declara las 22 filas de
   `C-6` en su orden, cada 1 con exactamente las claves ``numero``, ``campo`` y
   ``valor``, y el ``valor`` de 1 magnitud conserva su unidad en el texto
   —``16376 MiB``, ``94.89 tokens/s``, ``6.3 s``—.
+- Los registros escritos antes de la ampliación a 22 campos declaran 21 filas.
+  ``leer_registro`` tolera ese registro y devuelve las 22 filas, con la fila 22
+  «Memoria de expertos en host» en ``no disponible`` sintetizada en memoria y
+  sin número ni unidad estimados, conforme a `DEC-027`. La síntesis es de
+  lectura y no se persiste: el archivo nunca se abre en modo de escritura y sus
+  bytes permanecen idénticos antes y después de la lectura, porque `RNF-004`
+  exige 0 registros sobrescritos y `CB-005` exige que la evidencia histórica
+  conserve su contenido. 1 registro de 22 filas se lee sin cambios; 1 de 23
+  filas, 1 con las filas desordenadas y 1 cuya fila 22 no declara 1 número y la
+  unidad ``MiB`` siguen lanzando ``ValueError``.
 - ``comparar(lectura_inicial, lectura_propuesta, *, parametro, valor_inicial,
   valor_propuesto, alternativa=None) -> dict`` devuelve el bloque de `C-7` con
   exactamente las 10 claves ``parametro``, ``medicion_inicial``,
@@ -65,7 +75,7 @@ CLAVES_FRONTMATTER = (
     "registro_anterior",
 )
 
-# `C-6` y `RF-006`: las 21 etiquetas en el orden de la tabla.
+# `C-6` y `RF-006`: las 22 etiquetas en el orden de la tabla.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -88,6 +98,7 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
 # `C-7`: las 5 filas de magnitud que alimentan las diferencias, con su unidad.
@@ -96,6 +107,15 @@ FILA_VRAM_LIBRE = 14
 FILA_RAM = 15
 FILA_VELOCIDAD_PROMPT = 16
 FILA_VELOCIDAD_GENERACION = 17
+
+# `C-6` y `DEC-027`: la fila 22 declara la memoria de expertos en host en MiB y
+# es la que se sintetiza en los registros legados de 21 filas.
+FILA_MEMORIA_EXPERTOS = 22
+UNIDAD_MEMORIA_EXPERTOS = "MiB"
+
+# `C-6`, `RNF-005` y `DEC-027`: la marca de la fuente ausente, que se escribe sin
+# número ni unidad y es el valor sintetizado de la fila 22 del registro legado.
+NO_DISPONIBLE = "no disponible"
 
 # `C-7`: cada diferencia, su fila de `C-6` y la unidad que declara esa fila.
 DIFERENCIAS = (
@@ -134,7 +154,7 @@ def leer_registro(ruta):
 
     ``frontmatter`` declara las 11 claves de `C-5` con ``opciones_efectivas``
     decodificada del JSON y ``vram_total_mib`` numérica; ``filas`` declara las
-    21 filas de `C-6` en su orden con el texto íntegro de cada valor, incluida
+    22 filas de `C-6` en su orden con el texto íntegro de cada valor, incluida
     su unidad. La lectura parte del archivo recibido y no del directorio
     actual, y toda irregularidad lanza ``ValueError`` con la clave o la fila.
     """
@@ -280,7 +300,13 @@ def _valor_de_frontmatter(clave, texto, camino):
 
 
 def _filas_de_registro(cuerpo, camino):
-    """Lee las 21 filas de `C-6` en su orden desde la tabla del cuerpo."""
+    """Lee las 22 filas de `C-6` en su orden desde la tabla del cuerpo.
+
+    Los registros escritos antes de la ampliación a 22 campos declaran 21
+    filas: el lector valida las 21 y devuelve la 22 «Memoria de expertos en
+    host» en ``no disponible`` sintetizada en memoria, sin escribir en el
+    archivo ni estimar el valor ausente, conforme a `DEC-027`.
+    """
     celdas_por_fila = []
     for linea in cuerpo:
         if not linea.strip().startswith("|"):
@@ -319,7 +345,12 @@ def _filas_de_registro(cuerpo, camino):
                 f"fila {numero} ({campo_esperado}): el registro {camino} "
                 "declara el valor vacío; C-6 y RNF-005 exigen 0 campos vacíos"
             )
+        if numero == FILA_MEMORIA_EXPERTOS and valor != NO_DISPONIBLE:
+            _exigir_unidad_de_memoria(valor, numero, campo, camino)
         filas.append({"numero": numero, "campo": campo, "valor": valor})
+
+    if len(filas) == len(CAMPOS_C6) - 1:
+        return filas + [_fila_sintetizada_de_memoria()]
 
     if len(filas) != len(CAMPOS_C6):
         faltantes = [
@@ -334,9 +365,40 @@ def _filas_de_registro(cuerpo, camino):
         )
         raise ValueError(
             f"fila ausente: el registro {camino} {detalle} y C-6 exige "
-            f"{len(CAMPOS_C6)} filas"
+            f"{len(CAMPOS_C6)} filas, o las {len(CAMPOS_C6) - 1} del registro "
+            "legado que DEC-027 tolera con la fila 22 en no disponible"
         )
     return filas
+
+
+def _fila_sintetizada_de_memoria():
+    """Sintetiza en memoria la fila 22 del registro legado de 21 filas.
+
+    El valor es la marca de la fuente ausente de `RNF-005` y `C-6`, sin número
+    ni unidad: esas ejecuciones no midieron la memoria de expertos en host y
+    `DEC-027` prohíbe estimarla desde 1 carga posterior. La fila solo vive en
+    el diccionario devuelto y no se escribe en el archivo.
+    """
+    return {
+        "numero": FILA_MEMORIA_EXPERTOS,
+        "campo": CAMPOS_C6[FILA_MEMORIA_EXPERTOS - 1],
+        "valor": NO_DISPONIBLE,
+    }
+
+
+def _exigir_unidad_de_memoria(valor, numero, campo, camino):
+    """Exige que la fila 22 declare 1 número y la unidad `MiB` de `C-6`."""
+    cantidad, separador, unidad = valor.rpartition(" ")
+    if (
+        separador != " "
+        or unidad != UNIDAD_MEMORIA_EXPERTOS
+        or not PATRON_NUMERO.match(cantidad)
+    ):
+        raise ValueError(
+            f"fila {numero} ({campo}): el registro {camino} declara {valor!r} "
+            f"sin 1 número y la unidad {UNIDAD_MEMORIA_EXPERTOS!r} de C-6, ni "
+            f"la marca {NO_DISPONIBLE!r} de la fuente ausente"
+        )
 
 
 def _celdas(linea):

@@ -128,7 +128,7 @@ IDENTIFICADOR_AUSENTE = "20261121T140308Z-rendimiento-comparacion"
 VELOCIDAD_REGISTRADA = "89.69"
 VELOCIDAD_ALTERADA = "94.89"
 
-# `C-6`: las 21 etiquetas en el orden de `RF-006`.
+# `C-6`: las 22 etiquetas en el orden de `RF-006`.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -151,6 +151,7 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
 # Valores del registro sintético: las 3 magnitudes que puede citar el documento
@@ -178,6 +179,7 @@ VALORES_C6 = {
     "Desbordamiento hacia memoria compartida": "0 MiB",
     "Calidad funcional de la respuesta": "respuesta correcta",
     "Errores y advertencias": "sin errores",
+    "Memoria de expertos en host": "2846.25 MiB",
 }
 
 OPCIONES_EFECTIVAS = {

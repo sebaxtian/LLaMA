@@ -44,8 +44,11 @@ __all__ = ["leer_version", "opciones_aceptadas", "verificar_compatibilidad"]
 # como error de lectura en lugar de bloquear la comprobación de `RNF-001`.
 TIEMPO_LIMITE_SEGUNDOS = 5
 
-# Los 7 ejes de `C-2`, con el identificador que el perfil declara.
+# Los 9 ejes de `C-2` —los 7 iniciales más los 2 tipos de caché KV de
+# `DEC-028`—, con el identificador que el perfil declara.
 EJES = (
+    "cache_type_k",
+    "cache_type_v",
     "ctx_size",
     "flash_attn",
     "gpu_layers",
@@ -56,12 +59,15 @@ EJES = (
 )
 
 # Grafías alternativas de cada eje: la forma larga que no se deriva del
-# identificador —`ubatch` se escribe `--ubatch-size` y `ncmoe` se escribe
-# `--n-cpu-moe`— y las formas cortas conocidas de la ayuda del binario. El
-# identificador del eje y la opción son grafías distintas, así que esta
-# correspondencia es dato del contrato y no 1 lista de opciones aceptadas: la
-# ayuda sigue decidiendo si el eje existe.
+# identificador —`ubatch` se escribe `--ubatch-size`, `ncmoe` se escribe
+# `--n-cpu-moe`, `cache_type_k` se escribe `--cache-type-k` y `cache_type_v` se
+# escribe `--cache-type-v`— y las formas cortas conocidas de la ayuda del
+# binario. El identificador del eje y la opción son grafías distintas, así que
+# esta correspondencia es dato del contrato y no 1 lista de opciones aceptadas:
+# la ayuda sigue decidiendo si el eje existe.
 ALTERNATIVAS_DEL_EJE = {
+    "cache_type_k": ("cache-type-k", "ctk"),
+    "cache_type_v": ("cache-type-v", "ctv"),
     "ctx_size": ("c",),
     "flash_attn": ("fa",),
     "gpu_layers": ("n-gpu-layers", "ngl"),

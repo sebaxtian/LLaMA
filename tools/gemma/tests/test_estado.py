@@ -15,15 +15,18 @@ sobre las `opciones` declaradas y no sobre las efectivas):
   opciones modificadas. `aprobado` exige `medido` vigente, cada desviación con
   su bloque de comparación completo de las 10 claves de `C-7`,
   ``aprobacion.umbral_tg_tokens_por_segundo`` presente,
-  ``aprobacion.declarado_por`` con fecha, la última carga con
-  ``desbordamiento_mib`` igual a `0` y ``vram_libre_mib`` de al menos `512`; si
+  ``aprobacion.declarado_por`` con fecha, la última carga con 1 derrame no
+  intencional de como máximo `512` MiB —fila 19 menos fila 22 de `C-6`,
+  conforme a `RNF-003` y `DEC-026`— y ``vram_libre_mib`` de al menos `512`; si
   falta 1 condición, el estado reportado es `candidato` y el motivo la nombra.
 - ``elegible_para_aprobado(manifiesto, registros, ultima_carga) -> (bool,
   motivo | None)`` devuelve ``(True, None)`` solo si se cumplen todas las
   condiciones anteriores. ``ultima_carga`` es el identificador del registro de
   la última carga y debe existir en ``registros``: la elegibilidad lee de esa
-  lectura el desbordamiento de la fila 19 y la VRAM libre de la fila 14 de
-  `C-6`.
+  lectura el desbordamiento de la fila 19, la memoria de expertos en host de la
+  fila 22 y la VRAM libre de la fila 14 de `C-6`. Si la fila 22 declara `no
+  disponible`, el derrame no se puede calcular y la elegibilidad es falsa sin
+  asumir `0` MiB de descarga intencional.
 - ``verificar_aprobacion(manifiesto, *, ruta, ejecutor=None) -> (bool, motivo |
   None)`` contrasta el estado de firma del último commit que toca el manifiesto
   con ``git log --format=%G? -1 -- <ruta>``, conforme a `DEC-009`, y considera
@@ -83,7 +86,7 @@ INSTANTES_COMPARACION = (
 # Marca para distinguir «no se pide cambio» de «se pide `None`».
 INTACTA = object()
 
-# `C-6`: las 21 etiquetas en el orden de `RF-006`.
+# `C-6`: las 22 etiquetas en el orden de `RF-006`.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -106,11 +109,14 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
-# `C-6`: las 2 filas que decide la elegibilidad de `C-4`.
+# `C-6`: las 2 filas que mide la elegibilidad de `C-4` y el campo 22 que
+# descuenta la descarga intencional de expertos a la CPU del derrame.
 FILA_VRAM_LIBRE = 14
 FILA_DESBORDAMIENTO = 19
+FILA_MEMORIA_EXPERTOS = 22
 
 # `C-7`: las 10 claves del bloque; es completo solo si las declara todas y
 # `alternativa_contexto` es 1 clave adicional que no altera el recuento.
@@ -133,7 +139,7 @@ VRAM_TOTAL_MIB = 16311
 VERSION_BINARIO = "b12235"
 COMMIT_LLAMA_CPP = "3f6b1d1a0"
 
-# `C-6`: valores base de las 21 filas. Las 2 magnitudes que decide `C-4` y la
+# `C-6`: valores base de las 22 filas. Las 3 magnitudes que decide `C-4` y la
 # RAM se reemplazan en cada caso; el resto conserva 1 valor con la unidad que
 # `registro` exige, de modo que 0 filas quedan vacías.
 VALORES_BASE = {
@@ -158,6 +164,7 @@ VALORES_BASE = {
     "Desbordamiento hacia memoria compartida": "0 MiB",
     "Calidad funcional de la respuesta": "respuesta correcta",
     "Errores y advertencias": "sin errores",
+    "Memoria de expertos en host": "0 MiB",
 }
 
 
@@ -311,6 +318,7 @@ class ManejadorDeFixtures(unittest.TestCase):
         huella=None,
         comparacion=None,
         desbordamiento="0 MiB",
+        memoria_expertos="0 MiB",
         vram_libre="1449 MiB",
     ):
         """Construye 1 lectura de registro y la devuelve con su identificador.
@@ -324,6 +332,7 @@ class ManejadorDeFixtures(unittest.TestCase):
         valores["Nombre de la prueba"] = prueba
         valores["VRAM libre"] = vram_libre
         valores["Desbordamiento hacia memoria compartida"] = desbordamiento
+        valores["Memoria de expertos en host"] = memoria_expertos
         frontmatter = {
             "huella_opciones": huella
             if huella is not None
@@ -463,7 +472,59 @@ class EstadosReportadosTest(ManejadorDeFixtures):
 
     def test_aprobado_con_desbordamiento_devuelve_candidato(self):
         estado, perfiles, modulo_registro = _cargar_modulos()
-        # Sin desviaciones: el primer motivo que `C-4` declara es el desbordamiento.
+        # Sin desviaciones: el primer motivo que `C-4` declara es el derrame.
+        _, manifiesto = self._manifiesto_aprobado(
+            perfiles, PERFIL_RESILIENCIA, desviaciones=[]
+        )
+        # 1016 MiB de `Shared Usage` sin descarga intencional de expertos: el
+        # derrame no intencional de `RNF-003` es el mismo y supera el umbral.
+        identificador, lectura = self._lectura(
+            modulo_registro,
+            manifiesto,
+            prueba=PRUEBA_CARGA,
+            proposito=PROPOSITO_CARGA,
+            instante=INSTANTE_CARGA,
+            desbordamiento="1016 MiB",
+            memoria_expertos="0 MiB",
+            vram_libre="1449 MiB",
+        )
+        self.assertEqual("1016 MiB", _valor(lectura, FILA_DESBORDAMIENTO))
+        registros = {identificador: lectura}
+
+        reportado = estado.estado_reportado(manifiesto, registros)
+        elegible, motivo = estado.elegible_para_aprobado(
+            manifiesto, registros, identificador
+        )
+
+        self.assertEqual("candidato", reportado[0])
+        self.assertIn("derrame", reportado[1].lower())
+        self.assertIn(
+            "1016",
+            reportado[1],
+            "el motivo transcribe el derrame de la última carga",
+        )
+        self.assertIn(
+            "512",
+            reportado[1],
+            "el motivo nombra el umbral de 512 MiB de RNF-003",
+        )
+        self.assertIn("MiB", reportado[1])
+        self.assertFalse(
+            elegible, "RNF-003 y CB-004 admiten como máximo 512 MiB de derrame"
+        )
+        self.assertIsInstance(motivo, str)
+        self.assertIn("derrame", motivo.lower())
+        self.assertIn("1016", motivo)
+        self.assertIn("512", motivo)
+        print(
+            f"test_aprobado_con_desbordamiento_devuelve_candidato: "
+            f"estado={reportado[0]} motivo={motivo}"
+        )
+
+    def test_promocion_con_derrame_de_511_mib_es_elegible(self):
+        estado, perfiles, modulo_registro = _cargar_modulos()
+        # 2846.25 MiB de expertos en host son descarga intencional y se restan
+        # del `Shared Usage`: el derrame no intencional es de 511 MiB y cabe.
         _, manifiesto = self._manifiesto_aprobado(
             perfiles, PERFIL_RESILIENCIA, desviaciones=[]
         )
@@ -473,10 +534,77 @@ class EstadosReportadosTest(ManejadorDeFixtures):
             prueba=PRUEBA_CARGA,
             proposito=PROPOSITO_CARGA,
             instante=INSTANTE_CARGA,
-            desbordamiento="24 MiB",
+            desbordamiento="3357.25 MiB",
+            memoria_expertos="2846.25 MiB",
             vram_libre="1449 MiB",
         )
-        self.assertEqual("24 MiB", _valor(lectura, FILA_DESBORDAMIENTO))
+        self.assertEqual("3357.25 MiB", _valor(lectura, FILA_DESBORDAMIENTO))
+        self.assertEqual("2846.25 MiB", _valor(lectura, FILA_MEMORIA_EXPERTOS))
+        registros = {identificador: lectura}
+
+        self.assertEqual(
+            ("aprobado", None),
+            estado.estado_reportado(manifiesto, registros),
+            "1 derrame de 511 MiB es inferior al umbral de 512 MiB de RNF-003",
+        )
+        self.assertEqual(
+            (True, None),
+            estado.elegible_para_aprobado(manifiesto, registros, identificador),
+        )
+        print(
+            "test_promocion_con_derrame_de_511_mib_es_elegible: "
+            f"campo19=3357.25 MiB campo22=2846.25 MiB derrame=511 MiB "
+            f"estado={estado.estado_reportado(manifiesto, registros)}"
+        )
+
+    def test_promocion_con_derrame_de_512_mib_es_elegible(self):
+        estado, perfiles, modulo_registro = _cargar_modulos()
+        # La igualdad con el umbral no es 1 incumplimiento: 512 MiB cabe.
+        _, manifiesto = self._manifiesto_aprobado(
+            perfiles, PERFIL_RESILIENCIA, desviaciones=[]
+        )
+        identificador, lectura = self._lectura(
+            modulo_registro,
+            manifiesto,
+            prueba=PRUEBA_CARGA,
+            proposito=PROPOSITO_CARGA,
+            instante=INSTANTE_CARGA,
+            desbordamiento="3358.25 MiB",
+            memoria_expertos="2846.25 MiB",
+            vram_libre="1449 MiB",
+        )
+        registros = {identificador: lectura}
+
+        self.assertEqual(
+            ("aprobado", None),
+            estado.estado_reportado(manifiesto, registros),
+            "el derrame de 512 MiB cumple RNF-003 en el límite",
+        )
+        self.assertEqual(
+            (True, None),
+            estado.elegible_para_aprobado(manifiesto, registros, identificador),
+        )
+        print(
+            "test_promocion_con_derrame_de_512_mib_es_elegible: "
+            f"campo19=3358.25 MiB campo22=2846.25 MiB derrame=512 MiB "
+            f"estado={estado.estado_reportado(manifiesto, registros)}"
+        )
+
+    def test_promocion_con_derrame_de_513_mib_no_es_elegible(self):
+        estado, perfiles, modulo_registro = _cargar_modulos()
+        _, manifiesto = self._manifiesto_aprobado(
+            perfiles, PERFIL_RESILIENCIA, desviaciones=[]
+        )
+        identificador, lectura = self._lectura(
+            modulo_registro,
+            manifiesto,
+            prueba=PRUEBA_CARGA,
+            proposito=PROPOSITO_CARGA,
+            instante=INSTANTE_CARGA,
+            desbordamiento="3359.25 MiB",
+            memoria_expertos="2846.25 MiB",
+            vram_libre="1449 MiB",
+        )
         registros = {identificador: lectura}
 
         reportado = estado.estado_reportado(manifiesto, registros)
@@ -485,17 +613,74 @@ class EstadosReportadosTest(ManejadorDeFixtures):
         )
 
         self.assertEqual("candidato", reportado[0])
-        self.assertIn("desbordamiento", reportado[1].lower())
         self.assertIn(
-            "24",
+            "513",
             reportado[1],
-            "el motivo transcribe el desbordamiento de la última carga",
+            "el motivo transcribe el derrame de campo 19 menos campo 22",
         )
-        self.assertIn("MiB", reportado[1])
-        self.assertFalse(elegible, "RNF-003 y CB-004 exigen 0 MiB de desbordamiento")
+        self.assertIn(
+            "512",
+            reportado[1],
+            "el motivo nombra el umbral de RNF-003",
+        )
+        self.assertFalse(
+            elegible, "1 derrame de 513 MiB supera el umbral de 512 MiB"
+        )
         self.assertIsInstance(motivo, str)
-        self.assertIn("desbordamiento", motivo.lower())
-        self.assertIn("24", motivo)
+        self.assertIn("513", motivo)
+        self.assertIn("512", motivo)
+        self.assertIn("MiB", motivo)
+        print(
+            "test_promocion_con_derrame_de_513_mib_no_es_elegible: "
+            f"campo19=3359.25 MiB campo22=2846.25 MiB derrame=513 MiB "
+            f"elegible={elegible} motivo={motivo}"
+        )
+
+    def test_promocion_con_campo_22_no_disponible_no_es_elegible(self):
+        estado, perfiles, modulo_registro = _cargar_modulos()
+        # Sin la memoria de expertos en host el derrame no se puede calcular:
+        # C-4 no asume `0` MiB de descarga intencional.
+        _, manifiesto = self._manifiesto_aprobado(
+            perfiles, PERFIL_RESILIENCIA, desviaciones=[]
+        )
+        identificador, lectura = self._lectura(
+            modulo_registro,
+            manifiesto,
+            prueba=PRUEBA_CARGA,
+            proposito=PROPOSITO_CARGA,
+            instante=INSTANTE_CARGA,
+            desbordamiento="0 MiB",
+            memoria_expertos="no disponible",
+            vram_libre="1449 MiB",
+        )
+        self.assertEqual("no disponible", _valor(lectura, FILA_MEMORIA_EXPERTOS))
+        registros = {identificador: lectura}
+
+        reportado = estado.estado_reportado(manifiesto, registros)
+        elegible, motivo = estado.elegible_para_aprobado(
+            manifiesto, registros, identificador
+        )
+
+        self.assertEqual("candidato", reportado[0])
+        self.assertIn(
+            "Memoria de expertos en host",
+            reportado[1],
+            "el motivo nombra el campo 22 que no permite calcular el derrame",
+        )
+        self.assertIn("no disponible", reportado[1])
+        self.assertIn("512", reportado[1])
+        self.assertFalse(
+            elegible,
+            "sin el campo 22 el derrame no se calcula y la elegibilidad es falsa",
+        )
+        self.assertIsInstance(motivo, str)
+        self.assertIn("Memoria de expertos en host", motivo)
+        self.assertIn("no disponible", motivo)
+        print(
+            "test_promocion_con_campo_22_no_disponible_no_es_elegible: "
+            f"campo19=0 MiB campo22=no disponible elegible={elegible} "
+            f"motivo={motivo}"
+        )
 
     def test_aprobado_con_vram_libre_insuficiente(self):
         estado, perfiles, modulo_registro = _cargar_modulos()
@@ -563,9 +748,9 @@ class EstadosReportadosTest(ManejadorDeFixtures):
         estado, perfiles, modulo_registro = _cargar_modulos()
         _, manifiesto = self._manifiesto_aprobado(perfiles, PERFIL_RENDIMIENTO)
         self.assertEqual(
-            4,
+            3,
             len(manifiesto["desviaciones"]),
-            "el perfil rendimiento declara 4 desviaciones",
+            "el perfil rendimiento declara 3 desviaciones",
         )
 
         # La carga vigente, con desbordamiento 0 MiB y VRAM libre suficiente.
@@ -578,7 +763,7 @@ class EstadosReportadosTest(ManejadorDeFixtures):
         )
         registros = {identificador_carga: lectura_carga}
 
-        # 3 desviaciones con su bloque de 10 claves y `ncmoe` con 1 bloque
+        # 2 desviaciones con su bloque de 10 claves y `ncmoe` con 1 bloque
         # incompleto: le falta `delta_ram_mib`.
         omitidas_por_eje = {"ncmoe": ("delta_ram_mib",)}
         for desviacion, instante in zip(

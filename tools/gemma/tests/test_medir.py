@@ -58,6 +58,11 @@ Interfaz que fija esta suite:
 - Si `nvidia-smi` no está disponible (`FileNotFoundError`), el resultado es
   exactamente `{"codigo": 7}`, sin ninguna clave de valor y sin estimación
   de valores ausentes, conforme a `DEC-006` y al riesgo del eGPU USB4.
+- `vram_libre_mib(*, ejecutor=None) -> float | None` es la consulta de solo
+  lectura de `T-068` para la comprobación 4 de `C-9`: ejecuta
+  `nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits`, devuelve
+  el valor en MiB y `None` cuando la herramienta no está, sin contadores, sin
+  residente y sin PowerShell.
 
 Estas pruebas se ejecutan en rojo mientras `T-020` no escriba el módulo: la
 importación de `medir` falla con `ModuleNotFoundError` y cada caso declara el
@@ -534,6 +539,68 @@ class MedicionMemoriaTest(unittest.TestCase):
             "4343",
             mensaje,
             "el ValueError nombra el PID del árbol que la consulta no devolvió, en lugar de sumar 0 en silencio",
+        )
+
+
+class VramLibreTest(unittest.TestCase):
+    """Consulta de solo lectura de la VRAM libre para la comprobación 4 de `C-9`.
+
+    `T-068` expone `vram_libre_mib(*, ejecutor=None) -> float | None`, que
+    ejecuta `nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits` y
+    devuelve el valor en MiB sin consultar contadores, memoria residente ni
+    PowerShell. La herramienta ausente devuelve `None`: la comprobación 4 se
+    reporta `PENDIENTE` con su motivo y ningún valor se estima, conforme a
+    `DEC-018`.
+    """
+
+    def test_vram_libre_mib_solo_lectura(self):
+        modulo = _cargar_modulo()
+        doble = EjecutorDoble(salida_nvidia_smi="15172")
+
+        libre = modulo.vram_libre_mib(ejecutor=doble)
+
+        self.assertEqual(
+            15172.0,
+            libre,
+            "la consulta devuelve la VRAM libre en MiB de la salida sin cabecera ni unidades",
+        )
+        self.assertEqual(
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.free",
+                "--format=csv,noheader,nounits",
+            ],
+            doble.llamadas[0],
+            "la consulta declara el campo memory.free y el formato CSV sin cabecera ni unidades",
+        )
+        self.assertEqual(
+            1,
+            len(doble.llamadas),
+            "la consulta es de solo lectura: 1 comando y ningún contador ni residente",
+        )
+        tipos = [_tipo_consulta(comando) for comando in doble.llamadas]
+        self.assertEqual(
+            ["nvidia-smi"],
+            tipos,
+            "0 consultas de contadores, de residente ni de PowerShell acompañan la lectura",
+        )
+
+        ausente = EjecutorDoble(nvidia_smi_ausente=True)
+
+        self.assertIsNone(
+            modulo.vram_libre_mib(ejecutor=ausente),
+            "sin nvidia-smi la consulta devuelve None y ningún valor se estima",
+        )
+        self.assertEqual(
+            1,
+            len(ausente.llamadas),
+            "la ausencia de la herramienta no dispara otra fuente de consulta",
+        )
+
+        print(
+            "test_vram_libre_mib_solo_lectura: comando="
+            + " ".join(doble.llamadas[0])
+            + f" libre={libre} ausente=None"
         )
 
 

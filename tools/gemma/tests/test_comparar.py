@@ -13,7 +13,7 @@ Interfaz que fija esta suite:
   devuelve exactamente las claves `frontmatter` y `filas`. `frontmatter`
   declara las 11 claves de `C-5`: `opciones_efectivas` se decodifica del JSON
   que el registro serializa, `vram_total_mib` se interpreta como número y las 9
-  restantes se leen como texto. `filas` declara las 21 filas de `C-6` en su
+  restantes se leen como texto. `filas` declara las 22 filas de `C-6` en su
   orden, cada una con exactamente las claves `numero`, `campo` y `valor`; el
   `valor` de 1 magnitud conserva su unidad en el texto —`16376 MiB`,
   `94.89 tokens/s`, `6.3 s`— y la comparación lo interpreta por su magnitud y
@@ -52,6 +52,17 @@ no escribe valor medido alguno.
 Estas pruebas se ejecutan en rojo mientras `T-028` no escriba el módulo: la
 importación de `comparar` falla con `ModuleNotFoundError` y cada caso declara
 el módulo ausente.
+
+`T-064` añade los 6 casos del registro legado de 21 filas: `leer_registro`
+devuelve 22 filas con la 22 «Memoria de expertos en host» en `no disponible`
+sintetizada en memoria y sin abrir el archivo en escritura, de modo que sus
+bytes son idénticos antes y después de la lectura, conforme a `DEC-027`; 1
+registro de 22 filas se lee sin cambios y conserva sus 22 valores escritos; 1
+registro de 23 filas, 1 con las filas desordenadas y 1 con la fila 22 sin la
+unidad `MiB` de `C-6` siguen lanzando `ValueError`. Los 5 registros reales de
+`results/gemma/resiliencia/` no se abren en modo de escritura: los casos
+legados se construyen en el árbol temporal de `tmp/` retirando del texto la
+línea de la fila 22 que escribió `registro.escribir_registro`.
 """
 
 import json
@@ -118,7 +129,7 @@ CLAVES_ALTERNATIVA = (
 CLAVES_LECTURA = {"frontmatter", "filas"}
 CLAVES_FILA = {"numero", "campo", "valor"}
 
-# `C-6`: las 21 etiquetas en el orden de `RF-006`.
+# `C-6`: las 22 etiquetas en el orden de `RF-006`.
 CAMPOS_C6 = (
     "Fecha de la prueba",
     "Nombre de la prueba",
@@ -141,6 +152,7 @@ CAMPOS_C6 = (
     "Desbordamiento hacia memoria compartida",
     "Calidad funcional de la respuesta",
     "Errores y advertencias",
+    "Memoria de expertos en host",
 )
 
 # Números de las 5 filas de magnitud que alimentan las diferencias de `C-7` y
@@ -166,7 +178,7 @@ VRAM_TOTAL_MIB = 16311
 VERSION_BINARIO = "b12235"
 COMMIT_LLAMA_CPP = "3f6b1d1a0"
 
-# Valores base de las 21 filas de `C-6`; cada caso reemplaza las magnitudes que
+# Valores base de las 22 filas de `C-6`; cada caso reemplaza las magnitudes que
 # necesita. Los textos declaran la unidad de `C-6` para que `registro` acepte
 # el registro y el lector los conserve tal cual.
 VALORES_BASE = {
@@ -191,6 +203,7 @@ VALORES_BASE = {
     "Desbordamiento hacia memoria compartida": "0 MiB",
     "Calidad funcional de la respuesta": "respuesta correcta",
     "Errores y advertencias": "sin errores",
+    "Memoria de expertos en host": "2846.25 MiB",
 }
 
 
@@ -225,7 +238,7 @@ def _frontmatter():
 
 
 def _valores(cambios=None):
-    """Mapa ordenado de las 21 etiquetas de `C-6` a su valor de texto."""
+    """Mapa ordenado de las 22 etiquetas de `C-6` a su valor de texto."""
     valores = {campo: VALORES_BASE[campo] for campo in CAMPOS_C6}
     if cambios:
         valores.update(cambios)
@@ -260,6 +273,41 @@ class ManejadorDeRegistros(unittest.TestCase):
         )
         ruta = registro.escribir_registro(self.directorio, construido)
         return ruta, ruta.stem
+
+    def _escribir_legado(self, registro, *, instante=INSTANTE_INICIAL, valores=None):
+        """Escribe 1 registro de 21 filas retirando la fila 22 del texto.
+
+        El archivo se construye con el escritor del orquestador y después se
+        reescribe sin la línea de la fila 22, que es la forma de los 5 registros
+        que `DEC-027` deja atrás; los bytes se conservan en `LF` y el
+        frontmatter de `C-5` no se toca.
+        """
+        ruta, identificador = self._escribir(
+            registro,
+            instante=instante,
+            valores=_valores() if valores is None else valores,
+        )
+        lineas = ruta.read_bytes().splitlines(keepends=True)
+        legado = [linea for linea in lineas if not linea.startswith(b"| 22 |")]
+        self.assertEqual(
+            len(legado),
+            len(lineas) - 1,
+            "el registro de 22 filas declara la línea de la fila 22",
+        )
+        ruta.write_bytes(b"".join(legado))
+        return ruta, identificador
+
+    def _filas_en_disco(self, ruta):
+        """Devuelve los números de fila que el archivo declara, sin sintetizar."""
+        numeros = []
+        for linea in ruta.read_bytes().splitlines():
+            if not linea.startswith(b"| "):
+                continue
+            celdas = linea.decode("utf-8").split("|")
+            if len(celdas) < 2 or not celdas[1].strip().isdigit():
+                continue
+            numeros.append(int(celdas[1].strip()))
+        return numeros
 
 
 class BloqueDe10ClavesTest(ManejadorDeRegistros):
@@ -649,9 +697,9 @@ class LecturaSinTranscripcionManualTest(ManejadorDeRegistros):
             self.assertEqual(frontmatter["registro_anterior"], "ninguno")
 
             filas = lectura["filas"]
-            self.assertEqual(len(filas), 21, "C-6 declara 21 filas")
+            self.assertEqual(len(filas), 22, "C-6 declara 22 filas")
             self.assertEqual(
-                [fila["numero"] for fila in filas], list(range(1, 22))
+                [fila["numero"] for fila in filas], list(range(1, 23))
             )
             self.assertEqual(
                 [fila["campo"] for fila in filas], list(CAMPOS_C6)
@@ -689,6 +737,171 @@ class LecturaSinTranscripcionManualTest(ManejadorDeRegistros):
         self.assertEqual(
             json.loads(linea.partition(":")[2].strip()), OPCIONES_EFECTIVAS
         )
+
+
+class RegistroLegadoTest(ManejadorDeRegistros):
+    """`C-6`, `RNF-004` y `DEC-027`: el registro de 21 filas se lee con 22."""
+
+    def test_registro_de_21_filas_sintetiza_la_fila_22(self):
+        comparar, registro = _cargar_modulos()
+
+        valores = _valores()
+        ruta, identificador = self._escribir_legado(registro, valores=valores)
+
+        self.assertEqual(
+            self._filas_en_disco(ruta),
+            list(range(1, 22)),
+            "el caso parte de 1 registro de 21 filas, como los que DEC-027 "
+            "deja atrás",
+        )
+
+        lectura = comparar.leer_registro(ruta)
+
+        self.assertEqual(set(lectura), CLAVES_LECTURA)
+        self.assertEqual(lectura["frontmatter"]["id"], identificador)
+        filas = lectura["filas"]
+        self.assertEqual(
+            len(filas),
+            22,
+            "C-6 exige 22 filas y el lector sintetiza la 22 del registro "
+            "legado en memoria",
+        )
+        self.assertEqual(
+            [fila["numero"] for fila in filas], list(range(1, 23))
+        )
+        self.assertEqual([fila["campo"] for fila in filas], list(CAMPOS_C6))
+        self.assertEqual(filas[21]["campo"], "Memoria de expertos en host")
+        self.assertEqual(
+            filas[21]["valor"],
+            "no disponible",
+            "RNF-005 y C-6 admiten la marca no disponible cuando la fuente no "
+            "existe, sin número ni unidad estimados",
+        )
+        self.assertEqual(
+            set(filas[21]), CLAVES_FILA, "cada fila declara sus 3 claves"
+        )
+        for numero, campo in enumerate(CAMPOS_C6[:21], start=1):
+            self.assertEqual(
+                _valor(lectura, numero),
+                valores[campo],
+                f"la fila {numero} ({campo}) se lee tal como se escribió",
+            )
+        self.assertEqual(
+            self._filas_en_disco(ruta),
+            list(range(1, 22)),
+            "la síntesis es de lectura: el archivo no gana la fila 22",
+        )
+
+    def test_registro_legado_conserva_sus_bytes(self):
+        comparar, registro = _cargar_modulos()
+
+        ruta, _ = self._escribir_legado(registro)
+        antes = ruta.read_bytes()
+
+        comparar.leer_registro(ruta)
+        comparar.leer_registro(ruta)
+
+        self.assertEqual(
+            ruta.read_bytes(),
+            antes,
+            "RNF-004 y CB-005 exigen que la evidencia histórica conserve sus "
+            "bytes: el lector no abre el archivo en modo de escritura",
+        )
+        self.assertNotIn(
+            b"| 22 |",
+            antes,
+            "el registro de 21 filas no declara la línea de la fila 22",
+        )
+
+    def test_registro_de_22_filas_se_lee_sin_cambios(self):
+        comparar, registro = _cargar_modulos()
+
+        valores = _valores()
+        ruta, _ = self._escribir(
+            registro, instante=INSTANTE_INICIAL, valores=valores
+        )
+        antes = ruta.read_bytes()
+
+        lectura = comparar.leer_registro(ruta)
+
+        filas = lectura["filas"]
+        self.assertEqual(len(filas), 22)
+        for numero, campo in enumerate(CAMPOS_C6, start=1):
+            self.assertEqual(
+                _valor(lectura, numero),
+                valores[campo],
+                f"la fila {numero} ({campo}) del registro de 22 filas se lee "
+                "sin cambios",
+            )
+        self.assertEqual(
+            ruta.read_bytes(),
+            antes,
+            "el registro de 22 filas tampoco se reescribe al leerlo",
+        )
+
+    def test_registro_de_23_filas_falla(self):
+        comparar, registro = _cargar_modulos()
+
+        ruta, _ = self._escribir(
+            registro, instante=INSTANTE_INICIAL, valores=_valores()
+        )
+        ruta.write_bytes(
+            ruta.read_bytes()
+            + "| 23 | Memoria de expertos en host | 2846.25 MiB |\n".encode(
+                "utf-8"
+            )
+        )
+        self.assertEqual(len(self._filas_en_disco(ruta)), 23)
+
+        with self.assertRaises(ValueError) as capturado:
+            comparar.leer_registro(ruta)
+        self.assertIn("más de las 22 filas", str(capturado.exception))
+
+    def test_registro_desordenado_falla(self):
+        comparar, registro = _cargar_modulos()
+
+        ruta, _ = self._escribir(
+            registro, instante=INSTANTE_INICIAL, valores=_valores()
+        )
+        lineas = ruta.read_bytes().splitlines(keepends=True)
+        posicion_20 = next(
+            indice
+            for indice, linea in enumerate(lineas)
+            if linea.startswith(b"| 20 |")
+        )
+        posicion_21 = next(
+            indice
+            for indice, linea in enumerate(lineas)
+            if linea.startswith(b"| 21 |")
+        )
+        lineas[posicion_20], lineas[posicion_21] = (
+            lineas[posicion_21],
+            lineas[posicion_20],
+        )
+        ruta.write_bytes(b"".join(lineas))
+
+        with self.assertRaises(ValueError) as capturado:
+            comparar.leer_registro(ruta)
+        self.assertIn("fuera del orden de RF-006", str(capturado.exception))
+
+    def test_fila_22_sin_unidad_falla(self):
+        comparar, registro = _cargar_modulos()
+
+        ruta, _ = self._escribir(
+            registro, instante=INSTANTE_INICIAL, valores=_valores()
+        )
+        texto = ruta.read_bytes().decode("utf-8")
+        ruta.write_bytes(
+            texto.replace(
+                "| 22 | Memoria de expertos en host | 2846.25 MiB |",
+                "| 22 | Memoria de expertos en host | 2846.25 |",
+            ).encode("utf-8")
+        )
+
+        with self.assertRaises(ValueError) as capturado:
+            comparar.leer_registro(ruta)
+        self.assertIn("Memoria de expertos en host", str(capturado.exception))
+        self.assertIn("unidad 'MiB' de C-6", str(capturado.exception))
 
 
 if __name__ == "__main__":

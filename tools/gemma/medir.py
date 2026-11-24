@@ -17,6 +17,10 @@ Contrato:
   la herramienta no existe. Con ``None`` el módulo ejecuta los comandos reales
   con ``subprocess``; las pruebas inyectan siempre su doble, conforme a
   `DEC-012`.
+- ``vram_libre_mib(*, ejecutor=None)`` es la consulta de solo lectura de
+  `T-068`: ejecuta ``nvidia-smi --query-gpu=memory.free`` con formato CSV sin
+  cabecera ni unidades, devuelve la VRAM libre en MiB como ``float`` y `None`
+  cuando la herramienta no está.
 - Orden de consulta: (1) ``nvidia-smi`` con los 3 campos de memoria de la GPU;
   (2) los contadores de proceso por PID; (3) el respaldo de adaptador, solo si
   el conjunto de proceso no aporta filas del árbol; (4) la memoria residente.
@@ -43,7 +47,7 @@ import io
 import re
 import subprocess
 
-__all__ = ["medir_memoria"]
+__all__ = ["medir_memoria", "vram_libre_mib"]
 
 # 1 MiB en bytes: divisor de toda magnitud de memoria del contrato.
 BYTES_POR_MIB = 1048576
@@ -58,6 +62,15 @@ TIEMPO_LIMITE_SEGUNDOS = 10
 COMANDO_NVIDIA_SMI = [
     "nvidia-smi",
     "--query-gpu=memory.total,memory.used,memory.free",
+    "--format=csv,noheader,nounits",
+]
+
+# `T-068` y `DEC-018`: la comprobación 4 de `C-9` necesita la VRAM libre sin
+# cargar el modelo, de modo que la consulta se acota al campo `memory.free` y
+# no consulta contadores, memoria residente ni PowerShell.
+COMANDO_VRAM_LIBRE = [
+    "nvidia-smi",
+    "--query-gpu=memory.free",
     "--format=csv,noheader,nounits",
 ]
 
@@ -258,6 +271,45 @@ def _vram(salida):
 def _mib(bytes_):
     """Convierte bytes a MiB enteros, sin redondear hacia arriba."""
     return bytes_ // BYTES_POR_MIB
+
+
+def _vram_libre(salida):
+    """Lee la VRAM libre en MiB de la primera línea no vacía de la consulta.
+
+    1 salida vacía o 1 campo no numérico se informan como ``ValueError`` con su
+    contexto: el módulo no estima ningún valor. El campo se toma antes de la
+    primera coma porque el formato declarado no porta cabecera ni unidades.
+    """
+    linea = next((texto for texto in salida.splitlines() if texto.strip()), "")
+    if not linea:
+        raise ValueError(
+            "nvidia-smi: la consulta de la VRAM libre no devolvió ningún valor"
+        )
+    campo = linea.split(",", 1)[0].strip()
+    try:
+        return float(campo)
+    except ValueError:
+        raise ValueError(
+            f"nvidia-smi: la VRAM libre {campo!r} no es 1 número en MiB"
+        ) from None
+
+
+def vram_libre_mib(*, ejecutor=None):
+    """Devuelve la VRAM libre de la GPU dedicada en MiB, o `None` sin herramienta.
+
+    Consulta de solo lectura de `T-068` para la comprobación 4 de `C-9`: ejecuta
+    ``COMANDO_VRAM_LIBRE`` y devuelve el valor en MiB como ``float``. Con
+    ``FileNotFoundError`` devuelve ``None`` y no consulta otra fuente ni estima
+    valor alguno, de modo que la comprobación 4 se reporta `PENDIENTE` con su
+    motivo, conforme a `DEC-018`. ``ejecutor`` es el mismo invocable inyectable
+    de ``medir_memoria``: el módulo no lanza PowerShell en esta consulta.
+    """
+    ejecutar = _ejecutar_comando if ejecutor is None else ejecutor
+    try:
+        salida = ejecutar(list(COMANDO_VRAM_LIBRE))
+    except FileNotFoundError:
+        return None
+    return _vram_libre(salida)
 
 
 def medir_memoria(pids, *, ejecutor=None):

@@ -1,6 +1,6 @@
 # Clarificación — SPEC-017
 
-*Artefacto de rango 6: registro de las trece ambigüedades de `SPEC-017` resueltas con el propietario antes de abrir Plan, y de la reapertura de la clarificación del 2026-11-23. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1. La reapertura no declara G1: la aprobación anterior queda sin efecto sobre el contrato reformulado y la nueva aprobación firmada corresponde al propietario.*
+*Artefacto de rango 6: registro de las catorce ambigüedades de `SPEC-017` resueltas con el propietario antes de abrir Plan, y de las reaperturas de la clarificación del 2026-11-23 y del 2026-11-24. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1. Las reaperturas no declaran G1: la aprobación anterior queda sin efecto sobre el contrato reformulado y la nueva aprobación firmada corresponde al propietario. La reapertura del 2026-11-24, motivada por la reformulación de `RNF-007`, devuelve la spec a `draft` y deja sin cobertura la aprobación G1 registrada, la verificación G3 y el informe de validación.*
 
 ## Hallazgos de ambigüedad
 
@@ -121,9 +121,18 @@
 - **Fecha:** 2026-11-23 (UTC).
 - **Responsable:** Agent Sebaxtian.
 
+### AMB-014
+
+- **Descripción:** `RNF-007` exigía que «el número de cargas registradas con menos de 512 MiB de VRAM libre DEBE ser 0», y el corpus de registros conserva cargas por debajo de ese umbral que `RNF-004` prohíbe sobrescribir. La observación `O-01` del informe de validación cita 4: `20261122T203814Z-resiliencia-carga-inicial` con `56 MiB`, `20261124T174952Z-rendimiento-comparacion-micro-lote` con `389 MiB`, `20261124T175021Z-rendimiento-comparacion-micro-lote` con `53 MiB` y `20261124T192807Z-rendimiento-comparacion-contexto` con `336 MiB`. El recuento completo del corpus es de 13 cargas por debajo del umbral: además de esas 4, `20261123T144036Z-resiliencia-comparacion-ncmoe` y `20261123T144150Z-resiliencia-comparacion-ncmoe` con `133 MiB` cada una, `20261123T164756Z`, `20261123T164947Z`, `20261123T171120Z` y `20261123T171245Z` de la serie `resiliencia-comparacion-ncmoe` con `25 MiB` cada una, `20261124T113511Z-rendimiento-comparacion-ncmoe` con `25 MiB`, `20261124T190815Z-resiliencia-comparacion-ncmoe` y `20261124T191036Z-rendimiento-comparacion-ncmoe` con `389 MiB` cada una. La configuración vigente sí cumple el umbral: la última carga registrada del perfil `resiliencia` declara `3889 MiB` libres en `20261124T190907Z-resiliencia-comparacion-ncmoe`, y la última carga registrada del perfil `rendimiento`, `20261124T192807Z-rendimiento-comparacion-contexto` con `336 MiB`, se conserva como evidencia de una comparación que no promueve el perfil.
+- **Pregunta:** ¿Cómo se enuncia la VRAM libre de `RNF-007` sin exigir un recuento histórico que obligue a destruir la evidencia que `RNF-004` manda conservar?
+- **Respuesta:** el requisito expresa una condición de promoción y no un recuento: ningún perfil se promueve al estado aprobado si su última carga registrada declara menos de `512 MiB` de VRAM libre sobre la GPU dedicada, y las cargas que no alcanzan el umbral se conservan como evidencia sin constituir promoción.
+- **Decisión:** reformulación de `RNF-007` como condición de promoción y parches a `CA-007` y a `CB-004` para leer el umbral sobre la última carga registrada del perfil y para declarar que las cargas por debajo del umbral permanecen como evidencia sin constituir promoción. Aprobada por el propietario el 2026-11-24. La spec vuelve a `draft` por `T11`, la clarificación se reabre y la aprobación G1 registrada, la verificación G3 y el informe de validación dejan de cubrir el contrato reformulado; la nueva aprobación firmada de G1 queda pendiente del propietario.
+- **Fecha:** 2026-11-24 (UTC).
+- **Responsable:** Agent Sebaxtian.
+
 ## Casos borde nuevos
 
-Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su efecto sobre la promoción del perfil, y su umbral de derrame no intencional se alinea con `RNF-003` conforme a `AMB-013`.
+Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su efecto sobre la promoción del perfil: su umbral de derrame no intencional se alinea con `RNF-003` conforme a `AMB-013` y su umbral de VRAM libre se lee sobre la última carga registrada del perfil conforme a `AMB-014`.
 
 ## Parches aplicados a `spec.md`
 
@@ -143,6 +152,10 @@ Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su
 - [x] `RF-006` ampliado de 21 a 22 campos con el campo 22 «Memoria de expertos en host» en MiB y con los 13 campos de magnitud 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22; `RNF-005` y `CA-005` alineados con los 22 campos y los 13 campos de magnitud — afecta a `RF-006`, `RNF-005` y `CA-005`.
 - [x] `CB-004` y `CA-007` con el umbral de derrame no intencional de como máximo 512 MiB en lugar de 0 MiB de desbordamiento, con la conservación de la medición registrada y de los 512 MiB de VRAM libre de `RNF-007` — afecta a `CB-004` y `CA-007`.
 - [x] Frontmatter con `status` `draft`, `version` `0.5.0` y `updated` 2026-11-23; fila 0.5.0 en `## Historial de cambios`; fila de reversión `tasked` → `draft` en `### Historial de transiciones` — afecta a la estructura de `spec.md`.
+- [x] `RNF-007` reformulado como condición de promoción: el sistema no promueve 1 perfil al estado aprobado cuya última carga registrada declare menos de `512 MiB` de VRAM libre sobre la GPU dedicada, y las cargas por debajo del umbral se conservan como evidencia conforme a `RNF-004` sin constituir promoción — afecta a `RNF-007` y a `CA-007`.
+- [x] `CA-007` con el umbral de `512 MiB` de VRAM libre leído sobre la última carga registrada del perfil, con la conservación de las cargas por debajo del umbral como evidencia y con la prohibición de promover el perfil en ese caso — afecta a `CA-007`.
+- [x] `CB-004` con la condición de promoción sobre la última carga registrada del perfil y con la conservación de las cargas por debajo del umbral como evidencia conforme a `RNF-004` — afecta a `CB-004` y a `CA-007`.
+- [x] Frontmatter con `status` `draft`, `version` `0.10.0` y `updated` 2026-11-24; fila 0.10.0 en `## Historial de cambios`; fila de reapertura `implemented` → `draft` por `T11` en `### Historial de transiciones` — afecta a la estructura de `spec.md`.
 
 ## Decisiones de negocio
 
@@ -157,4 +170,5 @@ Sin casos borde nuevos en esta clarificación. `CB-004` conserva su número y su
 - El destino de la feature permanece abierto hasta la confirmación del propietario y el release se decide después de esa confirmación; el campo `release` del frontmatter permanece vacío y la publicación queda fuera de alcance.
 - El modelo draft es opcional: habilita la alternativa sin decodificación especulativa y no integra el perfil canónico. Su ausencia no impide iniciar el perfil alternativo.
 - La reformulación de `RNF-003` y la ampliación de `RF-006` a 22 campos reabren la clarificación y devuelven la spec a `draft`: la aprobación de G1 registrada el 2026-11-20 no cubre el contrato reformulado y la nueva aprobación firmada queda pendiente del propietario.
+- La VRAM libre de `RNF-007` se enuncia como condición de promoción y no como recuento histórico: ningún perfil se promueve al estado aprobado si su última carga registrada declara menos de `512 MiB` de VRAM libre sobre la GPU dedicada, y las cargas que no alcanzan el umbral se conservan como evidencia por `RNF-004`. La reformulación reabre la clarificación y devuelve la spec a `draft` por `T11`: la aprobación G1 registrada, la verificación G3 y el informe de validación dejan de cubrir el contrato reformulado y la nueva aprobación firmada queda pendiente del propietario.
 - Esta clarificación no declara compuerta alguna ni la aprobación de la configuración. El cierre de `clarify.md` habilita la lectura de G1 por el propietario y no sustituye su firma.

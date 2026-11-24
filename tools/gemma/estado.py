@@ -6,7 +6,10 @@ conforme a `CA-004`, `CA-007` y `CA-015`, sobre la tabla de `C-4`, el bloque de
 manifiesto), `DEC-008` (el valor inicial rige mientras la desviación no declara
 1 comparación completa), `DEC-009` (solo la firma `G` acredita la aprobación),
 `DEC-012` (funciones puras, sin GPU ni artefactos reales) y `DEC-020` (la huella
-se calcula sobre las `opciones` declaradas y no sobre las efectivas).
+se calcula sobre las `opciones` declaradas y no sobre las efectivas) y `DEC-026`
+(el derrame no intencional de `RNF-003` se calcula como la fila 19 menos la fila
+22 y debe ser de como máximo `512` MiB; la memoria de expertos en host del campo
+22 es descarga intencional y no cuenta como derrame).
 
 Contrato:
 
@@ -18,15 +21,18 @@ Contrato:
   medición o las opciones modificadas. ``aprobado`` exige ``medido`` vigente,
   cada desviación con su bloque de comparación completo de las 10 claves de
   `C-7`, ``aprobacion.umbral_tg_tokens_por_segundo`` presente,
-  ``aprobacion.declarado_por`` con fecha, y la última carga con
-  ``desbordamiento_mib`` igual a ``0`` y ``vram_libre_mib`` de al menos
-  ``512``; si falla 1 condición, el estado reportado es ``candidato`` y el
-  motivo la nombra con su valor.
+  ``aprobacion.declarado_por`` con fecha, y la última carga con 1 derrame no
+  intencional de como máximo ``512`` MiB —fila 19 menos fila 22— y
+  ``vram_libre_mib`` de al menos ``512``; si falla 1 condición, el estado
+  reportado es ``candidato`` y el motivo la nombra con su valor.
 - ``elegible_para_aprobado(manifiesto, registros, ultima_carga) -> (bool,
   motivo | None)`` devuelve ``(True, None)`` solo si se cumplen todas las
   condiciones anteriores. ``ultima_carga`` es el identificador del registro de
-  la carga y debe existir en ``registros``: el desbordamiento se lee de su
-  fila 19 y la VRAM libre de su fila 14 de `C-6`.
+  la carga y debe existir en ``registros``: el derrame se lee de su fila 19
+  menos su fila 22, y la VRAM libre de su fila 14 de `C-6`. Si la fila 22
+  declara ``no disponible`` el derrame no se puede calcular y la elegibilidad es
+  falsa con 1 motivo que nombra el campo, sin asumir ``0`` MiB de descarga
+  intencional.
 - ``verificar_aprobacion(manifiesto, *, ruta, ejecutor=None) -> (bool, motivo |
   None)`` consulta ``git log --format=%G? -1 -- <ruta>`` y acredita solo la
   firma ``G``; ``N``, ``B`` y ``U`` no acreditan y el motivo transcribe el
@@ -84,12 +90,15 @@ CAMPOS_COMPARACION = (
     "delta_ram_mib",
 )
 
-# `C-6`: las 2 filas que decide la elegibilidad de `C-4`.
+# `C-6`: las filas que deciden la elegibilidad de `C-4` y el campo 22 que
+# descuenta la descarga intencional de expertos a la CPU del derrame.
 FILA_VRAM_LIBRE = 14
 FILA_DESBORDAMIENTO = 19
+FILA_MEMORIA_EXPERTOS = 22
 
-# `C-4`: umbrales de la última carga.
-DESBORDAMIENTO_ADMITIDO_MIB = 0.0
+# `C-4`, `RNF-003` y `DEC-026`: umbrales de la última carga. El derrame no
+# intencional es la fila 19 menos la fila 22.
+DERRAME_ADMITIDO_MIB = 512.0
 VRAM_LIBRE_MINIMA_MIB = 512.0
 
 # `C-5`: el único propósito que identifica la carga.
@@ -406,20 +415,43 @@ def _motivo_declaracion(manifiesto):
 
 
 def _motivo_carga(registros, ultima_carga):
-    """Motivo del incumplimiento de las filas 19 y 14 de la última carga."""
+    """Motivo del incumplimiento del derrame y de las filas 22 y 14.
+
+    El derrame no intencional de `RNF-003` es la fila 19 menos la fila 22,
+    conforme a `DEC-026`: la memoria de expertos en host es descarga intencional
+    y no cuenta como derrame. Si falta 1 de las 2 magnitudes el derrame no se
+    puede calcular y el motivo lo nombra, sin asumir `0` en la fila 22.
+    """
     lectura = _lectura_carga(registros, ultima_carga)
 
     desbordamiento = _magnitud_mib(lectura, FILA_DESBORDAMIENTO, ultima_carga)
     if desbordamiento is None:
         return (
             f"la última carga «{ultima_carga}» declara «{NO_DISPONIBLE}» en la "
-            "fila 19 (desbordamiento) y RNF-003 exige 0 MiB"
+            f"fila {FILA_DESBORDAMIENTO} (desbordamiento hacia memoria "
+            "compartida) y el derrame no intencional de RNF-003 no se puede "
+            f"calcular: el umbral es de como máximo {DERRAME_ADMITIDO_MIB:g} MiB"
         )
-    if desbordamiento != DESBORDAMIENTO_ADMITIDO_MIB:
+
+    expertos = _magnitud_mib(lectura, FILA_MEMORIA_EXPERTOS, ultima_carga)
+    if expertos is None:
         return (
-            f"la última carga «{ultima_carga}» declara desbordamiento de "
-            f"{_texto_fila(lectura, FILA_DESBORDAMIENTO)} y RNF-003 exige "
-            f"{DESBORDAMIENTO_ADMITIDO_MIB:g} MiB"
+            f"la última carga «{ultima_carga}» declara «{NO_DISPONIBLE}» en la "
+            f"fila {FILA_MEMORIA_EXPERTOS} (Memoria de expertos en host) y el "
+            "derrame no intencional de RNF-003 no se puede calcular: el umbral "
+            f"es de como máximo {DERRAME_ADMITIDO_MIB:g} MiB y la descarga "
+            "intencional de expertos no se asume 0"
+        )
+
+    derrame = desbordamiento - expertos
+    if derrame > DERRAME_ADMITIDO_MIB:
+        return (
+            f"la última carga «{ultima_carga}» declara un derrame no "
+            f"intencional de {derrame:g} MiB —"
+            f"{_texto_fila(lectura, FILA_DESBORDAMIENTO)} de desbordamiento "
+            f"total menos {_texto_fila(lectura, FILA_MEMORIA_EXPERTOS)} de "
+            f"expertos en host— y RNF-003 exige como máximo "
+            f"{DERRAME_ADMITIDO_MIB:g} MiB"
         )
 
     libre = _magnitud_mib(lectura, FILA_VRAM_LIBRE, ultima_carga)
@@ -500,7 +532,8 @@ def _motivo_de_aprobado(manifiesto, registros, ultima_carga):
     if ultima_carga is None:
         return (
             "la última carga: 0 registros declaran proposito «carga» y C-4 "
-            "exige 1 carga registrada con desbordamiento de 0 MiB y al menos "
+            "exige 1 carga registrada con un derrame no intencional de como "
+            f"máximo {DERRAME_ADMITIDO_MIB:g} MiB y al menos "
             f"{VRAM_LIBRE_MINIMA_MIB:g} MiB de VRAM libre"
         )
     return _motivo_carga(registros, ultima_carga)

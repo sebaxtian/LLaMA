@@ -36,7 +36,18 @@ Estas pruebas se ejecutaron en rojo mientras `tools/gemma/precheck.py` no
 existía: `import precheck` lanzaba `ModuleNotFoundError`. Los árboles
 temporales se construyen con `tempfile` bajo `tmp/` y el lector de metadatos se
 sustituye por 1 doble, de modo que la suite no lee `bin/`, `models/` ni la GPU,
-conforme a `DEC-012`.
+conforme a `DEC-012`. `T-068` añade
+`test_presupuesto_sin_vram_informada_queda_pendiente`, que fija el camino de
+`vram_disponible_mib` en `None` —el retorno de `medir.vram_libre_mib` sin
+`nvidia-smi`—: la comprobación 4 se reporta `PENDIENTE` con su motivo, no se
+estima ningún valor y el cierre es `4 de 5 … 1 pendiente`, conforme a
+`DEC-018`; la regla no cambia, solo se acredita que recibe y usa el valor.
+`T-075` pasa el bloque `presupuesto_vram` a las 4 claves de `C-1` —con
+`kv_swa_mib` fija y `kv_no_swa_por_1024_tokens_mib` proporcional al contexto— y
+rechaza la clave retirada `kv_por_1024_tokens_mib` con `ValueError`, conforme a
+`DEC-028`; los bloques sintéticos de la suite declaran esas 4 claves y los casos
+que leen 1 manifiesto versionado sustituyen su bloque, porque los 3 manifiestos
+conservan la clave retirada hasta `T-077`.
 """
 
 import json
@@ -65,19 +76,23 @@ ESTADOS = ("SUPERADA", "FALLIDA", "PENDIENTE")
 # Los códigos de `C-8` que produce la comprobación previa.
 CODIGOS = (0, 3, 4, 5, 6)
 
-# Los 7 ejes de `C-2` en su valor inicial, que es el que declara el perfil
-# `sin_especulativa` y el que usan los manifiestos sintéticos por omisión.
+# Los 9 ejes de `C-2` en su valor inicial, que es el que declara el perfil
+# `sin_especulativa` y el que usan los manifiestos sintéticos por omisión; los 2
+# ejes de caché KV declaran `q8_0` conforme a `DEC-028` y `flash_attn` declara
+# `on` conforme a `DEC-029`.
 OPCIONES_INICIALES = {
     "gpu_layers": "all",
-    "flash_attn": "off",
+    "flash_attn": "on",
     "ctx_size": 4096,
     "ubatch": 512,
     "ncmoe": 0,
     "load_mode": "none",
     "parallel": 1,
+    "cache_type_k": "q8_0",
+    "cache_type_v": "q8_0",
 }
 
-# Forma que el binario enumera para cada eje, según el doble de `T-014`.
+# Forma que el binario enumera para cada eje de `C-2`, según el doble de `T-014`.
 OPCIONES_ACEPTADAS = {
     "gpu_layers": "--n-gpu-layers",
     "flash_attn": "--flash-attn",
@@ -86,6 +101,8 @@ OPCIONES_ACEPTADAS = {
     "ncmoe": "--n-cpu-moe",
     "load_mode": "--load-mode",
     "parallel": "--parallel",
+    "cache_type_k": "--cache-type-k",
+    "cache_type_v": "--cache-type-v",
 }
 
 # VRAM disponible que declaran los casos que no la ponen a prueba.
@@ -100,21 +117,67 @@ CUANTIZACION = {
     "tamano_bytes": 14249047104,
 }
 
-# Bloque `presupuesto_vram` incompleto: 3 claves en `null` y la marca que nombra
-# la tarea que lo escribe, conforme a `C-1`, `DEC-018` y `DEC-025`.
+# Bloque `presupuesto_vram` incompleto: las 4 claves de `C-1` en `null` y la marca
+# que nombra la tarea que lo escribe, conforme a `DEC-018`, `DEC-025` y `DEC-028`.
 PRESUPUESTO_PENDIENTE = {
     "pesos_en_vram_mib": None,
-    "kv_por_1024_tokens_mib": None,
+    "kv_no_swa_por_1024_tokens_mib": None,
+    "kv_swa_mib": None,
     "buffer_computo_mib": None,
     "pendiente": "T-059",
 }
 
-# Presupuesto que `T-036` midió en los 3 manifiestos, evaluado con el contexto
-# efectivo de `C-3` y no con el declarado: `14938.59 + 120.0 × 4096 / 1024 +
-# 782.03 = 16200.62` MiB. La VRAM disponible se declara 1 MiB por encima para
-# que el veredicto no dependa del redondeo en coma flotante, de modo que la
-# comprobación 4 se resuelve `SUPERADA` y no `FALLIDA` con el código `6`.
-VRAM_DEL_PRESUPUESTO_MEDIDO_MIB = 16201
+# Bloque sintético de 4 claves que resuelve la comprobación 4 con el contexto
+# efectivo de `C-3` y no con el declarado: `14938.59 + 100.0 × 4096 / 1024 + 82.0 +
+# 782.03 = 16202.62` MiB. La VRAM disponible se declara 1 MiB por encima para que
+# el veredicto no dependa del redondeo en coma flotante, de modo que la
+# comprobación 4 se resuelve `SUPERADA` y no `FALLIDA` con el código `6`. Los 2
+# valores de caché son sintéticos: la medición de la caché no-SWA y de la caché
+# SWA la escribe `T-077` con la medición de `T-076`.
+VRAM_DEL_PRESUPUESTO_MEDIDO_MIB = 16203
+
+# Bloque completo de 4 claves con el que los casos que necesitan 1 presupuesto
+# medido construyen su manifiesto sintético: `14938.59 + 100.0 × 4096 / 1024 +
+# 82.0 + 782.03 = 16202.62` MiB con 4096 tokens de contexto.
+PRESUPUESTO_MEDIDO = {
+    "pesos_en_vram_mib": 14938.59,
+    "kv_no_swa_por_1024_tokens_mib": 100.0,
+    "kv_swa_mib": 82.0,
+    "buffer_computo_mib": 782.03,
+}
+
+# Bloque incompleto sintético para los casos que necesitan la comprobación 4
+# `PENDIENTE` una vez que `T-071` escribe el presupuesto medido de `rendimiento`:
+# la marca es sintética y no nombra ninguna tarea del corpus.
+MARCA_PENDIENTE_SINTETICA = "T-999"
+PRESUPUESTO_PENDIENTE_SINTETICO = {
+    "pesos_en_vram_mib": None,
+    "kv_no_swa_por_1024_tokens_mib": None,
+    "kv_swa_mib": None,
+    "buffer_computo_mib": None,
+    "pendiente": MARCA_PENDIENTE_SINTETICA,
+}
+
+# `T-075` y `DEC-028`: bloque sintético de 4 claves con la caché SWA fija, para
+# acreditar que solo el término no-SWA escala con el contexto: con `4096` tokens
+# el consumo es `10000.0 + 40.0 × 4 + 500.0 + 500.0 = 11160` MiB y con `32768`
+# tokens es `10000.0 + 40.0 × 32 + 500.0 + 500.0 = 12280` MiB, de modo que la
+# diferencia de `1120` MiB es solo el término no-SWA y la SWA se suma 1 sola vez
+# en cada contexto.
+PRESUPUESTO_CON_SWA_FIJA = {
+    "pesos_en_vram_mib": 10000.0,
+    "kv_no_swa_por_1024_tokens_mib": 40.0,
+    "kv_swa_mib": 500.0,
+    "buffer_computo_mib": 500.0,
+}
+
+# Bloque sintético que conserva la clave retirada por `DEC-028`: la comprobación 4
+# lo rechaza con `ValueError` y ninguna función lee `kv_por_1024_tokens_mib`.
+PRESUPUESTO_CON_CLAVE_RETIRADA = {
+    "pesos_en_vram_mib": 12000,
+    "kv_por_1024_tokens_mib": 64,
+    "buffer_computo_mib": 512,
+}
 
 # Artefactos sintéticos del manifiesto de prueba, con ruta relativa a la raíz.
 ARTEFACTOS = {
@@ -141,10 +204,20 @@ def _cargar_modulo():
     return precheck
 
 
-def _leer_manifiesto(nombre):
-    """Lee 1 manifiesto versionado de `src/gemma/perfiles/`."""
+def _leer_manifiesto(nombre, presupuesto=None):
+    """Lee 1 manifiesto versionado de `src/gemma/perfiles/`.
+
+    `T-075` pasa el bloque `presupuesto_vram` a las 4 claves de `C-1` y los 3
+    manifiestos conservan la clave retirada `kv_por_1024_tokens_mib` hasta `T-077`,
+    de modo que la comprobación 4 los rechaza con `ValueError`. Los casos que leen
+    1 manifiesto versionado sin poner a prueba el presupuesto sustituyen su bloque
+    por `presupuesto`, que es 1 bloque de 4 claves construido en la prueba.
+    """
     ruta = DIRECTORIO_PERFILES / nombre
-    return json.loads(ruta.read_text(encoding="utf-8"))
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    if presupuesto is not None:
+        datos["presupuesto_vram"] = dict(presupuesto)
+    return datos
 
 
 def _manifiesto(cuantizacion=None, opciones=None, presupuesto=None, estado="candidato"):
@@ -305,18 +378,23 @@ class ExistenciasTest(CasoDeComprobacionPrevia):
     def test_existencias_superadas(self):
         manifiesto = _leer_manifiesto("rendimiento.json")
         self.assertEqual(4, len(manifiesto["artefactos"]))
-        self.assertNotIn(
-            "pendiente",
-            manifiesto["presupuesto_vram"],
-            "el bloque medido por T-036 ya no conserva la clave pendiente",
+        # `T-071` escribe el presupuesto medido con `ncmoe` `6` y retira la marca
+        # `pendiente` de `rendimiento`: el caso construye su bloque incompleto en la
+        # copia del manifiesto, con 1 marca sintética que ninguna tarea del corpus
+        # usa, y conserva la comprobación 4 `PENDIENTE` que `DEC-018` admite
+        # mientras falta la medición.
+        manifiesto["presupuesto_vram"] = dict(PRESUPUESTO_PENDIENTE_SINTETICO)
+        self.assertEqual(
+            MARCA_PENDIENTE_SINTETICA,
+            manifiesto["presupuesto_vram"]["pendiente"],
+            "el bloque de la prueba declara la marca de la tarea que lo completa",
         )
         self._crear_artefactos(manifiesto)
 
         # El manifiesto declara `ctx_size` en `131072`, pero su desviación no
         # tiene comparación medida y el valor efectivo de `C-3` es `4096`: la
-        # comprobación 4 se contrasta con ese contexto y con 1 VRAM disponible
-        # que iguala el presupuesto medido, de modo que el caso sigue poniendo
-        # a prueba la comprobación 1 y el código `0`.
+        # comprobación 4 queda pendiente y el caso sigue poniendo a prueba la
+        # comprobación 1 y el código `0`.
         resultado = self._ejecutar(
             manifiesto,
             vram_disponible_mib=VRAM_DEL_PRESUPUESTO_MEDIDO_MIB,
@@ -328,6 +406,36 @@ class ExistenciasTest(CasoDeComprobacionPrevia):
             self._estado(resultado, 1),
             "los 4 artefactos del perfil rendimiento están presentes",
         )
+        self.assertEqual(
+            "PENDIENTE",
+            self._estado(resultado, 4),
+            "el presupuesto pendiente no se declara superado ni fallido",
+        )
+        self.assertIn(
+            MARCA_PENDIENTE_SINTETICA,
+            self._detalle(resultado, 4),
+            "la comprobación 4 nombra la tarea que escribe el presupuesto",
+        )
+        self.assertEqual(0, resultado["codigo"])
+
+        # Con el bloque medido que escribe `T-071` —el presupuesto de `ncmoe` `6`,
+        # que es `14000.11` MiB para 4096 tokens efectivos— la comprobación 4 se
+        # resuelve con el contexto efectivo de `C-3` y 0 valores se estiman. `T-075`
+        # sustituye el bloque por el sintético de 4 claves de `DEC-028`, porque el
+        # manifiesto conserva la clave retirada hasta `T-077`.
+        manifiesto = _leer_manifiesto("rendimiento.json", PRESUPUESTO_MEDIDO)
+        self.assertNotIn(
+            "pendiente",
+            manifiesto["presupuesto_vram"],
+            "el bloque medido de rendimiento no conserva la clave pendiente",
+        )
+        self._crear_artefactos(manifiesto)
+        resultado = self._ejecutar(
+            manifiesto,
+            vram_disponible_mib=VRAM_DEL_PRESUPUESTO_MEDIDO_MIB,
+            opciones_efectivas=dict(OPCIONES_INICIALES),
+        )
+
         self.assertEqual(
             "SUPERADA",
             self._estado(resultado, 4),
@@ -341,11 +449,15 @@ class ExistenciasTest(CasoDeComprobacionPrevia):
         self.assertEqual(0, resultado["codigo"])
 
     def test_artefacto_ausente(self):
-        manifiesto = _leer_manifiesto("rendimiento.json")
+        # `T-075`: el bloque de 4 claves se construye en la prueba; el manifiesto
+        # conserva la clave retirada hasta `T-077`.
+        manifiesto = _leer_manifiesto("rendimiento.json", PRESUPUESTO_MEDIDO)
         ausente = manifiesto["artefactos"]["mmproj"]
         self._crear_artefactos(manifiesto, omitir=("mmproj",))
 
-        resultado = self._ejecutar(manifiesto)
+        resultado = self._ejecutar(
+            manifiesto, vram_disponible_mib=VRAM_DEL_PRESUPUESTO_MEDIDO_MIB
+        )
 
         self.assertEqual(
             "FALLIDA",
@@ -358,14 +470,18 @@ class ExistenciasTest(CasoDeComprobacionPrevia):
         )
 
     def test_perfil_sin_especulativa_sin_draft(self):
-        manifiesto = _leer_manifiesto("sin_especulativa.json")
+        # `T-075`: el bloque de 4 claves se construye en la prueba; el manifiesto
+        # conserva la clave retirada hasta `T-077`.
+        manifiesto = _leer_manifiesto("sin_especulativa.json", PRESUPUESTO_MEDIDO)
         self.assertIsNone(
             manifiesto["artefactos"]["draft"],
             "el perfil sin decodificación especulativa no declara modelo draft",
         )
         self._crear_artefactos(manifiesto)
 
-        resultado = self._ejecutar(manifiesto)
+        resultado = self._ejecutar(
+            manifiesto, vram_disponible_mib=VRAM_DEL_PRESUPUESTO_MEDIDO_MIB
+        )
 
         self.assertEqual(
             "SUPERADA",
@@ -454,16 +570,69 @@ class OpcionesTest(CasoDeComprobacionPrevia):
             3, resultado["codigo"], "la opción rechazada devuelve el código 3"
         )
 
+    def test_comprobacion_3_enumera_los_9_ejes(self):
+        """`T-074`, `C-9` y `DEC-028`: la comprobación 3 enumera los 9 ejes.
+
+        Sobre el manifiesto real `rendimiento.json`, con los 9 ejes de `C-2` en el
+        mapa del binario, la comprobación se declara `SUPERADA` y su detalle declara
+        el recuento de 9 y las 2 formas largas de la caché KV, de modo que el
+        recuento que usa `C-9` es 9 y no 7.
+        """
+        manifiesto = _leer_manifiesto("rendimiento.json", PRESUPUESTO_MEDIDO)
+        self._crear_artefactos(manifiesto)
+
+        # El contexto efectivo de `C-3` es el inicial de `4096` tokens, de modo que
+        # la comprobación 4 se resuelve con el presupuesto medido y el código es `0`:
+        # el caso pone a prueba la comprobación 3 y no el presupuesto. El bloque de
+        # 4 claves se construye en la prueba porque el manifiesto conserva la clave
+        # retirada hasta `T-077`.
+        resultado = self._ejecutar(
+            manifiesto,
+            vram_disponible_mib=VRAM_DEL_PRESUPUESTO_MEDIDO_MIB,
+            opciones_efectivas=dict(OPCIONES_INICIALES),
+        )
+
+        detalle = self._detalle(resultado, 3)
+        self.assertEqual(
+            "SUPERADA",
+            self._estado(resultado, 3),
+            "con los 9 ejes enumerados la comprobación 3 se declara superada",
+        )
+        self.assertIn(
+            "9 opciones enumeradas por el binario: ",
+            detalle,
+            f"el detalle declara el recuento de 9 ejes de C-2: {detalle}",
+        )
+        for forma in ("--cache-type-k", "--cache-type-v"):
+            with self.subTest(forma=forma):
+                self.assertIn(
+                    forma,
+                    detalle,
+                    f"el detalle enumera la forma larga {forma} de DEC-028",
+                )
+        print(
+            "test_comprobacion_3_enumera_los_9_ejes: "
+            f"detalle={detalle} codigo={resultado['codigo']}"
+        )
+        self.assertEqual(
+            0,
+            resultado["codigo"],
+            "con los 9 ejes enumerados y el presupuesto medido el código es 0",
+        )
+
 
 class PresupuestoTest(CasoDeComprobacionPrevia):
     """Comprobación 4 de `C-9`: presupuesto frente a la VRAM (`DEC-018`)."""
 
     def test_presupuesto_excedido(self):
+        # `T-075` y `DEC-028`: el consumo es `15900 + 512 × 8192 / 1024 + 256 + 512
+        # = 20764` MiB, con la caché SWA fija de 256 MiB.
         manifiesto = _manifiesto(
             opciones=dict(OPCIONES_INICIALES, ctx_size=8192),
             presupuesto={
                 "pesos_en_vram_mib": 15900,
-                "kv_por_1024_tokens_mib": 512,
+                "kv_no_swa_por_1024_tokens_mib": 512,
+                "kv_swa_mib": 256,
                 "buffer_computo_mib": 512,
             },
         )
@@ -522,6 +691,180 @@ class PresupuestoTest(CasoDeComprobacionPrevia):
             0, resultado["codigo"], "1 presupuesto pendiente no es 1 fallo"
         )
 
+    def test_presupuesto_sin_vram_informada_queda_pendiente(self):
+        """`T-068`: sin la consulta de VRAM la comprobación 4 no estima.
+
+        El bloque `presupuesto_vram` de `rendimiento` ya está medido —`T-071` lo
+        escribió con `ncmoe` `6`— y conserva la clave retirada hasta `T-077`, de modo
+        que el caso lo sustituye por el bloque sintético de 4 claves de `DEC-028`,
+        que también es 1 bloque completo, y `vram_disponible_mib` llega
+        en `None`, que es lo que devuelve
+        `medir.vram_libre_mib` cuando `nvidia-smi` no está disponible: la
+        comprobación 4 se reporta `PENDIENTE` con el motivo, no se declara
+        `SUPERADA` ni `FALLIDA` y no produce el código `6`, conforme a
+        `DEC-018`. El caso no toca la GPU ni el binario: los artefactos son
+        señuelos y el lector de metadatos es el doble de la suite.
+        """
+        manifiesto = _leer_manifiesto("rendimiento.json", PRESUPUESTO_MEDIDO)
+        self.assertNotIn(
+            "pendiente",
+            manifiesto["presupuesto_vram"],
+            "el bloque medido de rendimiento ya no conserva la clave pendiente",
+        )
+        self._crear_artefactos(manifiesto)
+
+        resultado = self._ejecutar(
+            manifiesto,
+            vram_disponible_mib=None,
+            opciones_efectivas=dict(OPCIONES_INICIALES),
+        )
+
+        detalle = self._detalle(resultado, 4)
+        self.assertEqual(
+            "PENDIENTE",
+            self._estado(resultado, 4),
+            "sin VRAM disponible la comprobación 4 queda pendiente y no se estima",
+        )
+        self.assertNotEqual(
+            "FALLIDA",
+            self._estado(resultado, 4),
+            "la falta de la consulta no produce el código 6 de presupuesto insuficiente",
+        )
+        self.assertIn(
+            "VRAM disponible no informada",
+            detalle,
+            "el detalle declara el motivo de la comprobación pendiente",
+        )
+        self.assertIn(
+            "no se contrasta ni se estima",
+            detalle,
+            "el detalle declara que ningún valor de VRAM se estima",
+        )
+        self.assertIn(
+            "4096 tokens",
+            detalle,
+            "el detalle conserva el contexto efectivo del presupuesto medido",
+        )
+        self.assertEqual(
+            0,
+            resultado["codigo"],
+            "la consulta ausente no es 1 fallo de C-8 y devuelve el código 0",
+        )
+
+        modulo = _cargar_modulo()
+        self.assertEqual(
+            "COMPROBACIÓN PREVIA: 4 de 5 comprobaciones superadas, 1 pendiente",
+            modulo.formatear_salida(resultado)[5],
+            "el cierre distingue la comprobación 4 pendiente, conforme a DEC-018",
+        )
+
+        print(
+            "test_presupuesto_sin_vram_informada_queda_pendiente: "
+            f"estado={self._estado(resultado, 4)} detalle={detalle!r} "
+            f"codigo={resultado['codigo']}"
+        )
+
+    def test_presupuesto_swa_no_escala_con_el_contexto(self):
+        """`T-075`, `C-9` y `DEC-028`: la caché SWA no escala con el contexto.
+
+        Con el bloque de 4 claves y la caché SWA fija de `500` MiB, el consumo de
+        `4096` tokens es `11160` MiB y el de `32768` tokens es `12280` MiB: la
+        diferencia de `1120` MiB es solo el término no-SWA de `40` MiB por cada
+        `1024` tokens, de modo que `kv_swa_mib` se suma 1 sola vez en cada
+        contexto y no se multiplica por el tamaño del contexto.
+        """
+        modulo = _cargar_modulo()
+        consumos = {}
+        for tokens in (4096, 32768):
+            manifiesto = _manifiesto(
+                opciones=dict(OPCIONES_INICIALES, ctx_size=tokens),
+                presupuesto=PRESUPUESTO_CON_SWA_FIJA,
+            )
+            self._crear_artefactos(manifiesto)
+
+            # 1 MiB de VRAM disponible deja la comprobación 4 `FALLIDA` y su
+            # detalle publica el consumo del contexto evaluado.
+            resultado = self._ejecutar(manifiesto, vram_disponible_mib=1)
+            detalle = self._detalle(resultado, 4)
+            consumos[tokens] = modulo._consumo_vram_mib(
+                PRESUPUESTO_CON_SWA_FIJA, {"ctx_size": tokens}
+            )
+
+            self.assertEqual(
+                "FALLIDA",
+                self._estado(resultado, 4),
+                "el consumo de la prueba excede la VRAM disponible y falla",
+            )
+            self.assertIn(
+                f"{tokens} tokens de contexto",
+                detalle,
+                f"el detalle nombra el contexto de {tokens} tokens",
+            )
+            self.assertIn(
+                f"{round(consumos[tokens])} MiB",
+                detalle,
+                f"el detalle declara el consumo de {round(consumos[tokens])} MiB",
+            )
+
+        self.assertAlmostEqual(11160.0, consumos[4096])
+        self.assertAlmostEqual(12280.0, consumos[32768])
+        self.assertAlmostEqual(
+            PRESUPUESTO_CON_SWA_FIJA["kv_no_swa_por_1024_tokens_mib"]
+            * (32768 - 4096)
+            / 1024,
+            consumos[32768] - consumos[4096],
+            msg="la diferencia entre los 2 contextos es solo el término no-SWA",
+        )
+        for tokens, consumo in consumos.items():
+            with self.subTest(tokens=tokens):
+                self.assertAlmostEqual(
+                    PRESUPUESTO_CON_SWA_FIJA["kv_swa_mib"],
+                    consumo
+                    - PRESUPUESTO_CON_SWA_FIJA["pesos_en_vram_mib"]
+                    - PRESUPUESTO_CON_SWA_FIJA["kv_no_swa_por_1024_tokens_mib"]
+                    * tokens
+                    / 1024
+                    - PRESUPUESTO_CON_SWA_FIJA["buffer_computo_mib"],
+                    msg="la caché SWA se suma 1 sola vez y no escala con el contexto",
+                )
+
+        print(
+            "test_presupuesto_swa_no_escala_con_el_contexto: "
+            f"consumo_4096={consumos[4096]} consumo_32768={consumos[32768]} "
+            f"delta={consumos[32768] - consumos[4096]} "
+            f"kv_swa={PRESUPUESTO_CON_SWA_FIJA['kv_swa_mib']}"
+        )
+
+    def test_presupuesto_con_clave_retirada_es_rechazado(self):
+        """`T-075`, `C-1` y `DEC-028`: `kv_por_1024_tokens_mib` no existe.
+
+        El bloque que declara la clave retirada es 1 bloque no conforme y la
+        comprobación 4 lo rechaza con `ValueError` que nombra la clave, de modo que
+        ningún presupuesto con la forma anterior se contrasta ni se interpreta.
+        """
+        manifiesto = _manifiesto(presupuesto=dict(PRESUPUESTO_CON_CLAVE_RETIRADA))
+        self._crear_artefactos(manifiesto)
+        modulo = _cargar_modulo()
+
+        with self.assertRaises(ValueError) as capturado:
+            modulo.ejecutar(
+                manifiesto,
+                self.raiz,
+                lector_metadatos=_lector_del_manifiesto(manifiesto),
+                opciones_aceptadas=dict(OPCIONES_ACEPTADAS),
+                vram_disponible_mib=VRAM_DISPONIBLE_MIB,
+            )
+
+        self.assertIn(
+            "kv_por_1024_tokens_mib",
+            str(capturado.exception),
+            "el rechazo nombra la clave retirada que el bloque declara",
+        )
+        print(
+            "test_presupuesto_con_clave_retirada_es_rechazado: "
+            f"error={str(capturado.exception)!r}"
+        )
+
 
 class ContextoEfectivoTest(CasoDeComprobacionPrevia):
     """Comprobación 4 de `C-9`: decide el contexto efectivo de `C-3`.
@@ -538,7 +881,8 @@ class ContextoEfectivoTest(CasoDeComprobacionPrevia):
             opciones=dict(OPCIONES_INICIALES, ctx_size=131072),
             presupuesto={
                 "pesos_en_vram_mib": 12000,
-                "kv_por_1024_tokens_mib": 64,
+                "kv_no_swa_por_1024_tokens_mib": 64,
+                "kv_swa_mib": 64,
                 "buffer_computo_mib": 512,
             },
         )
@@ -549,8 +893,8 @@ class ContextoEfectivoTest(CasoDeComprobacionPrevia):
             efectivas["ctx_size"],
             "las opciones efectivas de C-3 conservan el valor inicial del eje",
         )
-        # Con 4096 tokens el consumo es de 12 768 MiB y con los 131072
-        # declarados de 20 704 MiB, de modo que 13 000 MiB es intermedio.
+        # Con 4096 tokens el consumo es de 12 832 MiB y con los 131072
+        # declarados de 20 768 MiB, de modo que 13 000 MiB es intermedio.
         vram_intermedia_mib = 13000
 
         resultado = self._ejecutar(
@@ -649,8 +993,7 @@ class SalidaTest(CasoDeComprobacionPrevia):
 
         # El cierre con `pendiente` de `DEC-018` se conserva sobre 1 manifiesto
         # construido en la prueba cuyo bloque `presupuesto_vram` conserva la clave,
-        # porque los 3 manifiestos del repositorio ya declaran su presupuesto salvo
-        # `resiliencia`, que la conserva hasta que `T-059` lo escriba (`DEC-025`).
+        # porque los 3 manifiestos del repositorio declaran ya su presupuesto medido.
         manifiesto = _manifiesto()
         marca = manifiesto["presupuesto_vram"]["pendiente"]
         self.assertEqual(
@@ -690,6 +1033,7 @@ class SalidaTest(CasoDeComprobacionPrevia):
         # contexto efectivo de `C-3` —`4096` tokens— y el cierre ya no declara
         # ninguna pendiente, que es el estado que `DEC-018` deja de admitir.
         manifiesto = _leer_manifiesto("rendimiento.json")
+        manifiesto["presupuesto_vram"] = dict(PRESUPUESTO_MEDIDO)
         self._crear_artefactos(manifiesto)
         lineas = modulo.formatear_salida(
             self._ejecutar(

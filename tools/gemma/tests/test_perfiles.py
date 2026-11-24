@@ -37,16 +37,19 @@ RAIZ = Path(__file__).resolve().parents[3]
 DIRECTORIO_HERRAMIENTAS = RAIZ / "tools" / "gemma"
 DIRECTORIO_TMP = RAIZ / "tmp"
 
-# Valores iniciales de los 7 ejes de `C-2`, que rigen mientras la desviación no
-# declare 1 comparación completa.
+# Valores iniciales de los 9 ejes de `C-2`, que rigen mientras la desviación no
+# declare 1 comparación completa; los 2 ejes de caché KV declaran `q8_0`
+# conforme a `DEC-028` y `flash_attn` declara `on` conforme a `DEC-029`.
 INICIALES = {
     "gpu_layers": "all",
-    "flash_attn": "off",
+    "flash_attn": "on",
     "ctx_size": 4096,
     "ubatch": 512,
     "ncmoe": 0,
     "load_mode": "none",
     "parallel": 1,
+    "cache_type_k": "q8_0",
+    "cache_type_v": "q8_0",
 }
 
 # Claves del bloque de comparación de `C-7`: el bloque está completo solo si
@@ -175,7 +178,7 @@ class ResolucionOpcionesTest(ManejadorDeFixtures):
         self.assertEqual(
             INICIALES,
             resultado["opciones"],
-            "sin comparación rige el valor inicial de C-2 en los 7 ejes",
+            "sin comparación rige el valor inicial de C-2 en los 9 ejes",
         )
         self.assertEqual(["ctx_size"], resultado["omitidas"])
 
@@ -318,12 +321,14 @@ class HuellaOpcionesTest(unittest.TestCase):
         modulo = _cargar_modulo()
         un_orden = {
             "gpu_layers": "all",
-            "flash_attn": "off",
+            "flash_attn": "on",
             "ctx_size": 4096,
             "ubatch": 512,
             "ncmoe": 0,
             "load_mode": "none",
             "parallel": 1,
+            "cache_type_k": "q8_0",
+            "cache_type_v": "q8_0",
         }
         otro_orden = {
             "parallel": 1,
@@ -331,8 +336,10 @@ class HuellaOpcionesTest(unittest.TestCase):
             "ncmoe": 0,
             "ubatch": 512,
             "ctx_size": 4096,
-            "flash_attn": "off",
+            "flash_attn": "on",
             "gpu_layers": "all",
+            "cache_type_v": "q8_0",
+            "cache_type_k": "q8_0",
         }
 
         self.assertEqual(
@@ -349,7 +356,7 @@ class EstadoPorHuellaTest(ManejadorDeFixtures):
     def test_estado_degrada_por_huella(self):
         modulo = _cargar_modulo()
         opciones_vigentes = dict(INICIALES)
-        opciones_modificadas = dict(INICIALES, ctx_size=131072, flash_attn="on")
+        opciones_modificadas = dict(INICIALES, ctx_size=131072, ubatch=1024)
         huella_distinta = _huella_esperada(opciones_modificadas)
         huella_vigente = _huella_esperada(opciones_vigentes)
 

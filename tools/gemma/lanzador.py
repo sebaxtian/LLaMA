@@ -8,10 +8,14 @@ Modos:
 
 - ``comprobar`` ejecuta las 5 comprobaciones de `C-9`, imprime su salida y
   devuelve el código de `C-8` del resultado sin reinterpretarlo, sin lanzar el
-  servidor. La comprobación 4 se reporta `PENDIENTE` mientras el bloque
-  ``presupuesto_vram`` conserve su clave ``pendiente``, conforme a `DEC-018`, y
-  calcula su consumo con el `ctx_size` de las opciones efectivas de `C-3`, que
-  el modo resuelve con los registros disponibles, y no con el declarado.
+  servidor. La comprobación 4 contrasta el presupuesto medido del perfil con la
+  VRAM libre en MiB que informa la consulta de solo lectura
+  ``medir.vram_libre_mib`` por el punto inyectable ``VRAM_LIBRE_MIB``; sin esa
+  consulta disponible la comprobación se reporta `PENDIENTE` con su motivo y
+  ningún valor se estima, y mientras el bloque ``presupuesto_vram`` conserve su
+  clave ``pendiente`` se rige por `DEC-018`. El consumo se calcula con el
+  `ctx_size` de las opciones efectivas de `C-3`, que el modo resuelve con los
+  registros disponibles, y no con el declarado.
 - ``servir`` ejecuta la comprobación previa completa, resuelve las opciones
   efectivas de `C-3` con ``perfiles.resolver_opciones`` sobre los registros
   disponibles en ``results/gemma/<perfil>/``, lanza el ejecutable de
@@ -20,8 +24,14 @@ Modos:
   ``medir.medir_memoria`` sobre el árbol del proceso, cierra el servidor y no
   escribe registro alguno.
 - ``medir`` hace lo anterior, ejecuta la sonda de `DEC-011` cuando la prueba la
-  requiere y deja 1 registro propio de `C-5` con las 21 filas de `C-6` en
+  requiere y deja 1 registro propio de `C-5` con las 22 filas de `C-6` en
   ``results/gemma/<perfil>/`` bajo la raíz recibida; el código de `C-8` es `0`.
+  Con la sonda ejecutada imprime, antes de la línea del registro, 1 línea
+  ``SONDA: <tokens_generados> tokens en <segundos> s, <tokens_por_segundo>
+  tokens/s`` con el conteo del resultado y el tiempo medido alrededor de la
+  sonda, o ``SONDA: <tokens> tokens contados antes del corte`` con su motivo
+  cuando la sonda se declara `fallida`, de modo que `T-037` transcribe los 2000
+  tokens de `CB-003`; la línea no altera el registro ni el código de salida.
 - ``comparar`` exige ``--parametro`` y resuelve las opciones efectivas de `C-3`
   con los registros de comparación del perfil. Si la desviación del eje declara
   el bloque completo de `C-7`, usa ese bloque y la elegibilidad de
@@ -42,14 +52,21 @@ mientras el bloque conserve su clave ``pendiente`` el presupuesto no se estima,
 el cierre declara `4 de 5 comprobaciones superadas, 1 pendiente`, el campo 21 del
 registro lo declara ``no disponible`` y el código sigue siendo `0`.
 
+Memoria de expertos en host: el campo 22 de `C-6` transcribe la primera línea
+``CUDA_Host model buffer size = <n> MiB`` del modelo principal en la salida
+capturada del servidor, que ``_ServidorProceso.leer_salida`` devuelve antes de
+cerrar el proceso; la memoria del borrador no se suma ni se estima, y sin esa
+línea el campo declara ``no disponible``, conforme a `DEC-026`.
+
 Puntos inyectables de la suite, como atributos de módulo y sin opciones de
 línea de comandos fuera de `C-8`: ``MEDIR_MEMORIA`` (medición de memoria),
+``VRAM_LIBRE_MIB`` (VRAM libre de solo lectura para la comprobación 4),
 ``SONDEAR`` (sonda de contexto), ``LANZAR_SERVIDOR`` (ejecución del binario),
 ``EJECUTAR_COMPARACION`` (las 2 mediciones reales de la campaña de comparación)
 y las constantes ``URL_BASE`` y ``PUERTO`` del punto de acceso. El servidor
-lanzado expone ``pid``, ``activo()`` y ``cerrar()``; la medición recibe la
-lista de PID del árbol y la sonda la URL base. Las pruebas sustituyen además
-``binario.opciones_aceptadas``, ``binario.leer_version`` y
+lanzado expone ``pid``, ``activo()``, ``leer_salida()`` y ``cerrar()``; la
+medición recibe la lista de PID del árbol y la sonda la URL base. Las pruebas
+sustituyen además ``binario.opciones_aceptadas``, ``binario.leer_version`` y
 ``gguf.leer_metadatos``, de modo que ningún caso invoca ``nvidia-smi``,
 ``powershell.exe``, la GPU ni el binario real, conforme a `DEC-012`.
 
@@ -86,7 +103,7 @@ Contrato:
 - ``--modo comparar`` con 1 ``--parametro`` que no nombra 1 desviación del
   perfil imprime ``[ERROR] desviación no declarada: <clave>`` y devuelve `2`.
 
-El módulo usa ``argparse``, ``json``, ``os``, ``subprocess``, ``sys``,
+El módulo usa ``argparse``, ``json``, ``os``, ``re``, ``subprocess``, ``sys``,
 ``tempfile``, ``time``, ``urllib.error``, ``urllib.request``, ``datetime``,
 ``timedelta`` y ``pathlib`` de la biblioteca estándar, además de los módulos
 locales `binario`, `comparar`, `estado`, `medir`, `perfiles`, `precheck`,
@@ -99,6 +116,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -128,7 +146,7 @@ RAIZ_POR_DEFECTO = Path(__file__).resolve().parents[2]
 DIRECTORIO_PERFILES = Path("src") / "gemma" / "perfiles"
 SUFIJO_MANIFIESTO = ".json"
 
-# Manifiesto de los 7 ejes de `C-2`: no es 1 perfil, de modo que no se lista ni
+# Manifiesto de los 9 ejes de `C-2`: no es 1 perfil, de modo que no se lista ni
 # se selecciona con `--perfil`.
 MANIFIESTO_INICIAL = "parametros_iniciales"
 
@@ -172,9 +190,29 @@ TIPO_ESPECULATIVA_DRAFT_MTP = "draft-mtp"
 BANDERA_TIPO_ESPECULATIVA = "--spec-type"
 BANDERA_TECHO_BORRADOR = "--spec-draft-n-max"
 
-# `RF-009` y `DEC-011`: la prueba cuyo nombre es `carga` o empieza por
-# `carga-` requiere la sonda de contexto sostenido.
-PRUEBAS_CON_SONDA = ("carga",)
+# `RF-006` y `T-065`: `--log-verbosity 4` es 1 bandera de registro y no 1 eje de
+# `C-2`. Con ese nivel el binario imprime la línea
+# `CUDA_Host model buffer size = <n> MiB` del modelo principal, que es la fuente
+# del campo 22 de `C-6`; la bandera no entra en la resolución de `C-3` ni en la
+# huella de `DEC-020`, que se calcula sobre las `opciones` declaradas.
+BANDERA_VERBOSIDAD_REGISTRO = "--log-verbosity"
+VERBOSIDAD_REGISTRO = 4
+
+# `C-7`: la prueba que mide la alternativa de contexto menor de `T-041`, cuyo
+# registro exige el bloque cuando el eje es `ctx_size` con `131072` tokens.
+PRUEBA_ALTERNATIVA_CONTEXTO = "alternativa-contexto-menor"
+
+# `RF-009`, `CB-003` y `DEC-011`: la prueba de contexto sostenido es la de
+# `T-037` y requiere la sonda, además de la prueba de carga, que ya la disparaba;
+# `T-080` añade la alternativa de contexto menor de `T-041`, cuyo registro exige
+# las 2 velocidades del bloque de tiempos y que hasta entonces dejaba los campos
+# 16 y 17 en `no disponible` por quedar fuera de esta tupla.
+PRUEBAS_CON_SONDA = ("carga", "contexto-sostenido", PRUEBA_ALTERNATIVA_CONTEXTO)
+
+# `C-5`: solo la prueba de carga declara el propósito `carga`; las demás
+# mediciones, incluidas `contexto-sostenido` y `alternativa-contexto-menor`,
+# conservan el propósito `medicion`.
+PRUEBAS_DE_CARGA = ("carga",)
 
 # `C-6`: la marca de la fuente ausente que admite toda fila.
 NO_DISPONIBLE = registro.NO_DISPONIBLE
@@ -189,14 +227,11 @@ CLAVE_VELOCIDAD_PROMPT = "velocidad_prompt_tokens_por_segundo"
 PROPOSITO_COMPARACION = "comparacion"
 PREFIJO_PRUEBA_COMPARACION = "comparacion"
 
-# `C-7`: la prueba que mide la alternativa de contexto menor de `T-041`, cuyo
-# registro exige el bloque cuando el eje es `ctx_size` con `131072` tokens.
-PRUEBA_ALTERNATIVA_CONTEXTO = "alternativa-contexto-menor"
-
 # `C-6`: forma larga que el lanzamiento declara para cada eje de `C-2`; el eje
 # `load_mode` viaja como `--load-mode <valor>` porque el binario declara
 # `-lm, --load-mode` con los valores `auto`, `none`, `mmap`, `mlock`,
-# `mmap+mlock` y `dio`, y no enumera `--no-mmap`.
+# `mmap+mlock` y `dio`, y no enumera `--no-mmap`; los 2 tipos de caché KV de
+# `DEC-028` viajan como `--cache-type-k` y `--cache-type-v` con su valor efectivo.
 FORMA_DE_EJE = {
     "gpu_layers": "--n-gpu-layers",
     "flash_attn": "--flash-attn",
@@ -205,7 +240,16 @@ FORMA_DE_EJE = {
     "ncmoe": "--n-cpu-moe",
     "load_mode": "--load-mode",
     "parallel": "--parallel",
+    "cache_type_k": "--cache-type-k",
+    "cache_type_v": "--cache-type-v",
 }
+
+# `C-6` y `DEC-026`: el campo 22 «Memoria de expertos en host» toma la primera
+# línea `CUDA_Host model buffer size = <n> MiB` del modelo principal en la
+# salida del servidor; la del draft no se suma ni se estima ningún valor.
+PATRON_MEMORIA_EXPERTOS = re.compile(
+    r"CUDA_Host model buffer size\s*=\s*(\d+(?:\.\d+)?)\s*MiB"
+)
 
 
 def _crear_parser():
@@ -299,26 +343,48 @@ def _opciones_aceptadas(manifiesto, raiz):
         return None
 
 
+def _vram_libre_para_comprobar():
+    """VRAM libre en MiB de la consulta de solo lectura, o `None` si no está.
+
+    `T-068` expone ``medir.vram_libre_mib`` como consulta de solo lectura: no
+    lanza el servidor, no carga el modelo, no consulta contadores y no usa
+    PowerShell. La herramienta ausente, 1 salida no numérica o 1 error de
+    ejecución devuelven `None`, de modo que la comprobación 4 se reporta
+    `PENDIENTE` con su motivo y ningún valor se estima, conforme a `DEC-018`.
+    """
+    try:
+        valor = VRAM_LIBRE_MIB()
+    except (OSError, ValueError):
+        return None
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+        return None
+    return float(valor)
+
+
 def _comprobar(manifiesto, raiz, argumentos):
     """Modo `comprobar` de `DEC-003`: comprobación previa sin carga.
 
-    Inyecta en ``precheck.ejecutar`` el mapa que la ayuda del binario enumera y
-    las opciones efectivas de `C-3` que resuelven los registros disponibles, de
-    modo que la comprobación 4 contrasta el presupuesto con el `ctx_size` que el
-    servidor usaría y no con el declarado; imprime la salida de
+    Inyecta en ``precheck.ejecutar`` el mapa que la ayuda del binario enumera, la
+    VRAM libre en MiB de la consulta de solo lectura de `T-068` y las opciones
+    efectivas de `C-3` que resuelven los registros disponibles, de modo que la
+    comprobación 4 contrasta el presupuesto con el `ctx_size` que el servidor
+    usaría y no con el declarado; imprime la salida de
     ``precheck.formatear_salida`` y devuelve el código de `C-8` del resultado sin
-    reinterpretarlo. No declara ``vram_disponible_mib``: el presupuesto del
-    perfil sigue pendiente hasta `T-036` y la comprobación 4 se reporta
-    `PENDIENTE` conforme a `DEC-018`. No lanza el servidor ni carga el modelo.
+    reinterpretarlo. Sin la consulta disponible no informa
+    ``vram_disponible_mib`` y la comprobación 4 queda `PENDIENTE` con su motivo,
+    sin estimar ningún valor, conforme a `DEC-018`. No lanza el servidor ni carga
+    el modelo.
     """
     opciones_aceptadas = _opciones_aceptadas(manifiesto, raiz)
     efectivas = _opciones_efectivas(manifiesto, raiz, argumentos)
-    resultado = precheck.ejecutar(
-        manifiesto,
-        raiz,
-        opciones_aceptadas=opciones_aceptadas,
-        opciones_efectivas=efectivas["opciones"],
-    )
+    argumentos_comprobacion = {
+        "opciones_aceptadas": opciones_aceptadas,
+        "opciones_efectivas": efectivas["opciones"],
+    }
+    vram_libre = _vram_libre_para_comprobar()
+    if vram_libre is not None:
+        argumentos_comprobacion["vram_disponible_mib"] = vram_libre
+    resultado = precheck.ejecutar(manifiesto, raiz, **argumentos_comprobacion)
     for linea in precheck.formatear_salida(resultado):
         print(linea)
     return resultado["codigo"]
@@ -421,7 +487,11 @@ def _argumentos_del_servidor(manifiesto, raiz, opciones):
     declarado, `DEC-024` añade `--spec-type draft-mtp` y
     `--spec-draft-n-max <techo>` después de `--model-draft`, porque sin esa
     declaración el servidor aborta al cargar `Gemma4Assistant`; con `tipo`
-    `ninguno` no añade ninguna de las 2 banderas.
+    `ninguno` no añade ninguna de las 2 banderas. El par `--log-verbosity 4` es
+    1 bandera de registro y no 1 eje de `C-2`: hace que el binario imprima la
+    línea `CUDA_Host model buffer size` del modelo principal, que es la fuente
+    del campo 22 de `C-6`, sin alterar las 9 opciones del perfil ni la huella de
+    `DEC-020`.
     """
     artefactos = manifiesto.get("artefactos") or {}
     argumentos = [
@@ -433,6 +503,8 @@ def _argumentos_del_servidor(manifiesto, raiz, opciones):
         _host(),
         "--port",
         str(PUERTO),
+        BANDERA_VERBOSIDAD_REGISTRO,
+        str(VERBOSIDAD_REGISTRO),
     ]
     for eje, forma in FORMA_DE_EJE.items():
         if eje in opciones:
@@ -456,9 +528,10 @@ def _argumentos_del_servidor(manifiesto, raiz, opciones):
 class _ServidorProceso:
     """Servidor lanzado: proceso del binario y su archivo de salida temporal.
 
-    Expone el contrato que consume el orquestador —``pid``, ``activo()`` y
-    ``cerrar()``— de modo que la suite sustituye ``LANZAR_SERVIDOR`` por 1
-    doble con la misma forma y no ejecuta el binario real.
+    Expone el contrato que consume el orquestador —``pid``, ``activo()``,
+    ``leer_salida()`` y ``cerrar()``— de modo que la suite sustituye
+    ``LANZAR_SERVIDOR`` por 1 doble con la misma forma y no ejecuta el binario
+    real.
     """
 
     def __init__(self, proceso, salida):
@@ -474,6 +547,25 @@ class _ServidorProceso:
     def activo(self):
         """Indica si el proceso sigue en ejecución."""
         return self._proceso.poll() is None
+
+    def leer_salida(self):
+        """Devuelve el texto capturado del binario sin cerrar el temporal.
+
+        Rebobina el archivo temporal a su inicio y decodifica en UTF-8 con
+        reemplazo, de modo que el lanzador lee la línea
+        ``CUDA_Host model buffer size`` del registro del servidor antes de
+        cerrarlo; tras el cierre el archivo ya no se puede leer y el texto queda
+        vacío, que es la marca de fuente ausente del campo 22.
+        """
+        try:
+            self._salida.flush()
+            self._salida.seek(0)
+            datos = self._salida.read()
+        except (OSError, ValueError):
+            return ""
+        if isinstance(datos, bytes):
+            return datos.decode("utf-8", "replace")
+        return str(datos)
 
     def cerrar(self):
         """Termina el servidor, espera su salida y cierra el archivo temporal."""
@@ -547,7 +639,13 @@ def _esperar_salud(servidor, iniciar):
 
 
 def _requiere_sonda(prueba):
-    """Indica si la prueba requiere la sonda de `RF-009` y `DEC-011`."""
+    """Indica si la prueba requiere la sonda de `RF-009` y `DEC-011`.
+
+    La prueba de carga, la de contexto sostenido de `T-037` y la alternativa de
+    contexto menor de `T-041` son las 3 que acreditan `RF-009` y alimentan los
+    campos 16 y 17 de `C-6`; cualquier otra ejecución de `medir` no invoca la
+    sonda.
+    """
     if not prueba:
         return False
     nombre = prueba.strip().lower()
@@ -557,9 +655,20 @@ def _requiere_sonda(prueba):
     )
 
 
+def _es_prueba_de_carga(prueba):
+    """Indica si la prueba declara el propósito `carga` de `C-5`."""
+    if not prueba:
+        return False
+    nombre = prueba.strip().lower()
+    return any(
+        nombre == prefijo or nombre.startswith(prefijo + "-")
+        for prefijo in PRUEBAS_DE_CARGA
+    )
+
+
 def _proposito(prueba):
     """Propósito de `C-5` de la prueba: `carga` o `medicion`."""
-    return "carga" if _requiere_sonda(prueba) else "medicion"
+    return "carga" if _es_prueba_de_carga(prueba) else "medicion"
 
 
 def _imprimir_opciones_efectivas(efectivas):
@@ -589,9 +698,39 @@ def _estabilidad(sonda, servidor):
 
 def _mib_campo(valor):
     """Texto de 1 magnitud en MiB, o la marca de fuente ausente."""
-    if isinstance(valor, bool) or not isinstance(valor, int):
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
         return NO_DISPONIBLE
+    if isinstance(valor, float):
+        return f"{valor:g} MiB"
     return f"{valor} MiB"
+
+
+def _memoria_expertos_en_host(salida):
+    """Memoria de expertos en host del modelo principal, en MiB, o `None`.
+
+    `C-6` y `DEC-026` toman la primera línea
+    ``CUDA_Host model buffer size = <n> MiB`` de la salida capturada del
+    servidor, que es la del modelo principal porque el binario carga sus pesos
+    antes que el borrador. La línea del draft no se suma y ningún valor se
+    estima: sin coincidencia la función devuelve `None` y el campo 22 declara
+    la marca de fuente ausente.
+    """
+    if not isinstance(salida, str):
+        return None
+    for linea in salida.splitlines():
+        coincidencia = PATRON_MEMORIA_EXPERTOS.search(linea)
+        if coincidencia is None:
+            continue
+        cantidad = coincidencia.group(1)
+        if "." in cantidad:
+            return float(cantidad)
+        return int(cantidad)
+    return None
+
+
+def _campo_22(salida):
+    """Campo 22 de `C-6`: memoria de expertos en host en MiB o fuente ausente."""
+    return _mib_campo(_memoria_expertos_en_host(salida))
 
 
 def _decodificacion(manifiesto):
@@ -609,6 +748,41 @@ def _decodificacion(manifiesto):
             f"{especulativa.get('techo')} tokens)"
         )
     return registro.FORMA_11_DESACTIVADO
+
+
+def _linea_sonda(sonda, segundos):
+    """Línea `SONDA:` de `T-073` con el conteo del resultado de la sonda.
+
+    El modo `medir` imprime el número de tokens que `probe.sondear` devuelve en
+    ``tokens_generados``, que hasta `T-072` no llegaba a la salida y que `T-037`
+    necesita para acreditar los 2 000 tokens de `CB-003`. Con la sonda
+    `superada` la línea declara el tiempo medido por el lanzador alrededor de la
+    sonda con 2 decimales y la velocidad de generación del resultado; con la
+    sonda `fallida` declara el conteo parcial antes del corte y su motivo. El
+    registro de `C-5` y el código de `C-8` no dependen de esta línea.
+    """
+    tokens = sonda.get("tokens_generados")
+    texto_tokens = (
+        str(tokens)
+        if isinstance(tokens, int) and not isinstance(tokens, bool)
+        else NO_DISPONIBLE
+    )
+    if sonda.get("estado") != "superada":
+        motivo = sonda.get("motivo") or "la sonda de contexto no se completó"
+        return f"SONDA: {texto_tokens} tokens contados antes del corte: {motivo}"
+    if isinstance(segundos, bool) or not isinstance(segundos, (int, float)):
+        texto_segundos = "0.00"
+    else:
+        texto_segundos = f"{float(segundos):.2f}"
+    velocidad = sonda.get("tokens_por_segundo")
+    if isinstance(velocidad, bool) or not isinstance(velocidad, (int, float)):
+        texto_velocidad = NO_DISPONIBLE
+    else:
+        texto_velocidad = f"{float(velocidad):.2f}"
+    return (
+        f"SONDA: {texto_tokens} tokens en {texto_segundos} s, "
+        f"{texto_velocidad} tokens/s"
+    )
 
 
 def _velocidad_de_generacion(sonda):
@@ -643,8 +817,9 @@ def _campo_21(manifiesto, argumentos, memoria, sonda):
 
     Mientras el bloque `presupuesto_vram` conserve su clave `pendiente`, el
     presupuesto se declara ``no disponible`` y no se estima (`DEC-018`); la
-    prueba de contexto fallida transcribe su motivo sin declarar superado nada
-    (`CB-003`) y la VRAM libre por debajo de `RNF-007` queda registrada.
+    prueba de contexto fallida transcribe su motivo con el número de tokens
+    contados antes del corte y sin declarar superado nada (`CB-003`), y la VRAM
+    libre por debajo de `RNF-007` queda registrada.
     """
     partes = []
     if argumentos.errores and argumentos.errores.strip():
@@ -653,6 +828,9 @@ def _campo_21(manifiesto, argumentos, memoria, sonda):
         partes.append(f"presupuesto de VRAM: {NO_DISPONIBLE}")
     if sonda is not None and sonda.get("estado") != "superada":
         motivo = sonda.get("motivo") or "la sonda de contexto no se completó"
+        tokens = sonda.get("tokens_generados")
+        if isinstance(tokens, int) and not isinstance(tokens, bool):
+            motivo = f"{motivo}; {tokens} tokens contados antes del corte"
         partes.append(f"prueba de contexto fallida: {motivo}")
     libre = memoria.get("vram_libre_mib")
     if (
@@ -678,12 +856,15 @@ def _campos_de_c6(
     commit,
     instante,
     prueba=None,
+    salida_servidor=None,
 ):
-    """Mapa de las 21 etiquetas de `C-6` a su texto, en el orden de `RF-006`.
+    """Mapa de las 22 etiquetas de `C-6` a su texto, en el orden de `RF-006`.
 
     ``prueba`` sustituye el nombre de `--prueba` en la fila 2, de modo que la
     campaña de comparación puede declarar el nombre que compone su identificador
-    cuando ``--prueba`` no llega.
+    cuando ``--prueba`` no llega. ``salida_servidor`` es el texto capturado del
+    binario: de él toma el campo 22 la memoria de expertos en host del modelo
+    principal y, sin él, la fila declara la marca de fuente ausente.
     """
     cuantizacion = manifiesto.get("cuantizacion") or {}
     calidad = (argumentos.calidad or "").strip()
@@ -720,6 +901,9 @@ def _campos_de_c6(
         ),
         "Calidad funcional de la respuesta": calidad or NO_DISPONIBLE,
         "Errores y advertencias": _campo_21(manifiesto, argumentos, memoria, sonda),
+        # `C-6` y `DEC-026`: el campo 22 toma la memoria de expertos en host del
+        # modelo principal en el registro del servidor, sin sumar la del draft.
+        "Memoria de expertos en host": _campo_22(salida_servidor),
     }
 
 
@@ -759,6 +943,7 @@ def _construir_registro(
     proposito=None,
     comparacion=None,
     instante=None,
+    salida_servidor=None,
 ):
     """Construye en memoria el registro de `C-5` y devuelve su carpeta.
 
@@ -768,7 +953,9 @@ def _construir_registro(
     ``proposito`` e ``instante`` se inyectan para la campaña de comparación y,
     ausentes, conservan el nombre de `--prueba`, el propósito de la prueba y el
     reloj del sistema. ``comparacion`` añade a la clave opcional de `C-7` el
-    bloque que la campaña calcula antes de escribir el registro.
+    bloque que la campaña calcula antes de escribir el registro y
+    ``salida_servidor`` es el texto capturado del binario del que el campo 22
+    toma la memoria de expertos en host.
     """
     momento = instante if instante is not None else datetime.now(timezone.utc)
     identificador = manifiesto.get("id") or argumentos.perfil
@@ -800,6 +987,7 @@ def _construir_registro(
         commit,
         momento,
         nombre,
+        salida_servidor,
     )
     construido = registro.construir_registro(
         identificador,
@@ -813,13 +1001,23 @@ def _construir_registro(
 
 
 def _crear_registro(
-    manifiesto, raiz, argumentos, efectivas, carga, memoria, sonda, estabilidad
+    manifiesto,
+    raiz,
+    argumentos,
+    efectivas,
+    carga,
+    memoria,
+    sonda,
+    estabilidad,
+    salida_servidor=None,
 ):
     """Crea el registro de `C-5` de 1 ejecución y devuelve su ruta.
 
     La huella es la de las ``opciones`` declaradas en el manifiesto y no la de
     las efectivas, conforme a `DEC-020`; la carpeta de registros cuelga de la
     raíz recibida, de modo que la suite escribe en su árbol temporal.
+    ``salida_servidor`` es el texto capturado del binario, del que el campo 22
+    toma la memoria de expertos en host.
     """
     construido, directorio = _construir_registro(
         manifiesto,
@@ -830,6 +1028,7 @@ def _crear_registro(
         memoria,
         sonda,
         estabilidad,
+        salida_servidor=salida_servidor,
     )
     ruta = registro.escribir_registro(directorio, construido)
     print(f"REGISTRO: {construido['id']}")
@@ -966,33 +1165,51 @@ def _prueba_de_comparacion(argumentos, parametro):
     return nombre or f"{PREFIJO_PRUEBA_COMPARACION}-{parametro}"
 
 
-def _opciones_de_comparacion(manifiesto, parametro, valor):
-    """Opciones de 1 medición: los valores iniciales con el eje en su valor.
+def _opciones_de_comparacion(manifiesto, parametro, valor, registros):
+    """Opciones de 1 medición: las efectivas adoptadas y el eje en su valor.
 
-    La campaña compara 1 eje por vez y conserva los otros en el valor inicial de
-    `C-2`, de modo que las 5 diferencias del bloque de `C-7` son atribuibles al
-    eje comparado; el valor recibido es el inicial o el propuesto de la
-    desviación de `C-3`.
+    La campaña compara 1 eje por vez y conserva los otros en la opción efectiva
+    adoptada —las comparaciones que el perfil declara en `C-3` y constan entre
+    sus ``registros``—, de modo que las 5 diferencias del bloque de `C-7` son
+    atribuibles al eje comparado; el valor recibido es el inicial o el propuesto
+    de la desviación de `C-3`. `T-079` corrige la resolución sin registros: con
+    `ncmoe` adoptado en `6`, la comparación de `ubatch` corre a `ncmoe` `6` en
+    las 2 mediciones y no a `0`.
     """
-    iniciales = perfiles.resolver_opciones(manifiesto, {})
-    opciones = dict(iniciales["opciones"])
+    adoptadas = perfiles.resolver_opciones(manifiesto, registros)
+    opciones = dict(adoptadas["opciones"])
     opciones[parametro] = valor
-    return {"opciones": opciones, "omitidas": list(iniciales["omitidas"])}
+    return {"opciones": opciones, "omitidas": list(adoptadas["omitidas"])}
 
 
-def _medicion_de_comparacion(manifiesto, raiz, parametro, valor):
+def _medicion_de_comparacion(manifiesto, raiz, argumentos, parametro, valor):
     """Ejecuta 1 medición de la campaña y devuelve sus datos, o `None`.
 
     Repite el flujo de 1 ejecución de `plan.md`: lanza el ejecutable con las
     opciones del eje en el valor recibido, espera `GET /health`, mide la memoria
     del árbol del proceso, ejecuta la sonda de `DEC-011` —las 5 diferencias de
     `C-7` incluyen las 2 velocidades del bloque de tiempos, de modo que la
-    comparación requiere la sonda en las 2 mediciones— y cierra el servidor. No
-    escribe archivo alguno: el registro lo construye y lo escribe la campaña. 1
-    fallo de arranque, de salud o de medición de memoria devuelve `None` con su
-    mensaje, sin declarar ninguna cifra.
+    comparación requiere la sonda en las 2 mediciones—, lee la salida capturada
+    del servidor —de la que el campo 22 toma la memoria de expertos en host— y
+    cierra el servidor. No escribe archivo alguno: el registro lo construye y lo
+    escribe la campaña. Las opciones parten de las efectivas adoptadas por el
+    perfil y solo el eje comparado recibe el valor recibido; 1 registro adoptado
+    ilegible degrada a los valores iniciales sin abortar y lo declara. 1 fallo de
+    arranque, de salud o de medición de memoria devuelve `None` con su mensaje,
+    sin declarar ninguna cifra.
     """
-    efectivas = _opciones_de_comparacion(manifiesto, parametro, valor)
+    try:
+        registros = _leer_registros(raiz, manifiesto, argumentos)
+    except ValueError as error:
+        print(
+            "[AVISO] comparación con las opciones iniciales: 1 registro "
+            f"adoptado no se pudo leer: {error}",
+            file=sys.stderr,
+        )
+        registros = {}
+    efectivas = _opciones_de_comparacion(
+        manifiesto, parametro, valor, registros
+    )
     ejecutable = _ruta_ejecutable(manifiesto, raiz)
     argumentos_servidor = _argumentos_del_servidor(
         manifiesto, raiz, efectivas["opciones"]
@@ -1016,6 +1233,9 @@ def _medicion_de_comparacion(manifiesto, raiz, parametro, valor):
         memoria = MEDIR_MEMORIA([servidor.pid])
         sonda = SONDEAR(f"{URL_BASE.rstrip('/')}:{PUERTO}")
         estabilidad = _estabilidad(sonda, servidor)
+        # `C-6` y `DEC-026`: la salida se lee antes de cerrar el proceso, porque
+        # tras el cierre el archivo temporal ya no se puede leer.
+        salida_servidor = servidor.leer_salida()
     finally:
         servidor.cerrar()
 
@@ -1032,6 +1252,7 @@ def _medicion_de_comparacion(manifiesto, raiz, parametro, valor):
         "memoria": memoria,
         "sonda": sonda,
         "estabilidad": estabilidad,
+        "salida_servidor": salida_servidor,
     }
 
 
@@ -1144,7 +1365,7 @@ def _ejecutar_comparacion(manifiesto, raiz, argumentos, desviacion):
 
     # 1ª medición: valor inicial, con su registro propio ya escrito.
     iniciales = _medicion_de_comparacion(
-        manifiesto, raiz, parametro, valor_inicial
+        manifiesto, raiz, argumentos, parametro, valor_inicial
     )
     if iniciales is None:
         return None
@@ -1160,6 +1381,7 @@ def _ejecutar_comparacion(manifiesto, raiz, argumentos, desviacion):
         prueba=prueba,
         proposito=PROPOSITO_COMPARACION,
         instante=datetime.now(timezone.utc),
+        salida_servidor=iniciales["salida_servidor"],
     )
     try:
         ruta_inicial = registro.escribir_registro(directorio, construido_inicial)
@@ -1177,7 +1399,7 @@ def _ejecutar_comparacion(manifiesto, raiz, argumentos, desviacion):
 
     # 2ª medición: valor propuesto, con su registro todavía en memoria.
     propuestas = _medicion_de_comparacion(
-        manifiesto, raiz, parametro, valor_propuesto
+        manifiesto, raiz, argumentos, parametro, valor_propuesto
     )
     if propuestas is None:
         return None
@@ -1195,6 +1417,7 @@ def _ejecutar_comparacion(manifiesto, raiz, argumentos, desviacion):
         instante=_instante_de_registro_libre(
             directorio, perfil, prueba, datetime.now(timezone.utc)
         ),
+        salida_servidor=propuestas["salida_servidor"],
     )
 
     try:
@@ -1332,11 +1555,12 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
     Sigue el flujo de una ejecución de `plan.md`: comprobación previa completa,
     opciones efectivas de `C-3`, lanzamiento con esas opciones, espera de la
     salud con el tiempo de carga, medición de memoria, sonda cuando la prueba la
-    requiere y cierre del servidor. Las opciones efectivas se resuelven 1 sola
-    vez, con los registros disponibles en ``results/gemma/<perfil>/``, y ese
-    mismo resultado alimenta la comprobación 4 y el lanzamiento, de modo que el
-    presupuesto se contrasta con el contexto que el servidor usa. Solo `medir`
-    escribe el registro de `C-5`; `servir` deja 0 registros.
+    requiere, lectura de la salida capturada del servidor y cierre del proceso.
+    Las opciones efectivas se resuelven 1 sola vez, con los registros disponibles
+    en ``results/gemma/<perfil>/``, y ese mismo resultado alimenta la
+    comprobación 4 y el lanzamiento, de modo que el presupuesto se contrasta con
+    el contexto que el servidor usa. Solo `medir` escribe el registro de `C-5`;
+    `servir` deja 0 registros y declara el campo 22 como fuente ausente.
     """
     # `C-3` y `DEC-008`: el valor efectivo de cada eje es el inicial mientras su
     # desviación no declare 1 comparación completa y pasa a ser el propuesto en
@@ -1362,6 +1586,7 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
         return CODIGO_MEDICION_NO_DISPONIBLE
 
     sonda = None
+    segundos_sonda = None
     try:
         carga, motivo = _esperar_salud(servidor, iniciar)
         if carga is None:
@@ -1372,8 +1597,15 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
             return CODIGO_MEDICION_NO_DISPONIBLE
         memoria = MEDIR_MEMORIA([servidor.pid])
         if argumentos.modo == MODO_MEDIR and _requiere_sonda(argumentos.prueba):
+            # `T-073`: el tiempo se mide alrededor de la sonda y se declara en la
+            # línea `SONDA:` junto al conteo del resultado, antes del registro.
+            inicio_sonda = time.monotonic()
             sonda = SONDEAR(f"{URL_BASE.rstrip('/')}:{PUERTO}")
+            segundos_sonda = time.monotonic() - inicio_sonda
         estabilidad = _estabilidad(sonda, servidor)
+        # `C-6` y `DEC-026`: el campo 22 toma la memoria de expertos en host de
+        # la salida capturada, que se lee antes de cerrar el proceso.
+        salida_servidor = servidor.leer_salida()
     finally:
         servidor.cerrar()
 
@@ -1399,6 +1631,11 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
     )
     print(f"ESTABILIDAD: {estabilidad}")
 
+    # `T-073` y `CB-003`: el conteo de la sonda se imprime antes de la línea del
+    # registro de `C-5`, sin cambiar ni el registro ni el código de `C-8`.
+    if argumentos.modo == MODO_MEDIR and sonda is not None:
+        print(_linea_sonda(sonda, segundos_sonda))
+
     if argumentos.modo == MODO_SERVIR:
         return CODIGO_OK
 
@@ -1412,6 +1649,7 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
             memoria,
             sonda,
             estabilidad,
+            salida_servidor,
         )
     except ValueError as error:
         print(f"[ERROR] registro no declarable: {error}", file=sys.stderr)
@@ -1479,9 +1717,10 @@ def main(argv=None):
 
 
 # Puntos inyectables de la suite, conforme a `DEC-012`: la medición de memoria,
-# la sonda y la ejecución del binario se sustituyen por dobles sin opciones de
-# línea de comandos fuera de `C-8`.
+# la consulta de VRAM libre de solo lectura, la sonda y la ejecución del binario
+# se sustituyen por dobles sin opciones de línea de comandos fuera de `C-8`.
 MEDIR_MEMORIA = medir.medir_memoria
+VRAM_LIBRE_MIB = medir.vram_libre_mib
 SONDEAR = probe.sondear
 LANZAR_SERVIDOR = _lanzar_servidor
 

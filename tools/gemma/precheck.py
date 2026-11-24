@@ -21,9 +21,13 @@ y produce el código `3` de `C-8`. El mapa se inyecta porque lo lee
 acredita ninguna opción, de modo que la comprobación nunca se declara `SUPERADA`
 sin enumeración del binario.
 
-Comprobación 4 (`DEC-018`): el consumo se calcula en MiB como los pesos en VRAM
-más la caché `kv_por_1024_tokens_mib` proporcional al `ctx_size` efectivo de `C-3`
-más el `buffer_computo_mib`, y se contrasta con `vram_disponible_mib`. El
+Comprobación 4 (`DEC-018`, `DEC-028`): el consumo se calcula en MiB como
+`pesos_en_vram_mib` más `kv_no_swa_por_1024_tokens_mib` por el `ctx_size` efectivo
+de `C-3` entre `1024` más `kv_swa_mib`, que es 1 valor fijo y no depende del
+contexto, más `buffer_computo_mib`, y se contrasta con `vram_disponible_mib`. El
+bloque declara las 4 claves de `C-1` y la clave retirada
+`kv_por_1024_tokens_mib` no existe: 1 bloque que la declare se rechaza con
+`ValueError` que nombra la clave, porque su presencia es 1 bloque no conforme. El
 `ctx_size` que decide es el de ``opciones_efectivas`` cuando se informa, porque
 es el que el servidor arranca; sin ese argumento se conserva el `ctx_size`
 declarado en el manifiesto. Mientras el bloque `presupuesto_vram` conserve su
@@ -116,17 +120,24 @@ CODIGOS_POR_COMPROBACION = {
 ARTEFACTOS_SIEMPRE = ("ejecutable", "modelo", "mmproj")
 ARTEFACTO_OPCIONAL = "draft"
 
-# Las 3 claves medidas del bloque `presupuesto_vram` de `C-1` y la marca que
+# Las 4 claves medidas del bloque `presupuesto_vram` de `C-1` y la marca que
 # conserva mientras la primera carga real no las mide; la marca nombra la tarea
-# que las escribe y se lee del manifiesto, conforme a `DEC-018` y `DEC-025`.
+# que las escribe y se lee del manifiesto, conforme a `DEC-018`, `DEC-025` y
+# `DEC-028`.
 CLAVES_PRESUPUESTO = (
     "pesos_en_vram_mib",
-    "kv_por_1024_tokens_mib",
+    "kv_no_swa_por_1024_tokens_mib",
+    "kv_swa_mib",
     "buffer_computo_mib",
 )
 CLAVE_PENDIENTE = "pendiente"
 
-# Tokens sobre los que se declara la caché `kv_por_1024_tokens_mib`.
+# Clave retirada por `DEC-028`: el bloque que la declare es 1 bloque no conforme y
+# ninguna función de este módulo la lee.
+CLAVE_PRESUPUESTO_RETIRADA = "kv_por_1024_tokens_mib"
+
+# Tokens sobre los que se declara la caché no-SWA del presupuesto; la caché SWA
+# es 1 valor fijo que no se multiplica por el contexto.
 TOKENS_POR_CALCULO_KV = 1024
 
 # Estados que el manifiesto solo conserva con 1 registro de huella coincidente.
@@ -275,13 +286,35 @@ def _texto_mib(valor):
 
 
 def _consumo_vram_mib(bloque, opciones):
-    """Consumo de `C-9`: pesos más caché proporcional al contexto más buffer."""
+    """Consumo de `C-9` con la fórmula de `DEC-028`.
+
+    Pesos en VRAM más la caché no-SWA proporcional al contexto más la caché SWA
+    fija, que no escala con `ctx_size`, más el buffer de cómputo.
+    """
     tokens = opciones.get("ctx_size") or 0
     return (
         bloque["pesos_en_vram_mib"]
-        + bloque["kv_por_1024_tokens_mib"] * tokens / TOKENS_POR_CALCULO_KV
+        + bloque["kv_no_swa_por_1024_tokens_mib"] * tokens / TOKENS_POR_CALCULO_KV
+        + bloque["kv_swa_mib"]
         + bloque["buffer_computo_mib"]
     )
+
+
+def _rechazar_presupuesto_retirado(bloque):
+    """Rechaza el bloque que declara la clave retirada por `DEC-028`.
+
+    La clave `kv_por_1024_tokens_mib` desaparece del bloque de 4 claves de `C-1`:
+    ninguna función la lee y su presencia es 1 bloque no conforme, de modo que la
+    comprobación 4 no puede contrastar 1 presupuesto con 2 cachés de distinta
+    forma. El error nombra la clave para que el manifiesto se corrija.
+    """
+    if CLAVE_PRESUPUESTO_RETIRADA in bloque:
+        raise ValueError(
+            "presupuesto_vram: el bloque declara la clave retirada "
+            f"«{CLAVE_PRESUPUESTO_RETIRADA}» y C-1 exige las 4 claves "
+            f"{', '.join(CLAVES_PRESUPUESTO)}: la clave no se lee y su "
+            "presencia es 1 bloque no conforme, conforme a DEC-028"
+        )
 
 
 def _detalle_presupuesto_pendiente(marca, faltantes=None):
@@ -305,12 +338,15 @@ def _comprobar_presupuesto(manifiesto, vram_disponible_mib, opciones_efectivas=N
 
     El `ctx_size` que decide el consumo es el de ``opciones_efectivas`` cuando la
     resolución de `C-3` se informa, porque es el contexto con el que el servidor
-    arranca; sin ese argumento se conserva el declarado en el manifiesto. Ningún
-    camino de esta comprobación emite el código `6` por 1 presupuesto no medido:
-    el código solo se produce cuando el bloque está completo y el consumo supera
-    la VRAM disponible informada, conforme a `DEC-018`.
+    arranca; sin ese argumento se conserva el declarado en el manifiesto. El
+    bloque debe declarar las 4 claves de `C-1` y la clave retirada
+    `kv_por_1024_tokens_mib` lo deja no conforme, con `ValueError` que la nombra.
+    Ningún camino de esta comprobación emite el código `6` por 1 presupuesto no
+    medido: el código solo se produce cuando el bloque está completo y el consumo
+    supera la VRAM disponible informada, conforme a `DEC-018` y `DEC-028`.
     """
     bloque = manifiesto.get("presupuesto_vram") or {}
+    _rechazar_presupuesto_retirado(bloque)
     marca = bloque.get(CLAVE_PENDIENTE)
     if marca is not None:
         detalle = _detalle_presupuesto_pendiente(marca)
