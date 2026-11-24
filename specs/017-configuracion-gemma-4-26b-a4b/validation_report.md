@@ -83,7 +83,7 @@ Sin brechas de requisito: los 14 requisitos funcionales, los 7 no funcionales y 
 
 ## Cierre de integración
 
-Merge: 7a6bbe468bb98d4348af9d1eebde1da071100a01
+Merge: c49b6f32713f711948f383f4813278c978902f9b
 Release:
 
-- G5: merge 7a6bbe468bb98d4348af9d1eebde1da071100a01 con dos padres (`844a5b0b38ff24215b7612bb1706dfed706fe6ec` y `283c4dc2fa987dda28dd5fbff170bd1d4d2fce70`); validación posterior a la integración sin hallazgos (`python tools\sdd\validate.py --spec SPEC-017`: `OK: sin hallazgos`); rama feat/gemma-4-26b-a4b-it-qat-gguf eliminada en remoto al fusionar el PR #39 (`git ls-remote --heads origin` solo anuncia `dev` y `main`) y todavía presente en local, donde es la rama actual: `origin/dev` apunta al merge y `dev` local a `844a5b0`, de modo que la sincronización local queda pendiente.
+- G5: merge c49b6f32713f711948f383f4813278c978902f9b con dos padres (`7a6bbe468bb98d4348af9d1eebde1da071100a01` y `bddc922c8933d0d359a6a502a3d5db46dfe664c2`); validación posterior a la integración sin hallazgos (`python tools\sdd\validate.py --spec SPEC-017`: `OK: sin hallazgos`); rama feat/gemma-4-26b-a4b-it-qat-gguf eliminada en remoto al fusionar el PR #40 (`git ls-remote --heads origin` solo anuncia `dev` y `main`) y eliminada también en local (`git branch -d` ejecutado), con la referencia de seguimiento limpiada por `git branch -dr`.

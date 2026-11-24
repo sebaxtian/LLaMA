@@ -4,8 +4,8 @@
 
 ## Referencias
 
-- `spec.md`: `SPEC-017`, versión 0.13.0 con el plan alineado a la reformulación de `RNF-007`, estado `tasked`, con 14 requisitos funcionales, 7 requisitos no funcionales, 8 casos borde y 15 criterios de aceptación; G1 renovada por `Agent Sebaxtian` (2026-11-24) en el commit firmado `10d06f8`.
-- `clarify.md`: `SPEC-017`, cerrado con `AMB-001` a `AMB-012` resueltos, 12 parches aplicados a `spec.md` y 10 decisiones de negocio.
+- `spec.md`: `SPEC-017`, versión 0.15.1 con el plan alineado a la reformulación de `RNF-007`, estado `validated`, con 14 requisitos funcionales, 7 requisitos no funcionales, 8 casos borde y 15 criterios de aceptación; G1 renovada por `Agent Sebaxtian` (2026-11-24) en el commit firmado `10d06f8` y G4 aprobada por el propietario en el commit firmado `eacb2a1`.
+- `clarify.md`: `SPEC-017`, cerrado con `AMB-001` a `AMB-014` resueltos, 20 parches aplicados a `spec.md` y 12 decisiones de negocio.
 - `docs/gemma/Gemma-4-26B-A4B-it-qat-GGUF.md`: línea base documental de la feature con la serie de 5 pruebas históricas, 2 perfiles candidatos de la sección 6, la tabla de 24 parámetros de la sección 2.1 y el diagnóstico de la doble codificación.
 - `docs/gemma/Requerimientos_Feature_Gemma-4-26B-A4B-it-qat-GGUF.md`: alcance, 4 artefactos locales esperados, 6 fases de trabajo, métricas mínimas por prueba y criterios de validación.
 - `src/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF.bat`: configuración heredada con los 7 defectos del contexto de la spec; rutas relativas al directorio actual, cabecera de producción y perfil único.
