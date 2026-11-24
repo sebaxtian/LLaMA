@@ -120,6 +120,9 @@ Las transiciones hacia `cancelled` y hacia `superseded` no son etapas del ciclo:
 | T8 | `draft`, `clarified`, `planned` o `tasked` | `cancelled` | propietario | motivo escrito por el propietario y registrado en el historial de la spec |
 | T9 | `validated` | `implementing` | propietario | motivo de reapertura escrito y incremento MINOR de la versión |
 | T10 | `validated` o `released` | `superseded` | propietario | identificador `SPEC-NNN` de la spec que sustituye y destino declarado |
+| T11 | `tasked`, `implementing`, `implemented` o `validated` | `draft` | propietario | cambio de requisito aprobado por el propietario y registrado en el historial de la spec |
+
+**Reapertura de la clarificación.** `T11` reabre la clarificación: tras `T11` la spec queda en `draft`, la aprobación G1 anterior deja de cubrir el contrato y se exige nueva clarificación y nueva aprobación de G1 antes de volver a planificar. G1 se evalúa en el estado `clarified`, conforme a §6, y el retorno a Plan exige T1 y la nueva G1, pues T2 parte de `clarified`.
 
 Una compuerta no es un estado: la aprobación o verificación se registra entre dos etapas y no forma parte de la definición del estado.
 
@@ -127,9 +130,11 @@ Una compuerta no es un estado: la aprobación o verificación se registra entre 
 
 - El `planner` escribe la creación de la spec en `draft` y las transiciones T1, T2 y T3.
 - El `planner` escribe las transiciones T4, T5, T6 y T7 sobre la verificación registrada por el orquestador; sin esa verificación registrada no escribe la transición e informa la verificación ausente.
-- El propietario escribe la cancelación, la reapertura y la sustitución, y el orquestador solo las registra cuando el propietario las autoriza por escrito.
+- El propietario escribe la cancelación, la reapertura de implementación (T9), la reapertura de clarificación (T11) y la sustitución, y el orquestador solo las registra cuando el propietario las autoriza por escrito.
 
-**Reglas.** Las transiciones avanzan solo por la tabla; una transición no listada es defecto de conformidad. La reapertura exige motivo, incremento de versión y revalidación completa. Una spec en `cancelled` no se reabre: se redacta una spec nueva.
+**Reglas.** Las transiciones avanzan solo por la tabla; una transición no listada es defecto de conformidad. La reapertura de implementación (T9) y la reapertura de clarificación (T11) exigen motivo, incremento de versión y revalidación completa. Una spec en `cancelled` no se reabre: se redacta una spec nueva.
+
+**Constancia de corrección.** `2026-11-23`: por corrección autorizada directamente por el propietario, sin spec intermedia, se incorpora `T11` a la tabla de transiciones. El motivo es resolver la contradicción entre la vuelta a `draft` que ordenan `AGENTS.md`, §4 y §7 y la ausencia de toda transición con destino `draft` en esta tabla, que convertía esa vuelta en defecto de conformidad.
 
 ## 6. Compuertas G1 a G6
 
