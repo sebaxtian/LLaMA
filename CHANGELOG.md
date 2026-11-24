@@ -10,6 +10,22 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- Configuración ejecutable y medible de `Gemma-4-26B-A4B-it-qat-GGUF` con 3 perfiles versionados (`rendimiento`, `resiliencia`, `sin_especulativa`), presupuesto de VRAM medido en la máquina objetivo, registro de 22 campos con memoria de expertos en host y documentos de línea base con sus 3 secciones (`SPEC-017`).
+- Sonda de contexto sostenido con `ignore_eos` y clasificación por `timings`, comparación de desviaciones con bloque de `C-7` y elegibilidad de promoción por huella, derrame y VRAM libre (`SPEC-017`).
+- Transición `T11` del protocolo operativo y del validador: reversión a `draft` desde `tasked`, `implementing`, `implemented` o `validated` cuando el propietario aprueba un cambio de requisito.
+
+### Changed
+
+- Contrato de `SPEC-017`: `RNF-003` mide derrame no intencional de como máximo 512 MiB —`Shared Usage` menos expertos en host— y `RNF-007` rige como condición de promoción sobre la última carga registrada; `RF-006` declara 22 campos y `C-2` nueve ejes con caché KV `q8_0` y `flash_attn on`.
+- Perfiles `rendimiento` y `resiliencia` adoptan `ncmoe` 9 por comparación medida; la caché KV cuantizada reduce la caché no-SWA a 10,625 MiB por 1024 tokens y fija la SWA en 159,38 MiB.
+
+### Fixed
+
+- Documento `docs/gemma/Gemma-4-26B-A4B-it-qat-GGUF.md` sin doble codificación ni marca de orden de bytes, con las 3 secciones de `C-10` y las marcas de estado de los perfiles.
+- Lectura tolerante de los registros de 21 filas anteriores a la ampliación a 22 campos, con el campo 22 sintetizado en `no disponible` y sin reescribir el histórico.
+
 ## [v0.7.2] - 2026-11-21
 
 ### Added
