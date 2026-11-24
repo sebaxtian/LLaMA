@@ -84,6 +84,6 @@ Sin brechas de requisito: los 14 requisitos funcionales, los 7 no funcionales y 
 ## Cierre de integración
 
 Merge: c49b6f32713f711948f383f4813278c978902f9b
-Release:
+Release: v0.8.0
 
 - G5: merge c49b6f32713f711948f383f4813278c978902f9b con dos padres (`7a6bbe468bb98d4348af9d1eebde1da071100a01` y `bddc922c8933d0d359a6a502a3d5db46dfe664c2`); validación posterior a la integración sin hallazgos (`python tools\sdd\validate.py --spec SPEC-017`: `OK: sin hallazgos`); rama feat/gemma-4-26b-a4b-it-qat-gguf eliminada en remoto al fusionar el PR #40 (`git ls-remote --heads origin` solo anuncia `dev` y `main`) y eliminada también en local (`git branch -d` ejecutado), con la referencia de seguimiento limpiada por `git branch -dr`.

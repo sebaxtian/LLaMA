@@ -10,11 +10,14 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.8.0] - 2026-11-24
+
 ### Added
 
 - Configuración ejecutable y medible de `Gemma-4-26B-A4B-it-qat-GGUF` con 3 perfiles versionados (`rendimiento`, `resiliencia`, `sin_especulativa`), presupuesto de VRAM medido en la máquina objetivo, registro de 22 campos con memoria de expertos en host y documentos de línea base con sus 3 secciones (`SPEC-017`).
 - Sonda de contexto sostenido con `ignore_eos` y clasificación por `timings`, comparación de desviaciones con bloque de `C-7` y elegibilidad de promoción por huella, derrame y VRAM libre (`SPEC-017`).
 - Transición `T11` del protocolo operativo y del validador: reversión a `draft` desde `tasked`, `implementing`, `implemented` o `validated` cuando el propietario aprueba un cambio de requisito.
+- Informe final de auditoría `docs/sdd/auditoria_final_v0_8_0.md`, ejecutado sobre el árbol de la rama de cierre: cierre de los 5 hallazgos del informe previo —`H-02` por ratificación del propietario mediante el acta `docs/sdd/ratificacion_t11.md` firmada en `a06c789`, y `H-01`, `H-03`, `H-04` y `H-05` con el registro de cambios, el registro de G5, `MEMORY.md` y el historial de la spec—, con 0 hallazgos abiertos, 5 observaciones de severidad `Baja` y veredicto `CONFORME`; el inventario registra `AUD-114` a `AUD-118` y el índice del corpus las filas 42 a 44 (`SPEC-017`).
 
 ### Changed
 
@@ -25,6 +28,7 @@ vMAJOR.MINOR.PATCH
 
 - Documento `docs/gemma/Gemma-4-26B-A4B-it-qat-GGUF.md` sin doble codificación ni marca de orden de bytes, con las 3 secciones de `C-10` y las marcas de estado de los perfiles.
 - Lectura tolerante de los registros de 21 filas anteriores a la ampliación a 22 campos, con el campo 22 sintetizado en `no disponible` y sin reescribir el histórico.
+- Approved by: Agent Sebaxtian
 
 ## [v0.7.2] - 2026-11-21
 
@@ -277,8 +281,8 @@ vMAJOR.MINOR.PATCH
 
 Se publicó `v0.1.0` como primera versión estructural y documental del proyecto. El historial de releases con su fecha UTC y su tag anotado es:
 
-| Versión | Fecha | Tag |
-|---|---|---|
+| Versión  | Fecha      | Tag      |
+| -------- | ---------- | -------- |
 | `v0.1.0` | 2026-11-10 | `v0.1.0` |
 | `v0.2.0` | 2026-11-12 | `v0.2.0` |
 | `v0.3.0` | 2026-11-13 | `v0.3.0` |
