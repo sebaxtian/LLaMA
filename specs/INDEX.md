@@ -20,7 +20,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-014 | Cierre de las observaciones de la reauditoría final | released | feat/cierre-observaciones-finales | v0.7.0 | specs/014-cierre-observaciones-finales/ |
 | SPEC-015 | Cierre de la auditoría posterior al release | released | feat/cierre-auditoria-posterior | v0.7.1 | specs/015-cierre-auditoria-posterior/ |
 | SPEC-016 | Cierre de la auditoría de v0.7.1 | released | feat/reapertura-spec-016 | v0.7.2 | specs/016-cierre-auditoria-v0-7-1/ |
-| SPEC-017 | Configuración ejecutable y medible de Gemma-4-26B-A4B-it-qat-GGUF | implemented | feat/gemma-4-26b-a4b-it-qat-gguf | | specs/017-configuracion-gemma-4-26b-a4b/ |
+| SPEC-017 | Configuración ejecutable y medible de Gemma-4-26B-A4B-it-qat-GGUF | validated | feat/gemma-4-26b-a4b-it-qat-gguf | | specs/017-configuracion-gemma-4-26b-a4b/ |
 
 ## Reglas
 

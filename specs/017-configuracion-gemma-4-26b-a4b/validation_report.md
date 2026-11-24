@@ -80,3 +80,8 @@ Sin brechas de requisito: los 14 requisitos funcionales, los 7 no funcionales y 
 
 - [x] CONVERGIDO (100 % de requisitos y casos borde con evidencia PASADO).
 - [ ] NO CONVERGIDO.
+
+## Cierre de integración
+
+Merge:
+Release:
