@@ -294,5 +294,6 @@ Se publicó `v0.1.0` como primera versión estructural y documental del proyecto
 | `v0.7.0` | 2026-11-14 | `v0.7.0` |
 | `v0.7.1` | 2026-11-21 | `v0.7.1` |
 | `v0.7.2` | 2026-11-21 | `v0.7.2` |
+| `v0.8.0` | 2026-11-24 | `v0.8.0` |
 
 El empaquetado de `v0.7.0` quedó registrado en su entrada y en la tabla anterior: el release quedó publicado con la línea `- Approved by: Agent Sebaxtian` firmada por el propietario en el commit de empaquetado, G6 quedó cumplida y el tag anotado `v0.7.0` se creó sobre el commit publicado `5a3af48` con el mensaje `Release v0.7.0`.
