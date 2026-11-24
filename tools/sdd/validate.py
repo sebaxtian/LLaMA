@@ -107,6 +107,7 @@ TRANSITIONS = {
     "T8": (("draft", "clarified", "planned", "tasked"), "cancelled"),
     "T9": ("validated", "implementing"),
     "T10": (("validated", "released"), "superseded"),
+    "T11": (("tasked", "implementing", "implemented", "validated"), "draft"),
 }
 # Estado de origen que habilita cada compuerta (CB-004). G5 y G6 se verifican sobre la spec validada.
 GATE_STATES = {

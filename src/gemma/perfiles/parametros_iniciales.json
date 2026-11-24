@@ -1,0 +1,38 @@
+{
+  "gpu_layers": {
+    "valor": "all",
+    "fuente": "MEMORY.md §7: descarga de capas a la GPU con -ngl 99"
+  },
+  "flash_attn": {
+    "valor": "on",
+    "fuente": "DEC-029: la caché KV en q8_0 de DEC-028 no se admite desactivada en el binario; el valor off de MEMORY.md §7 rige solo con caché f16"
+  },
+  "ctx_size": {
+    "valor": 4096,
+    "fuente": "MEMORY.md §7: la banda de 25B a 28B comienza con -c 4096"
+  },
+  "ubatch": {
+    "valor": 512,
+    "fuente": "Sección 2.1 de la línea base documental: valor por defecto del tamaño de micro-lote"
+  },
+  "ncmoe": {
+    "valor": 0,
+    "fuente": "MEMORY.md §7: -ngl 99 sin desvío de capas de expertos a la CPU"
+  },
+  "load_mode": {
+    "valor": "none",
+    "fuente": "MEMORY.md §7: carga de pesos sin mapa de memoria con -lm none"
+  },
+  "parallel": {
+    "valor": 1,
+    "fuente": "MEMORY.md §7 y campo 7 de RF-006: ranuras del servidor con -np 1"
+  },
+  "cache_type_k": {
+    "valor": "q8_0",
+    "fuente": "src/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF.bat: caché KV de claves con --cache-type-k q8_0"
+  },
+  "cache_type_v": {
+    "valor": "q8_0",
+    "fuente": "src/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF.bat: caché KV de valores con --cache-type-v q8_0"
+  }
+}

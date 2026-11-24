@@ -68,6 +68,9 @@ Este documento es el **índice del corpus** de `docs/sdd/`. Su función es la na
 | `auditoria_previa_v0_7_2.md` | `docs/sdd/auditoria_previa_v0_7_2.md` | Informe de auditoría previa al release v0.7.2 | 39 | Sin rango |
 | `ratificacion_interpretacion.md` | `docs/sdd/ratificacion_interpretacion.md` | Acta de interpretación normativa del propietario | 40 | Sin rango |
 | `auditoria_final_v0_7_2.md` | `docs/sdd/auditoria_final_v0_7_2.md` | Informe de auditoría final previa al release v0.7.2 | 41 | Sin rango |
+| `auditoria_release_v0_8_0.md` | `docs/sdd/auditoria_release_v0_8_0.md` | Informe de auditoría previa al release v0.8.0 | 42 | Sin rango |
+| `ratificacion_t11.md` | `docs/sdd/ratificacion_t11.md` | Acta de ratificación del propietario sobre la transición `T11` | 43 | Sin rango |
+| `auditoria_final_v0_8_0.md` | `docs/sdd/auditoria_final_v0_8_0.md` | Informe de auditoría final previa al release v0.8.0 | 44 | Sin rango |
 
 ## Regla de inventario
 

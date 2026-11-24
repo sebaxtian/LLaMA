@@ -10,6 +10,26 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+## [v0.8.0] - 2026-11-24
+
+### Added
+
+- Configuración ejecutable y medible de `Gemma-4-26B-A4B-it-qat-GGUF` con 3 perfiles versionados (`rendimiento`, `resiliencia`, `sin_especulativa`), presupuesto de VRAM medido en la máquina objetivo, registro de 22 campos con memoria de expertos en host y documentos de línea base con sus 3 secciones (`SPEC-017`).
+- Sonda de contexto sostenido con `ignore_eos` y clasificación por `timings`, comparación de desviaciones con bloque de `C-7` y elegibilidad de promoción por huella, derrame y VRAM libre (`SPEC-017`).
+- Transición `T11` del protocolo operativo y del validador: reversión a `draft` desde `tasked`, `implementing`, `implemented` o `validated` cuando el propietario aprueba un cambio de requisito.
+- Informe final de auditoría `docs/sdd/auditoria_final_v0_8_0.md`, ejecutado sobre el árbol de la rama de cierre: cierre de los 5 hallazgos del informe previo —`H-02` por ratificación del propietario mediante el acta `docs/sdd/ratificacion_t11.md` firmada en `a06c789`, y `H-01`, `H-03`, `H-04` y `H-05` con el registro de cambios, el registro de G5, `MEMORY.md` y el historial de la spec—, con 0 hallazgos abiertos, 5 observaciones de severidad `Baja` y veredicto `CONFORME`; el inventario registra `AUD-114` a `AUD-118` y el índice del corpus las filas 42 a 44 (`SPEC-017`).
+
+### Changed
+
+- Contrato de `SPEC-017`: `RNF-003` mide derrame no intencional de como máximo 512 MiB —`Shared Usage` menos expertos en host— y `RNF-007` rige como condición de promoción sobre la última carga registrada; `RF-006` declara 22 campos y `C-2` nueve ejes con caché KV `q8_0` y `flash_attn on`.
+- Perfiles `rendimiento` y `resiliencia` adoptan `ncmoe` 9 por comparación medida; la caché KV cuantizada reduce la caché no-SWA a 10,625 MiB por 1024 tokens y fija la SWA en 159,38 MiB.
+
+### Fixed
+
+- Documento `docs/gemma/Gemma-4-26B-A4B-it-qat-GGUF.md` sin doble codificación ni marca de orden de bytes, con las 3 secciones de `C-10` y las marcas de estado de los perfiles.
+- Lectura tolerante de los registros de 21 filas anteriores a la ampliación a 22 campos, con el campo 22 sintetizado en `no disponible` y sin reescribir el histórico.
+- Approved by: Agent Sebaxtian
+
 ## [v0.7.2] - 2026-11-21
 
 ### Added
@@ -261,8 +281,8 @@ vMAJOR.MINOR.PATCH
 
 Se publicó `v0.1.0` como primera versión estructural y documental del proyecto. El historial de releases con su fecha UTC y su tag anotado es:
 
-| Versión | Fecha | Tag |
-|---|---|---|
+| Versión  | Fecha      | Tag      |
+| -------- | ---------- | -------- |
 | `v0.1.0` | 2026-11-10 | `v0.1.0` |
 | `v0.2.0` | 2026-11-12 | `v0.2.0` |
 | `v0.3.0` | 2026-11-13 | `v0.3.0` |
@@ -274,5 +294,6 @@ Se publicó `v0.1.0` como primera versión estructural y documental del proyecto
 | `v0.7.0` | 2026-11-14 | `v0.7.0` |
 | `v0.7.1` | 2026-11-21 | `v0.7.1` |
 | `v0.7.2` | 2026-11-21 | `v0.7.2` |
+| `v0.8.0` | 2026-11-24 | `v0.8.0` |
 
 El empaquetado de `v0.7.0` quedó registrado en su entrada y en la tabla anterior: el release quedó publicado con la línea `- Approved by: Agent Sebaxtian` firmada por el propietario en el commit de empaquetado, G6 quedó cumplida y el tag anotado `v0.7.0` se creó sobre el commit publicado `5a3af48` con el mensaje `Release v0.7.0`.
