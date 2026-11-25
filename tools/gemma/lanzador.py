@@ -94,6 +94,22 @@ código `3` sin arrancar el servidor (`CB-007`, `RF-007`, `CB-001`, `CB-008`,
 medida en el momento del lanzamiento mediante la regla de `RF-009` y `DEC-008`,
 de modo que el lanzamiento no reutiliza el valor declarado (`CB-005`).
 
+Selector interactivo de `SPEC-018`: sin `--perfil` ni `--escenario`, el flujo
+presenta el menú de los 9 escenarios numerados del 1 al 9 en el orden de
+`DEC-004`, con el identificador, las capas de expertos en CPU, el contexto
+efectivo en tokens y el presupuesto de VRAM en MiB de `RF-005`, y marca
+`[NO EJECUTABLE]` al escenario que `CB-007` no permite seleccionar. La consola se
+lee por el punto inyectable ``LEER_ENTRADA``, cuyo valor por omisión es
+``input``; 1 selección vacía informa el rechazo y devuelve el código `2` sin
+precheck ni lanzamiento, y 1 selección inválida o 1 escenario no ejecutable
+informan el rechazo, reimprimen la numeración y vuelven a preguntar. El número
+del menú o el identificador canónico resuelven el escenario y, después, el flujo
+resuelve el perfil de base —por número o por identificador de la lista de
+`DEC-001`— antes de aplicar el flujo de `C-2` y `C-4` a la ejecución. Con la
+entrada por omisión, el menú exige 1 terminal y 1 perfil de base único; con
+varios perfiles disponibles y sin consola, la invocación sin `--perfil` conserva
+el listado de `DEC-001` y devuelve el código `2`.
+
 Contrato:
 
 - ``main(argv=None) -> int`` devuelve el código de `C-8` y no termina por
@@ -173,6 +189,17 @@ RUTA_CATALOGO_ESCENARIOS = (
 # Manifiesto de los 9 ejes de `C-2`: no es 1 perfil, de modo que no se lista ni
 # se selecciona con `--perfil`.
 MANIFIESTO_INICIAL = "parametros_iniciales"
+
+# `SPEC-018` y `C-2`: el selector interactivo lee la consola por este punto
+# inyectable, cuyo valor por omisión es `input`; la suite lo sustituye por 1
+# doble que entrega sus líneas sin consola real, conforme a `DEC-012`.
+LEER_ENTRADA = input
+
+# Encabezados literales de los 2 menús del flujo interactivo de `DEC-001` y la
+# marca del escenario que `CB-007` no permite seleccionar.
+ENCABEZADO_MENU_ESCENARIOS = "Escenarios disponibles (--escenario <id>):"
+ENCABEZADO_MENU_PERFILES = "Perfiles disponibles (--perfil <id>):"
+MARCA_NO_EJECUTABLE = "[NO EJECUTABLE]"
 
 # Los 4 modos de `C-8` y ningún otro.
 MODOS = ("comprobar", "servir", "medir", "comparar")
@@ -346,7 +373,7 @@ def _leer_manifiesto(raiz, identificador):
 def _listar_perfiles(raiz, identificadores):
     """Imprime la raíz resuelta y la lista de perfiles de `DEC-001`."""
     print(f"Raíz: {raiz}")
-    print("Perfiles disponibles (--perfil <id>):")
+    print(ENCABEZADO_MENU_PERFILES)
     for identificador in identificadores:
         print(f"  {identificador}")
 
@@ -371,7 +398,7 @@ def _listar_escenarios(raiz):
     """
     catalogo = _cargar_catalogo(raiz)
     print("Raíz: " + str(Path(raiz)))
-    print("Escenarios disponibles (--escenario <id>):")
+    print(ENCABEZADO_MENU_ESCENARIOS)
     for escenario in escenarios.listar_escenarios(catalogo):
         contexto = escenario.get("contexto") or {}
         presupuesto = escenario.get("presupuesto_vram") or {}
@@ -402,6 +429,181 @@ def _rechazar_escenario_inexistente(catalogo, identificador):
         escenario["id"] for escenario in escenarios.listar_escenarios(catalogo)
     ]
     print("Escenarios disponibles: " + ", ".join(disponibles))
+
+
+def _entrada_interactiva(identificadores):
+    """Indica si la invocación sin `--perfil` presenta el menú de `C-2`.
+
+    Con ``LEER_ENTRADA`` sustituido por 1 punto inyectable, el menú se presenta
+    siempre; con el ``input`` por omisión exige 1 perfil de base único y 1
+    terminal en la entrada estándar. Con varios perfiles disponibles y sin
+    consola, la invocación sin `--perfil` conserva el listado de `DEC-001` y
+    devuelve el código `2`, de modo que ninguna ejecución queda a la espera de
+    una línea que no va a llegar.
+    """
+    if LEER_ENTRADA is not input:
+        return True
+    if len(identificadores) != 1:
+        return False
+    entrada = getattr(sys, "stdin", None)
+    try:
+        return bool(entrada is not None and entrada.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+def _leer_seleccion():
+    """Lee 1 línea de la consola por ``LEER_ENTRADA`` y la devuelve sin espacios.
+
+    El final de la entrada se declara como selección vacía, de modo que el flujo
+    aborta con el código `2` de `C-2` en lugar de propagar la excepción.
+    """
+    try:
+        linea = LEER_ENTRADA("Selección: ")
+    except EOFError:
+        return ""
+    if linea is None:
+        return ""
+    return str(linea).strip()
+
+
+def _imprimir_menu_escenarios(listado):
+    """Imprime el menú detallado de `C-2` con la numeración de `DEC-004`.
+
+    Cada línea declara el identificador, las capas de expertos en CPU, el
+    contexto efectivo en tokens y el presupuesto de VRAM en MiB que enumera
+    `RF-005`, y añade la marca al escenario que `CB-007` no permite seleccionar.
+    """
+    print(ENCABEZADO_MENU_ESCENARIOS)
+    for numero, escenario in enumerate(listado, start=1):
+        contexto = escenario.get("contexto") or {}
+        presupuesto = escenario.get("presupuesto_vram") or {}
+        linea = (
+            f"  {numero}) {escenario['id']}: "
+            f"capas_cpu_moe={escenario.get('capas_cpu_moe')}, "
+            f"contexto_efectivo={contexto.get('efectivo_tokens')} tokens, "
+            f"presupuesto_vram={presupuesto.get('total_mib')} MiB"
+        )
+        if escenario.get("estado") == escenarios.ESTADO_NO_EJECUTABLE:
+            linea = f"{linea} {MARCA_NO_EJECUTABLE}"
+        print(linea)
+
+
+def _recordar_menu_escenarios(listado):
+    """Reimprime el encabezado y la numeración del menú tras 1 rechazo.
+
+    La reimpresión repite el encabezado literal y la numeración de `DEC-004` sin
+    los datos de detalle ni la marca del escenario no ejecutable, que figura 1
+    sola vez en el menú detallado; el operador conserva así la referencia de
+    números para la línea siguiente.
+    """
+    print(ENCABEZADO_MENU_ESCENARIOS)
+    for numero, escenario in enumerate(listado, start=1):
+        print(f"  {numero}) {escenario['id']}")
+
+
+def _resolver_seleccion_escenario(catalogo, listado, texto):
+    """Devuelve el escenario declarado que nombra la selección, o `None`.
+
+    `RF-003` y `RF-004`: 1 número dentro de la numeración resuelve el escenario
+    de esa posición y 1 identificador resuelve el declarado con esa clave. 1
+    número fuera de rango y 1 identificador ausente del catálogo informan el
+    rechazo sin resolver, y `CB-007` rechaza el escenario no ejecutable nombrando
+    su identificador.
+    """
+    if texto.isdigit():
+        numero = int(texto)
+        if not 1 <= numero <= len(listado):
+            print(
+                f"[ERROR] selección fuera de rango: {texto}; el menú numera los "
+                f"{len(listado)} escenarios del 1 al {len(listado)}",
+                file=sys.stderr,
+            )
+            return None
+        escenario = _escenario_declarado(catalogo, listado[numero - 1]["id"])
+        if escenario is None:
+            _rechazar_escenario_inexistente(catalogo, listado[numero - 1]["id"])
+            return None
+    else:
+        escenario = _escenario_declarado(catalogo, texto)
+        if escenario is None:
+            _rechazar_escenario_inexistente(catalogo, texto)
+            return None
+    if escenario.get("estado") == escenarios.ESTADO_NO_EJECUTABLE:
+        print(
+            f"[ERROR] escenario no ejecutable: {escenario.get('id')}; el menú "
+            "no lo selecciona por su estado y vuelve a preguntar",
+            file=sys.stderr,
+        )
+        return None
+    return escenario
+
+
+def _seleccionar_escenario(catalogo):
+    """Resuelve 1 escenario por número o por identificador (`RF-003`).
+
+    El menú admite la numeración de `DEC-004` y el identificador canónico exacto.
+    1 selección vacía informa el rechazo y devuelve `None`, de modo que el flujo
+    aborta con el código `2` de `C-2` sin precheck ni lanzamiento; 1 selección
+    inválida y 1 escenario no ejecutable informan el rechazo, reimprimen la
+    numeración y vuelven a preguntar.
+    """
+    listado = escenarios.listar_escenarios(catalogo)
+    _imprimir_menu_escenarios(listado)
+    while True:
+        texto = _leer_seleccion()
+        if not texto:
+            print(
+                "[ERROR] selección vacía: el menú espera 1 número del 1 al "
+                f"{len(listado)} o 1 identificador del catálogo",
+                file=sys.stderr,
+            )
+            return None
+        escenario = _resolver_seleccion_escenario(catalogo, listado, texto)
+        if escenario is not None:
+            return escenario
+        _recordar_menu_escenarios(listado)
+
+
+def _imprimir_menu_perfiles(raiz, identificadores):
+    """Imprime la raíz resuelta y la numeración de perfiles de `DEC-001`."""
+    print(f"Raíz: {raiz}")
+    print(ENCABEZADO_MENU_PERFILES)
+    for numero, identificador in enumerate(identificadores, start=1):
+        print(f"  {numero}) {identificador}")
+
+
+def _seleccionar_perfil(raiz, identificadores):
+    """Resuelve el perfil de base del flujo interactivo, por número o por id.
+
+    Tras resolver el escenario, `C-2` exige 1 perfil de base para los artefactos
+    y la comprobación previa. 1 selección vacía informa el rechazo y devuelve
+    `None` para abortar con el código `2`; 1 número fuera de la numeración y 1
+    identificador ausente de la lista informan el rechazo, reimprimen la
+    numeración y vuelven a preguntar.
+    """
+    _imprimir_menu_perfiles(raiz, identificadores)
+    while True:
+        texto = _leer_seleccion()
+        if not texto:
+            print(
+                "[ERROR] selección vacía: el menú espera 1 número de perfil o 1 "
+                "identificador de la lista",
+                file=sys.stderr,
+            )
+            return None
+        if texto in identificadores:
+            return texto
+        if texto.isdigit():
+            numero = int(texto)
+            if 1 <= numero <= len(identificadores):
+                return identificadores[numero - 1]
+        print(
+            f"[ERROR] perfil no declarado: {texto}; el menú espera 1 número del "
+            f"1 al {len(identificadores)} o 1 identificador de la lista",
+            file=sys.stderr,
+        )
+        _imprimir_menu_perfiles(raiz, identificadores)
 
 
 def _anunciar_escenario(escenario):
@@ -1920,10 +2122,6 @@ def main(argv=None):
 
     identificadores = _perfiles_disponibles(raiz)
 
-    if argumentos.perfil is None:
-        _listar_perfiles(raiz, identificadores)
-        return CODIGO_USO_INCORRECTO
-
     if argumentos.modo not in MODOS:
         print(
             f"[ERROR] modo no admitido: {argumentos.modo}; "
@@ -1932,18 +2130,14 @@ def main(argv=None):
         )
         return CODIGO_USO_INCORRECTO
 
-    if argumentos.perfil not in identificadores:
-        print(
-            f"[ERROR] perfil no declarado: {argumentos.perfil}",
-            file=sys.stderr,
-        )
-        return CODIGO_USO_INCORRECTO
-
-    # `RF-004` y `C-2`: el identificador de escenario se contrasta con el
-    # catálogo antes de resolver los argumentos del modo; 1 identificador
-    # ausente devuelve el código 2 y enumera los 9 canónicos.
+    # `SPEC-018` y `C-2`: sin `--perfil` ni `--escenario` el flujo interactivo
+    # resuelve primero el escenario del catálogo y después el perfil de base; con
+    # varios perfiles y sin consola, el listado de `DEC-001` se conserva.
     escenario = None
-    if argumentos.escenario:
+    if argumentos.perfil is None:
+        if argumentos.escenario or not _entrada_interactiva(identificadores):
+            _listar_perfiles(raiz, identificadores)
+            return CODIGO_USO_INCORRECTO
         try:
             catalogo = _cargar_catalogo(raiz)
         except ValueError as error:
@@ -1952,10 +2146,37 @@ def main(argv=None):
                 file=sys.stderr,
             )
             return CODIGO_USO_INCORRECTO
-        escenario = _escenario_declarado(catalogo, argumentos.escenario)
+        escenario = _seleccionar_escenario(catalogo)
         if escenario is None:
-            _rechazar_escenario_inexistente(catalogo, argumentos.escenario)
             return CODIGO_USO_INCORRECTO
+        identificador = _seleccionar_perfil(raiz, identificadores)
+        if identificador is None:
+            return CODIGO_USO_INCORRECTO
+        argumentos.perfil = identificador
+    else:
+        if argumentos.perfil not in identificadores:
+            print(
+                f"[ERROR] perfil no declarado: {argumentos.perfil}",
+                file=sys.stderr,
+            )
+            return CODIGO_USO_INCORRECTO
+
+        # `RF-004` y `C-2`: el identificador de escenario se contrasta con el
+        # catálogo antes de resolver los argumentos del modo; 1 identificador
+        # ausente devuelve el código 2 y enumera los 9 canónicos.
+        if argumentos.escenario:
+            try:
+                catalogo = _cargar_catalogo(raiz)
+            except ValueError as error:
+                print(
+                    f"[ERROR] catálogo de escenarios no disponible: {error}",
+                    file=sys.stderr,
+                )
+                return CODIGO_USO_INCORRECTO
+            escenario = _escenario_declarado(catalogo, argumentos.escenario)
+            if escenario is None:
+                _rechazar_escenario_inexistente(catalogo, argumentos.escenario)
+                return CODIGO_USO_INCORRECTO
 
     if argumentos.modo == MODO_COMPARAR and argumentos.parametro is None:
         print(
