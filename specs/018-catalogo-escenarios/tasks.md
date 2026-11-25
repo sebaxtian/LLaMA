@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 14 de 16 tareas.
+- Cerradas: 15 de 16 tareas.
 
 ## Tareas
 
@@ -170,8 +170,8 @@
 - **Archivos:** `src/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF.bat`, `tools/gemma/tests/test_lanzador.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_lanzador.TestLanzadorBatPropagacion` en verde con `OK`: verifica que el script `.bat` conserve la resolución de raíz mediante `%~dp0`, las 3 vías de resolución de Python y la propagación íntegra de `%*` hacia `lanzador.py`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_lanzador.TestLanzadorBatPropagacion` imprimió `.....` y el cierre literal `Ran 5 tests in 0.001s` y `OK`, sin fallos ni errores, y código de salida `0`; los 5 puntos son 1 por prueba de la clase —`test_codigo_de_salida_8_sin_interprete`, `test_propaga_argumentos_hacia_lanzador`, `test_raiz_resuelta_con_dp0`, `test_sin_interpretacion_de_argumentos_de_escenario` y `test_tres_vias_de_dec_015`—. `python -m unittest tools.gemma.tests.test_lanzador` imprimió `....................................` y el cierre literal `Ran 36 tests in 1.325s` y `OK`, sin fallos ni errores, y código de salida `0`: los 31 puntos previos acreditan que las 31 pruebas de `SPEC-017`, del selector no interactivo y del menú interactivo conservan su comportamiento, y los 5 puntos nuevos cierran la clase añadida. La revisión estática de `src/gemma/unsloth_gemma-4-26B-A4B-it-qat-GGUF.bat` confirmó que la línea de delegación ya propagaba `%*`, de modo que el archivo no requirió cambio y su diff quedó vacío. La clase nueva acredita sobre el contenido del archivo, sin ejecutarlo, `%~dp0` con la forma `for %%R in ("%~dp0..\..") do set "RAIZ=%%~fR"`, las 3 vías de `DEC-015` con sus 3 asignaciones del intérprete y el argumento `-3` de `py.exe`, la guardia `[ERROR] intérprete no disponible` seguida de `exit /b 8` como 1 sola salida con el código 8 anterior a la delegación, la línea única `"%PYTHON%" %PY_ARGS% "%RAIZ%\tools\gemma\lanzador.py" --raiz "%RAIZ%" %*` terminada en `%*` sin comillas y sin repetición, y la ausencia de los literales `--escenario`, `--listar-escenarios`, `--perfil`, `--modo`, `shift`, `%~1` y `%1` que interceptarían los argumentos. No se ejecutó el `.bat` en pruebas y no se tocó `spec.md`, `INDEX.md`, `plan.md`, `clarify.md`, `catalogo.json` ni `tools/gemma/lanzador.py`.
+- [x] Completada.
 
 ### T-016
 

@@ -3677,5 +3677,156 @@ class LanzadorBatTest(unittest.TestCase):
         )
 
 
+class TestLanzadorBatPropagacion(unittest.TestCase):
+    """Fija la propagación íntegra de `%*` del lanzador `.bat` hacia `lanzador.py`.
+
+    Comprobación estática sobre el contenido del archivo, igual que
+    `LanzadorBatTest.test_bat_sin_cabecera_de_produccion`: no ejecuta el `.bat`.
+    Acredita el contrato `C-2` y `DEC-009` de `SPEC-018`: la resolución de raíz
+    por `%~dp0`, las 3 vías de `DEC-015`, el código de salida `8` sin intérprete
+    y la delegación en `tools/gemma/lanzador.py` con la raíz resuelta y los
+    argumentos recibidos sin reinterpretar.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not LANZADOR_BAT.exists():
+            raise unittest.SkipTest(
+                f"falta el lanzador .bat de DEC-014: {LANZADOR_BAT}"
+            )
+        cls.texto = LANZADOR_BAT.read_text(encoding="utf-8")
+        cls.lineas = [linea.strip() for linea in cls.texto.splitlines()]
+        cls.invocaciones = [
+            linea
+            for linea in cls.lineas
+            if "lanzador.py" in linea and not linea.lower().startswith("rem")
+        ]
+
+    def test_raiz_resuelta_con_dp0(self):
+        """La raíz del repositorio se deriva de la ubicación del propio archivo."""
+        self.assertIn(
+            "%~dp0",
+            self.texto,
+            "la raíz se resuelve desde la ubicación del propio archivo",
+        )
+        self.assertIn(
+            'for %%R in ("%~dp0..\\..") do set "RAIZ=%%~fR"',
+            self.texto,
+            "el .bat vive 2 niveles bajo la raíz y la declara absoluta",
+        )
+        self.assertEqual(
+            1,
+            len(self.invocaciones),
+            "el .bat delega en lanzador.py en 1 sola línea",
+        )
+        self.assertIn(
+            '--raiz "%RAIZ%"',
+            self.invocaciones[0],
+            "la raíz resuelta se propaga al orquestador como argumento --raiz",
+        )
+
+    def test_tres_vias_de_dec_015(self):
+        """El intérprete se resuelve por las 3 vías de `DEC-015`, sin el `PATH`."""
+        self.assertIn(
+            "if defined LLAMA_PYTHON if exist \"%LLAMA_PYTHON%\"",
+            self.texto,
+            "la vía 1 exige que LLAMA_PYTHON declare una ruta existente",
+        )
+        self.assertIn(
+            'if not defined PYTHON if exist "%SystemRoot%\\py.exe"',
+            self.texto,
+            "la vía 2 consulta py.exe del sistema sin buscarlo en el PATH",
+        )
+        self.assertIn(
+            'set "PY_ARGS=-3"',
+            self.texto,
+            "la vía 2 invoca py.exe con -3 antes de lanzador.py",
+        )
+        self.assertIn(
+            '"%LOCALAPPDATA%\\Programs\\Python\\Python3??"',
+            self.texto,
+            "la vía 3 recorre las versiones de 2 dígitos bajo LOCALAPPDATA",
+        )
+        self.assertIn(
+            '"%LOCALAPPDATA%\\Programs\\Python\\Python3?"',
+            self.texto,
+            "la vía 3 recorre las versiones de 1 dígito bajo LOCALAPPDATA",
+        )
+        for asignacion in (
+            'set "PYTHON=%LLAMA_PYTHON%"',
+            'set "PYTHON=%SystemRoot%\\py.exe"',
+            'set "PYTHON=%%D\\python.exe"',
+        ):
+            self.assertIn(
+                asignacion,
+                self.texto,
+                f"cada vía asigna el intérprete con {asignacion}",
+            )
+
+    def test_codigo_de_salida_8_sin_interprete(self):
+        """Sin intérprete devuelve el código `8` de `C-8` sin invocar el orquestador."""
+        ocurrencias = [linea for linea in self.lineas if linea.lower() == "exit /b 8"]
+        self.assertEqual(
+            1,
+            len(ocurrencias),
+            "el .bat declara 1 sola salida con el código 8 de C-8",
+        )
+        indice_salida_8 = self.lineas.index("exit /b 8")
+        indice_guardia = next(
+            indice
+            for indice, linea in enumerate(self.lineas)
+            if "[ERROR] intérprete no disponible" in linea
+        )
+        self.assertLess(
+            indice_guardia,
+            indice_salida_8,
+            "el código 8 se devuelve en la guardia de intérprete ausente",
+        )
+        self.assertGreater(
+            self.lineas.index(self.invocaciones[0]),
+            indice_salida_8,
+            "el orquestador se invoca solo después de resolver el intérprete",
+        )
+
+    def test_propaga_argumentos_hacia_lanzador(self):
+        """La línea de delegación propaga `%*` sin comillarlo ni filtrarlo."""
+        invocacion = self.invocaciones[0]
+        self.assertIn(
+            '"%RAIZ%\\tools\\gemma\\lanzador.py"',
+            invocacion,
+            "el .bat invoca el orquestador por su ruta bajo la raíz resuelta",
+        )
+        self.assertTrue(
+            invocacion.endswith("%*"),
+            "la línea de delegación termina con %* y propaga íntegramente los argumentos",
+        )
+        self.assertNotIn(
+            '"%*"',
+            self.texto,
+            "%* no se comilla: se expande tal como lo recibió el .bat",
+        )
+        self.assertEqual(
+            1,
+            sum(linea.count("%*") for linea in self.lineas),
+            "%* aparece 1 sola vez y no se duplica la propagación",
+        )
+
+    def test_sin_interpretacion_de_argumentos_de_escenario(self):
+        """El `.bat` no enumera ni intercepta los argumentos de `C-2`."""
+        minusculas = self.texto.lower()
+        for literal in ("--escenario", "--listar-escenarios", "--perfil", "--modo"):
+            self.assertNotIn(
+                literal,
+                minusculas,
+                f"el .bat no intercepta {literal}: lo propaga por %*",
+            )
+        for filtro in ("shift", "%~1", "%1"):
+            self.assertNotIn(
+                filtro,
+                minusculas,
+                f"el .bat no consume argumentos con {filtro}",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
