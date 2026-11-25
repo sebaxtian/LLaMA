@@ -1,0 +1,295 @@
+{
+  "version": "1.0.0",
+  "modelo": "Gemma-4-26B-A4B-it-qat-GGUF",
+  "descripcion": "Catálogo canónico de 9 escenarios de ejecución del modelo Gemma-4-26B-A4B",
+  "escenarios": {
+    "ESC-M0-C4K": {
+      "id": "ESC-M0-C4K",
+      "estado": "declarado",
+      "capas_cpu_moe": 0,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 4096,
+        "efectivo_tokens": 4096,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 14200,
+        "desglose": {
+          "pesos_mib": 11800,
+          "cache_kv_mib": 600,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 0,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M0-CADJ": {
+      "id": "ESC-M0-CADJ",
+      "estado": "declarado",
+      "capas_cpu_moe": 0,
+      "contexto": {
+        "tipo": "ajustado",
+        "declarado_tokens": 8192,
+        "efectivo_tokens": 8192,
+        "regla_derivacion": "multiplos_1024_suelo_4096"
+      },
+      "presupuesto_vram": {
+        "total_mib": 14800,
+        "desglose": {
+          "pesos_mib": 11800,
+          "cache_kv_mib": 1200,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 0,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M0-C131K": {
+      "id": "ESC-M0-C131K",
+      "estado": "declarado",
+      "capas_cpu_moe": 0,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 131072,
+        "efectivo_tokens": 131072,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 15600,
+        "desglose": {
+          "pesos_mib": 11800,
+          "cache_kv_mib": 2000,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 0,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M6-C4K": {
+      "id": "ESC-M6-C4K",
+      "estado": "declarado",
+      "capas_cpu_moe": 6,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 4096,
+        "efectivo_tokens": 4096,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 11200,
+        "desglose": {
+          "pesos_mib": 8800,
+          "cache_kv_mib": 600,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 3500,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M6-CADJ": {
+      "id": "ESC-M6-CADJ",
+      "estado": "declarado",
+      "capas_cpu_moe": 6,
+      "contexto": {
+        "tipo": "ajustado",
+        "declarado_tokens": 16384,
+        "efectivo_tokens": 16384,
+        "regla_derivacion": "multiplos_1024_suelo_4096"
+      },
+      "presupuesto_vram": {
+        "total_mib": 12800,
+        "desglose": {
+          "pesos_mib": 8800,
+          "cache_kv_mib": 2200,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 3500,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M6-C131K": {
+      "id": "ESC-M6-C131K",
+      "estado": "no_ejecutable",
+      "capas_cpu_moe": 6,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 131072,
+        "efectivo_tokens": 131072,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 15800,
+        "desglose": {
+          "pesos_mib": 8800,
+          "cache_kv_mib": 5200,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 3500,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M9-C4K": {
+      "id": "ESC-M9-C4K",
+      "estado": "declarado",
+      "capas_cpu_moe": 9,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 4096,
+        "efectivo_tokens": 4096,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 9600,
+        "desglose": {
+          "pesos_mib": 7200,
+          "cache_kv_mib": 600,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 5200,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M9-CADJ": {
+      "id": "ESC-M9-CADJ",
+      "estado": "declarado",
+      "capas_cpu_moe": 9,
+      "contexto": {
+        "tipo": "ajustado",
+        "declarado_tokens": 65536,
+        "efectivo_tokens": 65536,
+        "regla_derivacion": "multiplos_1024_suelo_4096"
+      },
+      "presupuesto_vram": {
+        "total_mib": 14500,
+        "desglose": {
+          "pesos_mib": 7200,
+          "cache_kv_mib": 5500,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 5200,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    },
+    "ESC-M9-C131K": {
+      "id": "ESC-M9-C131K",
+      "estado": "declarado",
+      "capas_cpu_moe": 9,
+      "contexto": {
+        "tipo": "fijo",
+        "declarado_tokens": 131072,
+        "efectivo_tokens": 131072,
+        "regla_derivacion": null
+      },
+      "presupuesto_vram": {
+        "total_mib": 15500,
+        "desglose": {
+          "pesos_mib": 7200,
+          "cache_kv_mib": 6500,
+          "computo_mib": 1000,
+          "reserva_mib": 800
+        }
+      },
+      "ram_sistema_requerida_mib": 5200,
+      "parametros_ejecucion": {
+        "gpu_layers": 99,
+        "flash_attn": "on",
+        "ubatch": 1120,
+        "load_mode": "none",
+        "parallel": 1,
+        "cache_type_k": "q8_0",
+        "cache_type_v": "q8_0",
+        "spec_draft_n_max": 3
+      },
+      "aprobacion": null
+    }
+  }
+}

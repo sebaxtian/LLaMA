@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 1 de 16 tareas.
+- Cerradas: 2 de 16 tareas.
 
 ## Tareas
 
@@ -27,8 +27,8 @@
 - **Archivos:** `src/gemma/escenarios/catalogo.json`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios.TestCatalogoEstructura` en verde con `OK`: verifica 9 escenarios únicos (3×3), 9 IDs canónicos invariables, presupuestos desglosados en 4 componentes con margen libre >= 512 MiB sobre 16 384 MiB, RAM de host, los 7 parámetros de ejecución obligatorios y `ESC-M6-C131K` en `no_ejecutable`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios.TestCatalogoEstructura` imprimió `.......`, 1 punto por prueba en verde de `TestCatalogoEstructura` —`test_campos_obligatorios_sin_vacios`, `test_conteo_exacto_nueve_escenarios`, `test_identificadores_canonicos_y_estados`, `test_nueve_escenarios_cobertura_completa`, `test_presupuestos_no_exceden_capacidad_gpu`, `test_presupuestos_vram_desglose_y_ram_sistema` y `test_siete_parametros_ejecucion_declarados`—, con el cierre `Ran 7 tests in 0.004s` y `OK`, sin fallos ni errores, y código de salida `0`. Se creó `src/gemma/escenarios/catalogo.json` en UTF-8 sin BOM y sin comentarios, con las claves raíz `version`, `modelo`, `descripcion` y `escenarios`; declara los 9 escenarios de la matriz 3 × 3 —`ESC-M0-C4K`, `ESC-M0-CADJ` y `ESC-M0-C131K` con 0 capas de expertos en CPU, `ESC-M6-C4K`, `ESC-M6-CADJ` y `ESC-M6-C131K` con 6 capas, y `ESC-M9-C4K`, `ESC-M9-CADJ` y `ESC-M9-C131K` con 9 capas—, con `ESC-M6-C131K` en estado `no_ejecutable` y los otros 8 en estado `declarado`; los contextos fijos de 4096 y 131 072 tokens declaran el efectivo igual al declarado y los ajustados declaran 8192, 16 384 y 65 536 tokens con la regla `multiplos_1024_suelo_4096`; cada presupuesto desglosa `pesos_mib`, `cache_kv_mib`, `computo_mib` y `reserva_mib` con suma igual a `total_mib` y margen libre sobre 16 384 MiB de 2184, 1584, 784, 5184, 3584, 584, 6784, 1884 y 884 MiB respectivamente; `ram_sistema_requerida_mib` declara `0` en los 3 escenarios de 0 capas, `3500` en los 3 de 6 capas y `5200` en los 3 de 9 capas; y los 9 escenarios declaran los 7 parámetros obligatorios —`gpu_layers` 99, `flash_attn` `on`, `ubatch` 1120, `load_mode` `none`, `parallel` 1, `cache_type_k` `q8_0` y `cache_type_v` `q8_0`— más `spec_draft_n_max` 3, conforme a `DEC-011`. `git status --short` informó `?? src/gemma/escenarios/` como única variación de la implementación; no se modificó `tools/gemma/tests/test_escenarios.py` ni artefacto alguno fuera de `src/gemma/escenarios/catalogo.json` y `tasks.md`, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-003
 
