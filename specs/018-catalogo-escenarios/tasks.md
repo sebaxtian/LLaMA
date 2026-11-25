@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 9 de 16 tareas.
+- Cerradas: 10 de 16 tareas.
 
 ## Tareas
 
@@ -115,8 +115,8 @@
 - **Archivos:** `tools/gemma/registro.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_registro.TestRegistroEscenarios` en verde con `OK`: verifica registro de `escenario_id`, `presupuesto_vram_declarado_mib`, VRAM asignada, libre, delta y conformidad (`consumo <= presupuesto`); si consumo > presupuesto, verifica registro del exceso y conservación íntegra de la medición con `conforme_presupuesto = false`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_registro.TestRegistroEscenarios` imprimió `.....`, 1 punto por cada una de las 5 pruebas de la clase —`test_22_campos_previos_conservan_orden_y_contenido`, `test_consumo_excede_presupuesto_conserva_medicion`, `test_entradas_del_escenario_se_validan_nombrando_la_clave`, `test_registro_declara_escenario_y_conformidad` y `test_sin_presupuesto_o_sin_medicion_no_inventa_valores`—, con el cierre literal `Ran 5 tests in 0.021s` y `OK`, sin fallos ni errores, y código de salida `0`. `python -m unittest tools.gemma.tests.test_registro` imprimió `...............`, 1 punto por cada una de las 15 pruebas de la suite —las 10 de `SPEC-017` y las 5 de la clase añadida—, con el cierre literal `Ran 15 tests in 0.042s` y `OK`, sin fallos ni errores, y código de salida `0`: los 10 puntos previos acreditan que el registro de `SPEC-017` conserva sus 11 claves de `C-5` y sus 22 filas de `C-6` en el orden y con el contenido anteriores, y las 5 pruebas nuevas cierran la extensión de `SPEC-018`. Se completó `tools/gemma/registro.py` con el contrato `C-5` de `SPEC-018`: `construir_registro(perfil, prueba, proposito, frontmatter, campos, *, instante=None, escenario=None)` admite el bloque opcional `escenario` con las 4 entradas `escenario_id`, `presupuesto_vram_declarado_mib`, `vram_asignada_medida_mib` y `vram_libre_medida_mib`, deriva `delta_presupuesto_mib` como la VRAM asignada medida menos el presupuesto declarado, aplica la regla `consumo <= presupuesto` de `AMB-010` en `conforme_presupuesto` y transcribe el resultado en `dictamen`, con `conforme` cuando el consumo no excede el presupuesto y `excede presupuesto por N MiB` cuando lo supera; el bloque declara las 7 claves en el orden del contrato `escenario_id`, `presupuesto_vram_declarado_mib`, `vram_asignada_medida_mib`, `vram_libre_medida_mib`, `delta_presupuesto_mib`, `dictamen` y `conforme_presupuesto`, y se serializa en 1 sola línea `escenario: <json compacto, claves ordenadas>` después de las 11 claves de `C-5` y del bloque `comparacion`, antes del cierre del frontmatter. Sin el bloque, el archivo escrito es idéntico al de `SPEC-017`, y la tabla de 22 filas no se altera ni se renumera. 1 clave ajena al bloque, 1 `escenario_id` ausente, vacío o sin el prefijo `ESC-`, y 1 MiB fuera de rango —negativo, booleano o texto— abortan con `ValueError` que nombra la clave. Sin presupuesto, sin medición del consumo o sin ambas cosas, las claves no contrastables valen `None` y el dictamen declara la ausencia con `no contrastable: falta el presupuesto declarado`, `no contrastable: falta la medición de VRAM asignada` o `no contrastable: faltan el presupuesto declarado y la medición de VRAM asignada`, de modo que el registro no inventa valor alguno y conserva íntegra la medición de la fila 13 de `C-6` cuando el consumo excede el presupuesto (`CB-002`); la ausencia se escribe como `null` en el JSON, nunca como `0` ni como `false`. `git status --short` informó ` M tools/gemma/registro.py` como única variación; no se modificó `tools/gemma/tests/test_registro.py` ni archivo alguno fuera de los declarados en la tarea, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-011
 

@@ -10,8 +10,9 @@ que ninguna ejecución sobrescribe 1 registro previo.
 Contrato:
 
 - ``construir_registro(perfil, prueba, proposito, frontmatter, campos, *,
-  instante=None) -> dict`` es pura: valida y devuelve exactamente las claves
-  ``id``, ``frontmatter`` y ``filas`` sin escribir archivo alguno. ``id`` y
+  instante=None, escenario=None) -> dict`` es pura: valida y devuelve
+  exactamente las claves ``id``, ``frontmatter`` y ``filas`` sin escribir
+  archivo alguno. ``id`` y
   ``frontmatter["id"]`` declaran la forma ``<AAAAMMDD>T<HHMMSS>Z-<perfil>-
   <prueba>`` en UTC y ``frontmatter["fecha_utc"]`` la forma
   ``YYYY-MM-DDTHH:MM:SSZ``. ``instante`` es 1 ``datetime`` inyectable para fijar
@@ -38,6 +39,20 @@ Contrato:
   línea y el registro conserva exactamente las 11 claves de `C-5`. 1 clave
   ausente de las 10, 1 clave ajena a `C-7` o 1 valor no serializable produce
   ``ValueError`` que nombra la clave.
+- ``escenario`` de `SPEC-018` es 1 bloque opcional con las 4 entradas que
+  aporta el orquestador —``escenario_id``, ``presupuesto_vram_declarado_mib``,
+  ``vram_asignada_medida_mib`` y ``vram_libre_medida_mib``— del que el
+  registro deriva ``delta_presupuesto_mib``, ``dictamen`` y
+  ``conforme_presupuesto`` bajo la regla ``consumo <= presupuesto`` de
+  `AMB-010`, conforme a `RF-008`, `CB-002` y `CA-006`. El bloque declara las 7
+  claves en ese orden y se escribe en 1 sola línea
+  ``escenario: <json compacto, claves ordenadas>`` después de las 11 claves de
+  `C-5` y del bloque de comparación, antes del cierre del frontmatter. Cuando
+  falta el presupuesto, la medición del consumo o ambas cosas, las claves no
+  contrastables valen ``None`` y el ``dictamen`` declara la ausencia, de modo
+  que el registro no inventa valor alguno; 1 clave ajena, 1 identificador sin
+  el prefijo ``ESC-`` o 1 MiB fuera de rango producen ``ValueError`` que nombra
+  la clave.
 - ``campos`` es el mapa ordenado de las 22 etiquetas de `C-6` a su texto. Las
   13 magnitudes —6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 19 y 22— declaran su
   unidad en el valor: ``<número> <unidad>`` con ``tokens`` en 6 y 9,
@@ -122,6 +137,41 @@ CLAVE_ALTERNATIVA = "alternativa_contexto"
 
 # `C-7`: el bloque viaja en esta clave opcional del frontmatter.
 CLAVE_COMPARACION = "comparacion"
+
+# `C-5` de `SPEC-018`: el bloque de conformidad presupuestaria viaja en esta
+# clave opcional del frontmatter y no altera las 11 claves de `C-5`.
+CLAVE_ESCENARIO = "escenario"
+
+# `C-5` de `SPEC-018`: las 4 entradas que aporta el orquestador.
+ENTRADAS_ESCENARIO = (
+    "escenario_id",
+    "presupuesto_vram_declarado_mib",
+    "vram_asignada_medida_mib",
+    "vram_libre_medida_mib",
+)
+
+# `C-5` de `SPEC-018`: las 3 claves que deriva el registro.
+CLAVES_DERIVADAS_ESCENARIO = (
+    "delta_presupuesto_mib",
+    "dictamen",
+    "conforme_presupuesto",
+)
+
+# `C-5` de `SPEC-018`: las 7 claves del bloque, en el orden de declaración.
+CLAVES_ESCENARIO = ENTRADAS_ESCENARIO + CLAVES_DERIVADAS_ESCENARIO
+
+# `C-5` de `SPEC-018`: el identificador declara el prefijo del catálogo.
+PREFIJO_ESCENARIO = "ESC-"
+
+# `C-5` de `SPEC-018`: la regla `consumo <= presupuesto` de `AMB-010` y los 3
+# dictámenes que declaran la ausencia de contraste sin inventar valores.
+DICTAMEN_CONFORME = "conforme"
+DICTAMEN_SIN_PRESUPUESTO = "no contrastable: falta el presupuesto declarado"
+DICTAMEN_SIN_MEDICION = "no contrastable: falta la medición de VRAM asignada"
+DICTAMEN_SIN_AMBOS = (
+    "no contrastable: faltan el presupuesto declarado y la medición de VRAM "
+    "asignada"
+)
 
 # `C-7`: las 3 claves del bloque que declaran 1 texto no vacío.
 CLAVES_TEXTO_COMPARACION = (
@@ -212,16 +262,24 @@ SEPARADOR_TABLA = "| --- | --- | --- |"
 
 
 def construir_registro(
-    perfil, prueba, proposito, frontmatter, campos, *, instante=None
+    perfil,
+    prueba,
+    proposito,
+    frontmatter,
+    campos,
+    *,
+    instante=None,
+    escenario=None,
 ):
     """Valida y devuelve el registro de 1 ejecución sin escribir archivo.
 
     ``perfil`` y ``prueba`` forman el identificador junto con el instante UTC;
     ``proposito`` pertenece a ``PROPOSITOS``; ``frontmatter`` aporta las 6
-    claves que calcula el orquestador, admite la clave opcional ``comparacion``
-    de `C-7` y ``campos`` el texto de las 22 filas de `C-6`. Toda irregularidad
-    lanza ``ValueError`` con la fila, la unidad, el vocabulario o la clave
-    afectada.
+    claves que calcula el orquestador y admite las claves opcionales
+    ``comparacion`` de `C-7` y ``escenario`` de `SPEC-018`, que también llega
+    como ``escenario``; ``campos`` el texto de las 22 filas de `C-6`. Toda
+    irregularidad lanza ``ValueError`` con la fila, la unidad, el vocabulario o
+    la clave afectada.
     """
     nombre_perfil = _validar_identificador("perfil", perfil)
     nombre_prueba = _validar_identificador("prueba", prueba)
@@ -249,6 +307,13 @@ def construir_registro(
         # `C-7`: la clave se suma a las 11 de `C-5` solo cuando la prueba es
         # comparativa; sin ella el registro conserva el formato de `T-025`.
         frontmatter_registro[CLAVE_COMPARACION] = comparacion
+    bloque_escenario = _escenario_de_c5(
+        escenario if escenario is not None else frontmatter.get(CLAVE_ESCENARIO)
+    )
+    if bloque_escenario is not None:
+        # `SPEC-018`: el bloque de conformidad se suma a las 11 claves de `C-5`
+        # solo cuando la ejecución declara el escenario del catálogo.
+        frontmatter_registro[CLAVE_ESCENARIO] = bloque_escenario
 
     return {
         "id": identificador,
@@ -446,6 +511,130 @@ def _json_comparacion(bloque):
         ) from error
 
 
+def _escenario_de_c5(bloque):
+    """Valida el bloque de `SPEC-018` y devuelve sus 7 claves en orden.
+
+    ``bloque`` aporta las 4 entradas del orquestador; el registro deriva
+    ``delta_presupuesto_mib`` como consumo medido menos presupuesto declarado,
+    ``conforme_presupuesto`` bajo la regla ``consumo <= presupuesto`` de
+    `AMB-010` y ``dictamen`` como su forma legible. 1 entrada ausente o
+    ``None`` no se sustituye por estimación alguna: la clave no contrastable
+    vale ``None`` y el dictamen declara la ausencia. Las claves derivadas se
+    recalculan siempre, de modo que la función es idempotente sobre su propio
+    resultado y ``escribir_registro`` vuelve a validar el bloque ya derivado.
+    """
+    if bloque is None:
+        return None
+    if not isinstance(bloque, dict):
+        raise ValueError(
+            f"{CLAVE_ESCENARIO}: se esperaba 1 mapa con las 4 entradas de C-5 y "
+            f"se recibió {type(bloque).__name__}"
+        )
+    admitidas = set(CLAVES_ESCENARIO)
+    for clave in bloque:
+        if clave not in admitidas:
+            raise ValueError(
+                f"{CLAVE_ESCENARIO}: la clave {clave} no pertenece a C-5 de "
+                "SPEC-018, que declara las 4 entradas del orquestador y las 3 "
+                "claves derivadas"
+            )
+    identificador = _escenario_id(bloque.get("escenario_id"))
+    presupuesto = _mib_de_escenario(
+        "presupuesto_vram_declarado_mib",
+        bloque.get("presupuesto_vram_declarado_mib"),
+        positivo=True,
+    )
+    asignada = _mib_de_escenario(
+        "vram_asignada_medida_mib",
+        bloque.get("vram_asignada_medida_mib"),
+        positivo=False,
+    )
+    libre = _mib_de_escenario(
+        "vram_libre_medida_mib",
+        bloque.get("vram_libre_medida_mib"),
+        positivo=False,
+    )
+    delta, dictamen, conforme = _dictamen_de_presupuesto(presupuesto, asignada)
+    return {
+        "escenario_id": identificador,
+        "presupuesto_vram_declarado_mib": presupuesto,
+        "vram_asignada_medida_mib": asignada,
+        "vram_libre_medida_mib": libre,
+        "delta_presupuesto_mib": delta,
+        "dictamen": dictamen,
+        "conforme_presupuesto": conforme,
+    }
+
+
+def _escenario_id(valor):
+    """Valida el identificador canónico del escenario ejecutado."""
+    if valor is None:
+        raise ValueError(
+            f"{CLAVE_ESCENARIO}: falta la clave escenario_id de C-5, que "
+            "identifica el escenario del catálogo que se ejecutó"
+        )
+    if not isinstance(valor, str) or not valor.strip():
+        raise ValueError(
+            f"{CLAVE_ESCENARIO}: la clave escenario_id declara {valor!r}; C-5 "
+            "exige 1 identificador no vacío"
+        )
+    texto = valor.strip()
+    if not texto.startswith(PREFIJO_ESCENARIO):
+        raise ValueError(
+            f"{CLAVE_ESCENARIO}: la clave escenario_id declara {texto!r}; el "
+            f"identificador del catálogo declara el prefijo {PREFIJO_ESCENARIO}"
+        )
+    return texto
+
+
+def _mib_de_escenario(clave, valor, *, positivo):
+    """Valida 1 entrada en MiB; ``None`` la declara no contrastable."""
+    if valor is None:
+        return None
+    forma = "mayor que 0" if positivo else "no negativo"
+    mensaje = (
+        f"{CLAVE_ESCENARIO}: la clave {clave} declara {valor!r}; C-5 exige "
+        f"1 número {forma} en MiB"
+    )
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+        raise ValueError(mensaje)
+    fuera_de_rango = valor <= 0 if positivo else valor < 0
+    if fuera_de_rango:
+        raise ValueError(mensaje)
+    return valor
+
+
+def _dictamen_de_presupuesto(presupuesto, asignada):
+    """Aplica la regla ``consumo <= presupuesto`` de `AMB-010`.
+
+    Devuelve la tupla ``(delta, dictamen, conforme)``; sin las 2 magnitudes no
+    hay contraste y las 3 posiciones declaran la ausencia con ``None``.
+    """
+    if presupuesto is None and asignada is None:
+        return None, DICTAMEN_SIN_AMBOS, None
+    if presupuesto is None:
+        return None, DICTAMEN_SIN_PRESUPUESTO, None
+    if asignada is None:
+        return None, DICTAMEN_SIN_MEDICION, None
+    delta = asignada - presupuesto
+    if delta > 0:
+        return delta, f"excede presupuesto por {delta} MiB", False
+    return delta, DICTAMEN_CONFORME, True
+
+
+def _json_escenario(bloque):
+    """Serializa el bloque de `SPEC-018` en JSON compacto, claves ordenadas."""
+    try:
+        return json.dumps(
+            bloque, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"{CLAVE_ESCENARIO}: el bloque de C-5 no es serializable en JSON: "
+            f"{error}"
+        ) from error
+
+
 def _filas_de_c6(campos):
     """Valida y devuelve las 22 filas de `C-6` en el orden de `RF-006`."""
     if not isinstance(campos, dict):
@@ -570,8 +759,9 @@ def _texto_del_registro(registro, identificador):
     """Serializa el registro completo con el identificador indicado.
 
     Las 11 claves de `C-5` se escriben en su orden y, cuando el frontmatter
-    declara el bloque opcional de `C-7`, 1 línea ``comparacion:`` con el objeto
-    en 1 sola línea legible se escribe después de ellas y antes del cierre.
+    declara los bloques opcionales, después de ellas se escriben 1 línea
+    ``comparacion:`` de `C-7` y 1 línea ``escenario:`` de `SPEC-018`, en ese
+    orden y antes del cierre, cada una con su objeto en JSON de 1 sola línea.
     """
     frontmatter = dict(registro["frontmatter"])
     frontmatter["id"] = identificador
@@ -587,6 +777,9 @@ def _texto_del_registro(registro, identificador):
     comparacion = _comparacion_de_c7(frontmatter.get(CLAVE_COMPARACION))
     if comparacion is not None:
         lineas.append(f"{CLAVE_COMPARACION}: {_json_comparacion(comparacion)}")
+    escenario = _escenario_de_c5(frontmatter.get(CLAVE_ESCENARIO))
+    if escenario is not None:
+        lineas.append(f"{CLAVE_ESCENARIO}: {_json_escenario(escenario)}")
     lineas.extend(["---", "", ENCABEZADO_TABLA, SEPARADOR_TABLA])
     for fila in registro["filas"]:
         lineas.append(
