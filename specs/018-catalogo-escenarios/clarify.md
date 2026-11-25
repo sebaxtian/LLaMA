@@ -1,6 +1,6 @@
 # Clarificación — SPEC-018
 
-*Artefacto de rango 6: registro de las doce ambigüedades de SPEC-018 resueltas con el propietario antes de abrir Plan. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1.*
+*Artefacto de rango 6: registro de las doce ambigüedades de SPEC-018 resueltas con el propietario antes de abrir Plan, y de la reapertura de la clarificación del 2026-11-25 con AMB-013. Al cierre no queda ninguna casilla pendiente: el cierre sin casillas abiertas es condición de G1. La reapertura no declara G1: la aprobación anterior queda sin efecto sobre el contrato reformulado y la nueva aprobación firmada corresponde al propietario.*
 
 ## Hallazgos de ambigüedad
 
@@ -131,9 +131,25 @@
 - [x] Modelo de transición a `aprobado` condicionado a medición registrada y confirmación del propietario, con ejecutabilidad autónoma para estados `declarado` y `medido` independiente de los perfiles — afecta a `RF-011` y `CA-008`.
 - [x] Convivencia y autonomía de ejecución de los escenarios frente a los 3 perfiles vigentes — afecta a `RF-012` y `CA-004`.
 - [x] Especificación de valores y directrices canónicas para los 7 parámetros de ejecución restantes — afecta a `RF-013` y `CA-009`.
+- [x] `RF-011` y `CA-008` con el registro de aprobación que conserva los 4 valores que sostuvieron la aprobación —capas de expertos en CPU, contexto efectivo en tokens, los 7 parámetros de ejecución y el presupuesto de VRAM en MiB— y con la comparación de esos valores frente a los declarados por el escenario, de modo que 1 diferencia en cualquiera de ellos revoca la condición de aprobado y exige 1 medición nueva — afecta a `RF-011` y `CA-008`.
 
 ## Decisiones de negocio
 
 - Se preserva la matriz 3×3 íntegra de 9 escenarios para propósitos de análisis comparativo y catalogación exhaustiva, catalogando el escenario técnicamente inviable (`ESC-M6-C131K`) como `no_ejecutable` desde el diseño.
 - El presupuesto de VRAM se rige estrictamente por la regla `consumo <= presupuesto` con margen de seguridad mínimo de 512 MiB para salvaguardar la eGPU USB4 contra transferencias lentas a memoria compartida.
 - La memoria RAM de sistema se controla como salvaguarda operativa mediante precheck (mínimo 8192 MiB libres) sin alterar la centralidad del presupuesto de VRAM de la GPU dedicada.
+
+## Reapertura de la clarificación (v0.6.0)
+
+- **Motivo:** brecha de implementación de `CB-006` detectada en la validación con dictamen `NO CONVERGIDO`: `plan.md` designa 1 instrumento de prueba inexistente para la modificación inválida del estado aprobado y `escenarios.py` resuelve la admisibilidad solo por la veracidad del campo `aprobacion`, sin conservar ni comparar los valores que sostuvieron la aprobación.
+- **Alcance:** se cierra AMB-013, se parchean `RF-011` y `CA-008` con la conservación y comparación del registro de aprobación, y se fija la tarea `T-017` que implementa la revocación y su prueba. La corrección de los 7 instrumentos de `plan.md` con nombre inexistente corresponde a la etapa Plan. No se añaden casos borde nuevos y `CB-006` conserva su redacción.
+- **Constancia:** no se altera ningún otro `AMB`: `AMB-001` a `AMB-012` conservan su descripción, pregunta, respuesta, decisión, fecha y responsable, y el alcance de esta reapertura se limita a `AMB-013`.
+
+### AMB-013
+
+- **Descripción:** `CB-006` exige que 1 escenario aprobado que recibe 1 modificación en capas de expertos en CPU, contexto, parámetros de ejecución o presupuesto pierda la condición de aprobado y exija 1 medición nueva, y la implementación resuelve la admisibilidad solo por la veracidad del campo `aprobacion`, sin conservar ni comparar los valores aprobados; el instrumento que `plan.md` designa no existe.
+- **Pregunta:** ¿qué debe conservar el registro de aprobación para que la modificación de 1 valor revoque el estado aprobado?
+- **Respuesta:** el registro de aprobación conserva los 4 valores que sostuvieron la aprobación —capas de expertos en CPU, contexto efectivo en tokens, los 7 parámetros de ejecución y el presupuesto de VRAM—, y la admisibilidad compara esos valores con los declarados; 1 diferencia en cualquiera de ellos revoca la condición de aprobado y exige 1 medición nueva.
+- **Decisión:** parche a `RF-011` y a `CA-008` con la exigencia de conservar y comparar el registro de aprobación, tarea `T-017` para implementar la revocación y su prueba, y corrección de los 7 instrumentos inexistentes en `plan.md` en la etapa Plan.
+- **Fecha:** 2026-11-25 (UTC).
+- **Responsable:** Agent Sebaxtian.

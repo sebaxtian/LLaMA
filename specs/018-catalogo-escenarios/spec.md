@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: implemented
-version: 0.4.2
+status: clarified
+version: 0.6.0
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -91,7 +91,7 @@ La presente redacción fija como requisito que el valor del contexto ajustado y 
 
 ### RF-011
 
-`El sistema NO DEBE presentar 1 escenario del catálogo como configuración aprobada mientras no conste 1 medición registrada que lo sostenga y el propietario no lo haya confirmado por escrito, pero DEBE permitir la selección y ejecución de cualquier escenario en estado declarado o medido con independencia del estado de aprobación de los perfiles.`
+`El sistema NO DEBE presentar 1 escenario del catálogo como configuración aprobada mientras no conste 1 medición registrada que lo sostenga y el propietario no lo haya confirmado por escrito, pero DEBE permitir la selección y ejecución de cualquier escenario en estado declarado o medido con independencia del estado de aprobación de los perfiles. El registro de aprobación DEBE conservar los 4 valores que sostuvieron la aprobación —capas de expertos en CPU, contexto efectivo en tokens, los 7 parámetros de ejecución y el presupuesto de VRAM en MiB— y el sistema DEBE comparar esos valores con los declarados por el escenario, de modo que 1 diferencia en cualquiera de ellos DEBE revocar la condición de aprobado y DEBE exigir 1 medición nueva.`
 
 ### RF-012
 
@@ -216,7 +216,7 @@ Cubre: `RF-009`, `RF-010`, `RNF-005`, `CB-003`, `CB-005`.
 
 ### CA-008
 
-`DADO 1 escenario del catálogo, CUANDO se contrasta su presentación, ENTONCES no figura como configuración aprobada sin 1 medición registrada y la confirmación escrita del propietario, pero permite la selección y ejecución en estado declarado o medido con independencia de los perfiles; y 1 escenario medido que recibe 1 modificación de sus capas, contexto, parámetros o presupuesto no conserva la condición de aprobado y exige 1 medición nueva.`
+`DADO 1 escenario del catálogo, CUANDO se contrasta su presentación, ENTONCES no figura como configuración aprobada sin 1 medición registrada y la confirmación escrita del propietario, pero permite la selección y ejecución en estado declarado o medido con independencia de los perfiles; el registro de aprobación conserva los 4 valores que sostuvieron la aprobación —capas de expertos en CPU, contexto efectivo en tokens, los 7 parámetros de ejecución y el presupuesto de VRAM en MiB—, la admisibilidad compara esos valores con los declarados por el escenario, y 1 diferencia en cualquiera de ellos revoca la condición de aprobado y exige 1 medición nueva.`
 
 Cubre: `RF-011`, `CB-006`.
 
@@ -249,6 +249,8 @@ Cubre: `CB-007`.
 | 0.4.0   | 2026-11-25 | Descomposición en tareas atómicas (tasks.md) con dependencias, estimaciones y cobertura completa |
 | 0.4.1   | 2026-11-25 | Transición tasked → implementing por T4: G2 verificada por el orquestador con OK: sin hallazgos y 16 de 16 tareas cerradas con su evidencia transcrita; la versión incrementa PATCH y no MINOR porque la regla de versionado reserva el MINOR a clarify, plan, tasks y validación, y esta fila solo registra la entrada en la etapa Implement sin modificar requisitos, casos borde ni criterios de aceptación |
 | 0.4.2   | 2026-11-25 | Transición implementing → implemented por T5: 16 de 16 tareas cerradas con su evidencia transcrita y G3 verificada por el orquestador con OK: sin hallazgos; la versión incrementa PATCH y no MINOR porque la etapa Implement no cambia el contrato y la regla de versionado reserva el MINOR a clarify, plan, tasks y validación |
+| 0.5.0 | 2026-11-25 | Reapertura por T11 autorizada por el propietario: la validación detectó que CB-006 no está implementado ni verificado, porque plan.md designa 1 instrumento inexistente y escenarios.py no conserva ni compara los valores que sostuvieron la aprobación; la aprobación G1 anterior deja de cubrir el contrato y se exige nueva clarificación y nueva aprobación firmada de G1 |
+| 0.6.0 | 2026-11-25 | Reapertura de la clarificación con AMB-013: se registra la brecha de CB-006, se fija el contenido del registro de aprobación que sostiene el estado aprobado y se decide la tarea T-017 que implementa la revocación |
 
 ### Historial de transiciones
 
@@ -260,5 +262,7 @@ Cubre: `CB-007`.
 | 2026-11-25  | T3         | `planned`   | `tasked`    | `planner`   | tasks.md con los campos obligatorios y cobertura completa de requisitos y casos borde |
 | 2026-11-25  | T4         | `tasked`    | `implementing` | `planner` | G2 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G2, que devolvió OK: sin hallazgos, y 16 de 16 tareas cerradas con su evidencia transcrita |
 | 2026-11-25 | T5 | implementing | implemented | planner | G3 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G3, que devolvió OK: sin hallazgos, y 16 de 16 tareas cerradas con su evidencia transcrita |
+| 2026-11-25 | T11 | implemented | draft | propietario | reapertura autorizada por escrito por el propietario por brecha de implementación de CB-006 detectada en el reporte de validación con dictamen NO CONVERGIDO; la aprobación G1 anterior queda sin efecto |
+| 2026-11-25 | T1 | draft | clarified | planner | clarify.md reabierto con AMB-013 cerrado y parches aplicados |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
