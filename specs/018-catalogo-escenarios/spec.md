@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: implemented
-version: 0.8.2
+status: validated
+version: 0.9.0
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -255,6 +255,7 @@ Cubre: `CB-007`.
 | 0.8.0   | 2026-11-25 | Tareas de la reapertura: T-017 fija las pruebas de la revocación de la aprobación y T-018 implementa la validación del bloque aprobacion y su comparación en la admisibilidad, conforme a DEC-012                                                                                                                                                                                                              |
 | 0.8.1   | 2026-11-25 | Transición tasked → implementing por T4 de la reapertura: G2 verificada por el orquestador con OK: sin hallazgos sobre el contrato 0.8.0 y 16 de 18 tareas cerradas; la versión incrementa PATCH porque la etapa Implement no cambia el contrato y la regla de versionado reserva el MINOR a clarify, plan, tasks y validación                                                                                 |
 | 0.8.2   | 2026-11-25 | Transición implementing → implemented por T5 de la reapertura: T-017 y T-018 cerradas con su evidencia transcrita y G3 verificada por el orquestador con OK: sin hallazgos sobre el contrato 0.8.0, en el que la admisibilidad compara los 4 valores conservados en el bloque aprobacion; la versión incrementa PATCH porque la etapa Implement no cambia el contrato                                          |
+| 0.9.0   | 2026-11-25 | Transición implemented → validated por T6: G4 aprobada por el propietario en el commit firmado cc92982 y verificada con OK: sin hallazgos; la rama de trabajo se integró en dev con el merge de dos padres 15582a1 y quedó eliminada; el validador agregado sobre dev no emite errores; la versión incrementa MINOR por la entrada en la etapa Validate |
 
 ### Historial de transiciones
 
@@ -272,5 +273,6 @@ Cubre: `CB-007`.
 | 2026-11-25  | T3         | planned      | tasked         | planner     | tasks.md con T-017 y T-018, sus 8 campos y la cobertura de RF-011, CB-006 y CA-008                                                                                                                       |
 | 2026-11-25  | T4         | tasked       | implementing   | planner     | G2 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G2, que devolvió OK: sin hallazgos, y 16 de 18 tareas cerradas con T-017 y T-018 abiertas                       |
 | 2026-11-25  | T5         | implementing | implemented    | planner     | G3 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G3, que devolvió OK: sin hallazgos, y 18 de 18 tareas cerradas con su evidencia transcrita                      |
+| 2026-11-25  | T6         | implemented  | validated      | planner     | G4 aprobada en el commit firmado cc92982 y verificada con python tools\sdd\validate.py --spec SPEC-018 --gate G4 --git, que devolvió OK: sin hallazgos; integración en dev por el merge de dos padres 15582a1 y validador agregado posterior sin errores |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
