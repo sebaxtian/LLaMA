@@ -13,7 +13,10 @@ Contrato:
   ausente, ilegible o con JSON inválido, ante 1 clave obligatoria ausente, ante
   1 campo con tipo incoherente y ante el par (capas de expertos en CPU,
   contexto efectivo) repetido, cuyo error identifica los identificadores
-  implicados (`CB-004`).
+  implicados (`CB-004`). El bloque ``aprobacion`` se acepta nulo o ausente y,
+  cuando consta, exige las 6 claves de `C-1` con sus tipos y valores válidos,
+  de modo que el rechazo nombra la clave que falta o no es válida (`RF-011`,
+  `DEC-012`).
 - ``listar_escenarios(catalogo)`` devuelve los escenarios ordenados por capas
   de expertos en CPU ascendente y, dentro de cada valor, por contexto efectivo
   ascendente (`DEC-004`), con independencia del orden de declaración del JSON.
@@ -31,8 +34,10 @@ Contrato:
 - ``validar_admisibilidad_escenario(escenario)`` devuelve ``(True, "")`` para
   los estados ``declarado`` y ``medido`` y ``(False, motivo)`` para
   ``no_ejecutable``, para ``aprobado`` sin aprobación registrada, al que se le
-  exige 1 medición nueva, y para el contexto ajustado sin valor numérico
-  resuelto (`RF-011`, `RF-010`, `CB-006`).
+  exige 1 medición nueva, para el contexto ajustado sin valor numérico
+  resuelto (`RF-011`, `RF-010`, `CB-006`) y para ``aprobado`` cuyos 4 valores
+  conservados difieren de los declarados; en ese último caso el motivo nombra
+  la clave y ambos valores y exige 1 medición nueva (`DEC-012`, `CA-008`).
 """
 
 from __future__ import annotations
@@ -60,6 +65,17 @@ CAMPOS_LISTADO = (
     "capas_cpu_moe",
     "contexto",
     "presupuesto_vram",
+)
+
+# `C-1`, `RF-011` y `DEC-012`: las 6 claves obligatorias del bloque
+# `aprobacion` y los 4 valores que la admisibilidad compara con los declarados.
+CLAVES_APROBACION = (
+    "capas_cpu_moe",
+    "contexto_efectivo_tokens",
+    "parametros_ejecucion",
+    "presupuesto_vram_total_mib",
+    "medicion",
+    "confirmacion_propietario",
 )
 
 MOTIVO_NO_EJECUTABLE = (
@@ -111,6 +127,15 @@ def _numero(valor, campo):
     """Comprueba que 1 campo declara 1 número —nunca 1 booleano— y lo devuelve."""
     if isinstance(valor, bool) or not isinstance(valor, (int, float)):
         raise ValueError(f"{campo}: se esperaba 1 número y declara {valor!r}")
+    return valor
+
+
+def _texto(valor, campo):
+    """Comprueba que 1 campo declara 1 texto no vacío y lo devuelve."""
+    if not isinstance(valor, str) or not valor.strip():
+        raise ValueError(
+            f"{campo}: se esperaba 1 texto no vacío y declara {valor!r}"
+        )
     return valor
 
 
@@ -199,6 +224,55 @@ def _validar_presupuesto(presupuesto, contexto_error):
         )
 
 
+def _validar_aprobacion(escenario, contexto_error):
+    """Valida el bloque ``aprobacion`` de `C-1` y `DEC-012` cuando consta.
+
+    El bloque nulo o ausente es válido: solo los escenarios con aprobación
+    registrada declaran el objeto con las 6 claves obligatorias. 1 clave
+    ausente o 1 valor con tipo o rango inválido aborta con ``ValueError`` que
+    nombra la clave.
+    """
+    if "aprobacion" not in escenario:
+        return
+    bloque = escenario["aprobacion"]
+    if bloque is None:
+        return
+    ruta = f"{contexto_error}.aprobacion"
+    _objeto(bloque, ruta)
+    for clave in CLAVES_APROBACION:
+        _requerido(bloque, clave, ruta)
+    capas = _entero(bloque["capas_cpu_moe"], f"{ruta}.capas_cpu_moe")
+    if capas < 0:
+        raise ValueError(f"{ruta}.capas_cpu_moe: declara {capas} capas")
+    efectivo = _entero(
+        bloque["contexto_efectivo_tokens"], f"{ruta}.contexto_efectivo_tokens"
+    )
+    if efectivo <= 0:
+        raise ValueError(
+            f"{ruta}.contexto_efectivo_tokens: declara {efectivo} tokens"
+        )
+    parametros = _objeto(
+        bloque["parametros_ejecucion"], f"{ruta}.parametros_ejecucion"
+    )
+    if not parametros:
+        raise ValueError(
+            f"{ruta}.parametros_ejecucion: no declara parámetro alguno"
+        )
+    total = _entero(
+        bloque["presupuesto_vram_total_mib"],
+        f"{ruta}.presupuesto_vram_total_mib",
+    )
+    if total <= 0:
+        raise ValueError(
+            f"{ruta}.presupuesto_vram_total_mib: declara {total} MiB"
+        )
+    _texto(bloque["medicion"], f"{ruta}.medicion")
+    _texto(
+        bloque["confirmacion_propietario"],
+        f"{ruta}.confirmacion_propietario",
+    )
+
+
 def _validar_escenario(identificador, escenario):
     """Valida 1 escenario de `C-1` y devuelve el par (capas, contexto) de `CB-004`."""
     contexto_error = f"escenario «{identificador}»"
@@ -243,6 +317,7 @@ def _validar_escenario(identificador, escenario):
         raise ValueError(
             f"{contexto_error}.parametros_ejecucion: no declara parámetro alguno"
         )
+    _validar_aprobacion(escenario, contexto_error)
     return (capas, efectivo)
 
 
@@ -390,6 +465,80 @@ def _falta_contexto_resuelto(escenario):
     return False
 
 
+def _valor_anidado(contenedor, *ruta):
+    """Devuelve el valor de 1 ruta anidada o ``None`` si la ruta no existe."""
+    actual = contenedor
+    for clave in ruta:
+        if not isinstance(actual, dict) or clave not in actual:
+            return None
+        actual = actual[clave]
+    return actual
+
+
+def _diferencia_parametros(declarados, conservados):
+    """Devuelve la primera diferencia de ``parametros_ejecucion`` como tupla.
+
+    La tupla declara la clave interna que difiere —con el prefijo
+    ``parametros_ejecucion``—, el valor declarado y el valor conservado; si los
+    2 objetos coinciden devuelve ``None`` (`DEC-012`).
+    """
+    if not isinstance(declarados, dict) or not isinstance(conservados, dict):
+        return ("parametros_ejecucion", declarados, conservados)
+    for clave, conservado in conservados.items():
+        if clave not in declarados or declarados[clave] != conservado:
+            return (
+                f"parametros_ejecucion.{clave}",
+                declarados.get(clave),
+                conservado,
+            )
+    for clave, declarado in declarados.items():
+        if clave not in conservados:
+            return (f"parametros_ejecucion.{clave}", declarado, None)
+    return None
+
+
+def _diferencia_aprobacion(escenario, bloque):
+    """Devuelve la primera diferencia de `DEC-012` como ``(clave, declarado, conservado)``.
+
+    Compara los 4 valores conservados por la aprobación con los declarados por
+    el escenario, en el orden de `C-1`: capas de expertos en CPU, contexto
+    efectivo en tokens, parámetros de ejecución y presupuesto de VRAM en MiB.
+    """
+    conservado = bloque.get("capas_cpu_moe")
+    if escenario.get("capas_cpu_moe") != conservado:
+        return ("capas_cpu_moe", escenario.get("capas_cpu_moe"), conservado)
+    conservado = bloque.get("contexto_efectivo_tokens")
+    declarado = _valor_anidado(escenario, "contexto", "efectivo_tokens")
+    if declarado != conservado:
+        return ("contexto_efectivo_tokens", declarado, conservado)
+    diferencia = _diferencia_parametros(
+        escenario.get("parametros_ejecucion"),
+        bloque.get("parametros_ejecucion"),
+    )
+    if diferencia is not None:
+        return diferencia
+    conservado = bloque.get("presupuesto_vram_total_mib")
+    declarado = _valor_anidado(escenario, "presupuesto_vram", "total_mib")
+    if declarado != conservado:
+        return ("presupuesto_vram_total_mib", declarado, conservado)
+    return None
+
+
+def _motivo_revocacion(escenario, clave, declarado, conservado):
+    """Motivo de `CB-006` y `DEC-012` que nombra la clave y ambos valores."""
+    identificador = escenario.get("id")
+    referencia = (
+        f"escenario «{identificador}»"
+        if isinstance(identificador, str) and identificador
+        else "escenario sin identificador"
+    )
+    return (
+        f"{referencia}: la aprobación conserva «{clave}» con el valor "
+        f"{conservado!r} y el escenario declara {declarado!r}; la diferencia "
+        "revoca la condición de aprobado y exige 1 medición nueva (`CB-006`)"
+    )
+
+
 def validar_admisibilidad_escenario(escenario):
     """Admisibilidad de selección de `RF-011` y `CB-006` como ``(admisible, motivo)``."""
     _objeto(escenario, "escenario")
@@ -398,8 +547,11 @@ def validar_admisibilidad_escenario(escenario):
         return (False, MOTIVO_NO_EJECUTABLE)
     if estado == ESTADO_APROBADO:
         aprobacion = escenario.get("aprobacion")
-        if not aprobacion:
+        if not isinstance(aprobacion, dict) or not aprobacion:
             return (False, MOTIVO_APROBACION_AUSENTE)
+        diferencia = _diferencia_aprobacion(escenario, aprobacion)
+        if diferencia is not None:
+            return (False, _motivo_revocacion(escenario, *diferencia))
         return (True, "")
     if estado in ESTADOS_EJECUTABLES:
         if _falta_contexto_resuelto(escenario):

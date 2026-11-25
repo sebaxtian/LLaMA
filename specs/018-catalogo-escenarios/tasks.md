@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 17 de 18 tareas.
+- Cerradas: 18 de 18 tareas.
 
 ## Tareas
 
@@ -203,5 +203,5 @@
 - **Archivos:** `tools/gemma/escenarios.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios` en verde con `OK`, con la validación del bloque `aprobacion` en `cargar_catalogo` y la comparación con motivo por valor en `validar_admisibilidad_escenario`, conforme a `C-1`, `C-3` y `DEC-012`.
-- **Evidencia:** `Pendiente de ejecución de la tarea.`
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios` imprimió la marca de progreso `.......................................`, el cierre literal `Ran 39 tests in 0.056s`, la línea `OK` y las 4 líneas de `print` de `TestRendimientoResolucion` —`test_carga_validacion_y_listado_menor_cinco_segundos: escenarios=9 admisibles=8 no_admisibles=1 segundos=0.0002 milisegundos=0.169 margen=4.9998 dentro_del_margen_planificado=True`, `test_nueve_presupuestos_y_siete_parametros_sin_vacios: escenarios=9 presupuestos=9 parametros_obligatorios=7 campos=99 vacios=0`, `test_perfiles_vigentes_no_se_alteran: manifiestos=3 intactos=True escenarios=9` y `test_tiempo_resolucion_menor_cinco_segundos: escenarios=9 ajustados=3 segundos=0.0000 milisegundos=0.028 margen=5.0000 dentro_del_margen_planificado=True contextos=ESC-M0-CADJ=8192, ESC-M6-CADJ=16384, ESC-M9-CADJ=65536`—, sin fallos ni errores, y código de salida `0`; los 39 puntos acreditan las 29 pruebas previas y las 10 nuevas de `T-017` en verde —las 5 de revocación por valor más la central y los 10 `subTest` de validación del bloque en la carga—. `python -m unittest tools.gemma.tests.test_escenarios tools.gemma.tests.test_precheck tools.gemma.tests.test_registro tools.gemma.tests.test_lanzador` imprimió una línea de 110 puntos y el cierre literal `Ran 110 tests in 1.737s` y `OK`, sin fallos ni errores, y código de salida `0`, de modo que las 39 pruebas de la suite de escenarios, las 20 de precheck, las 15 de registro y las 36 del lanzador conviven en verde. Se completó `tools/gemma/escenarios.py` con `C-1`, `C-3` y `DEC-012`: `cargar_catalogo` acepta el bloque `aprobacion` nulo o ausente y, cuando consta, exige las 6 claves `capas_cpu_moe`, `contexto_efectivo_tokens`, `parametros_ejecucion`, `presupuesto_vram_total_mib`, `medicion` y `confirmacion_propietario`, con entero no negativo, entero positivo, objeto no vacío, entero positivo y 2 textos no vacíos, y el `ValueError` nombra la clave que falta o no es válida; `validar_admisibilidad_escenario` compara los 4 valores conservados con los declarados en el orden de `C-1` y devuelve `(False, motivo)` que nombra la clave, el valor declarado, el valor conservado y exige 1 medición nueva, con la clave interna del parámetro que difiere cuando la diferencia está en `parametros_ejecucion` —`parametros_ejecucion.ubatch`, 640 declarado frente a 1120 conservado—; los estados `declarado`, `medido` y `no_ejecutable` conservan el comportamiento previo y el bloque nulo o ausente mantiene el motivo de aprobación sin registro. `git status --short` informó `M tools/gemma/escenarios.py` y `M specs/018-catalogo-escenarios/tasks.md` como las 2 únicas variaciones; no se modificaron los tests, `src/gemma/escenarios/catalogo.json` ni otro archivo, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
