@@ -15,6 +15,17 @@ la declaración duplicada del par de capas de expertos en CPU y contexto
 módulo no exista, cada una de esas pruebas falla con `ModuleNotFoundError`,
 que es el rojo declarado de `T-003`; `T-004` cierra el caso. Las 7 pruebas de
 `TestCatalogoEstructura` no importan el módulo y permanecen en verde.
+
+`T-005` añade `TestContextoAjustado`, que fija en rojo el contrato `C-3` y
+`DEC-008` de la derivación y la validación del contexto ajustado mediante
+`resolver_contexto_ajustado(escenario, vram_libre_mib,
+consumo_kv_por_1024_mib=85.0)` y `validar_contexto_ajustado(escenario,
+tokens_resueltos)`: los valores nominales base de 8192, 16 384 y 65 536 tokens
+según las capas de expertos en CPU, la derivación en múltiplos de 1024 tokens
+acotada por la base, el rechazo del valor resuelto menor o igual a 4096 tokens
+con el valor y el escenario declarados (`CB-003`) y la inadmisibilidad de
+selección del escenario ajustado sin valor numérico (`RF-010`). `T-006` cierra
+el caso en `tools/gemma/escenarios.py`.
 """
 
 import json
@@ -963,4 +974,408 @@ class TestAdmisibilidadEscenarios(unittest.TestCase):
         )
         self.assertTrue(
             motivo.strip(), "la inadmisibilidad no declara motivo"
+        )
+
+
+# `DEC-008` y `C-3`: consumo de caché KV por bloque de 1024 tokens, en MiB, con
+# el valor por omisión de `resolver_contexto_ajustado`.
+CONSUMO_KV_POR_1024_MIB = 85.0
+
+# `DEC-008`, `AMB-001` y `CB-003`: granularidad de la derivación y suelo mínimo
+# del contexto resuelto, en tokens.
+MULTIPLO_CONTEXTO_TOKENS = 1024
+SUELO_CONTEXTO_RESUELTO_TOKENS = 4096
+
+# `RF-009` y `AMB-001`: valor nominal base del contexto ajustado por capas de
+# expertos en CPU.
+BASE_CONTEXTO_AJUSTADO_POR_CAPAS = {0: 8192, 6: 16384, 9: 65536}
+
+# `RF-009` y `RNF-005`: regla determinista que declara el catálogo de `C-1`.
+REGLA_DERIVACION = "multiplos_1024_suelo_4096"
+
+# `RF-009`: con la VRAM holgada se alcanza el valor nominal base de cada
+# escenario ajustado.
+VRAM_HOLGADA_MIB = CAPACIDAD_GPU_MIB
+
+# `CB-003`: escenario ajustado de referencia para el rechazo por suelo mínimo.
+ESCENARIO_AJUSTADO_DE_REFERENCIA = "ESC-M0-CADJ"
+
+
+def _ajustados(catalogo):
+    """Devuelve los escenarios de contexto ajustado del catálogo, por id."""
+    return [
+        escenario
+        for _, escenario in sorted(catalogo["escenarios"].items())
+        if escenario["contexto"]["tipo"] == "ajustado"
+    ]
+
+
+def _vram_no_kv(escenario):
+    """Devuelve la VRAM del presupuesto que no corresponde a la caché KV."""
+    presupuesto = escenario["presupuesto_vram"]
+    return presupuesto["total_mib"] - presupuesto["desglose"]["cache_kv_mib"]
+
+
+def _contexto_esperado(escenario, vram_libre_mib):
+    """Deriva el contexto esperado de `DEC-008` en múltiplos de 1024 tokens.
+
+    La VRAM disponible para la caché KV es la VRAM libre menos el resto del
+    presupuesto declarado —pesos, cómputo y reserva—; el número de bloques de
+    1024 tokens es el cociente entero entre esa VRAM y
+    `CONSUMO_KV_POR_1024_MIB`, y el resultado nunca supera el valor nominal base
+    del escenario ni baja de 0 tokens.
+    """
+    bloques = int(
+        (vram_libre_mib - _vram_no_kv(escenario)) // CONSUMO_KV_POR_1024_MIB
+    )
+    derivado = max(bloques, 0) * MULTIPLO_CONTEXTO_TOKENS
+    return min(escenario["contexto"]["declarado_tokens"], derivado)
+
+
+class TestContextoAjustado(unittest.TestCase):
+    """Acredita el contrato `C-3` y `DEC-008` del contexto ajustado.
+
+    Cubre `RF-009`, `RF-010`, `RNF-005` y `CB-003` sobre
+    `tools/gemma/escenarios.py`, que completa `T-006` con 2 funciones:
+
+    - ``resolver_contexto_ajustado(escenario, vram_libre_mib,
+      consumo_kv_por_1024_mib=85.0) -> int`` deriva el contexto efectivo en
+      múltiplos de 1024 tokens a partir de la VRAM libre real, acotado por el
+      valor nominal base del escenario y sin aplicar suelo: devuelve el valor
+      calculado, incluso si es menor o igual a 4096 tokens, para que la
+      validación lo rechace (`CB-003`).
+    - ``validar_contexto_ajustado(escenario, tokens_resueltos) ->
+      tuple[bool, str]`` devuelve ``(True, "")`` por encima de 4096 tokens y
+      ``(False, motivo)`` cuando el valor resuelto es menor o igual a 4096
+      tokens, con el valor resuelto y el identificador del escenario en el
+      motivo (`CB-003`).
+
+    La inadmisibilidad de selección de 1 escenario ajustado sin valor numérico
+    (`RF-010`) se declara sobre ``validar_admisibilidad_escenario(escenario)``,
+    que `T-004` ya expone.
+    """
+
+    def setUp(self):
+        self.modulo = _cargar_modulo()
+        self.catalogo = self.modulo.cargar_catalogo()
+        self.ajustados = _ajustados(self.catalogo)
+
+    def _resolver(self, escenario, vram_libre_mib):
+        """Invoca `resolver_contexto_ajustado` y valida el tipo del resultado."""
+        tokens = self.modulo.resolver_contexto_ajustado(
+            escenario, vram_libre_mib
+        )
+        self.assertNotIsInstance(
+            tokens, bool, "la derivación declara 1 booleano y no 1 entero"
+        )
+        self.assertIsInstance(
+            tokens, int, f"la derivación declara {tokens!r} y no 1 entero"
+        )
+        return tokens
+
+    def _validar(self, escenario, tokens_resueltos):
+        """Invoca `validar_contexto_ajustado` y normaliza a `(admisible, motivo)`."""
+        resultado = self.modulo.validar_contexto_ajustado(
+            escenario, tokens_resueltos
+        )
+        self.assertIsInstance(
+            resultado, tuple, "el veredicto del contexto no declara 1 tupla"
+        )
+        self.assertEqual(
+            2, len(resultado), f"el veredicto declara {len(resultado)} valores"
+        )
+        admisible, motivo = resultado
+        self.assertIsInstance(
+            admisible, bool, f"el veredicto declara {admisible!r} y no 1 booleano"
+        )
+        self.assertIsInstance(
+            motivo, str, f"el motivo declara {motivo!r} y no 1 texto"
+        )
+        return admisible, motivo
+
+    def test_valores_nominales_y_regla_derivacion(self):
+        """`RF-009`: 8192, 16 384 y 65 536 tokens con su regla determinista."""
+        self.assertEqual(
+            3,
+            len(self.ajustados),
+            f"el catálogo declara {len(self.ajustados)} escenarios ajustados y "
+            "no 3",
+        )
+
+        for escenario in self.ajustados:
+            with self.subTest(escenario=escenario["id"]):
+                capas = escenario["capas_cpu_moe"]
+                self.assertIn(
+                    capas,
+                    BASE_CONTEXTO_AJUSTADO_POR_CAPAS,
+                    f"{escenario['id']} declara {capas} capas de expertos en CPU "
+                    "y no 1 valor con base nominal",
+                )
+                base = BASE_CONTEXTO_AJUSTADO_POR_CAPAS[capas]
+                declarado = escenario["contexto"]["declarado_tokens"]
+                self.assertEqual(
+                    base,
+                    declarado,
+                    f"{escenario['id']} con {capas} capas declara {declarado} "
+                    f"tokens y no el nominal base de {base} tokens",
+                )
+                self.assertEqual(
+                    0,
+                    base % MULTIPLO_CONTEXTO_TOKENS,
+                    f"el valor nominal {base} de {escenario['id']} no es "
+                    f"múltiplo de {MULTIPLO_CONTEXTO_TOKENS} tokens",
+                )
+                self.assertGreater(
+                    base,
+                    SUELO_CONTEXTO_RESUELTO_TOKENS,
+                    f"el valor nominal {base} de {escenario['id']} no supera el "
+                    f"suelo de {SUELO_CONTEXTO_RESUELTO_TOKENS} tokens",
+                )
+                self.assertEqual(
+                    REGLA_DERIVACION,
+                    escenario["contexto"].get("regla_derivacion"),
+                    f"{escenario['id']} no registra la regla determinista "
+                    f"{REGLA_DERIVACION!r}",
+                )
+                self.assertEqual(
+                    base,
+                    self._resolver(escenario, VRAM_HOLGADA_MIB),
+                    f"{escenario['id']} no alcanza su valor nominal base de "
+                    f"{base} tokens con {VRAM_HOLGADA_MIB} MiB de VRAM libre",
+                )
+
+    def test_cien_por_ciento_ajustados_con_regla(self):
+        """`RNF-005`: el 100 % de los ajustados declara valor y regla."""
+        ajustados = [
+            escenario
+            for escenario in self.catalogo["escenarios"].values()
+            if escenario["contexto"]["tipo"] == "ajustado"
+        ]
+        self.assertEqual(
+            3,
+            len(ajustados),
+            f"el catálogo declara {len(ajustados)} escenarios ajustados y no 3",
+        )
+
+        carentes = {}
+        for escenario in ajustados:
+            contexto = escenario["contexto"]
+            faltas = []
+            for campo in ("declarado_tokens", "efectivo_tokens"):
+                valor = contexto.get(campo)
+                if isinstance(valor, bool) or not isinstance(valor, int):
+                    faltas.append(campo)
+                elif valor <= 0:
+                    faltas.append(campo)
+            regla = contexto.get("regla_derivacion")
+            if not isinstance(regla, str) or not regla.strip():
+                faltas.append("regla_derivacion")
+            if faltas:
+                carentes[escenario["id"]] = faltas
+
+        self.assertEqual(
+            {},
+            carentes,
+            f"los escenarios ajustados sin valor numérico o sin regla son "
+            f"{carentes} y el número debe ser 0",
+        )
+        con_regla = {
+            escenario["id"]
+            for escenario in ajustados
+            if escenario["contexto"].get("regla_derivacion")
+        }
+        self.assertEqual(
+            len(ajustados),
+            len(con_regla),
+            f"solo {len(con_regla)} de {len(ajustados)} escenarios ajustados "
+            "declaran regla de derivación",
+        )
+
+    def test_resultado_siempre_multiplo_de_1024(self):
+        """`RF-009`: el valor derivado es múltiplo de 1024 y no supera la base."""
+        for escenario in self.ajustados:
+            base = escenario["contexto"]["declarado_tokens"]
+            no_kv = _vram_no_kv(escenario)
+            muestras = (
+                no_kv,
+                no_kv + 255,
+                no_kv + 850,
+                12000,
+                VRAM_HOLGADA_MIB,
+            )
+            for vram_libre_mib in muestras:
+                with self.subTest(
+                    escenario=escenario["id"], vram_libre_mib=vram_libre_mib
+                ):
+                    tokens = self._resolver(escenario, vram_libre_mib)
+                    self.assertEqual(
+                        0,
+                        tokens % MULTIPLO_CONTEXTO_TOKENS,
+                        f"{escenario['id']} deriva {tokens} tokens con "
+                        f"{vram_libre_mib} MiB libres y no 1 múltiplo de "
+                        f"{MULTIPLO_CONTEXTO_TOKENS}",
+                    )
+                    self.assertGreaterEqual(
+                        tokens,
+                        0,
+                        f"{escenario['id']} deriva {tokens} tokens con "
+                        f"{vram_libre_mib} MiB libres",
+                    )
+                    self.assertLessEqual(
+                        tokens,
+                        base,
+                        f"{escenario['id']} deriva {tokens} tokens con "
+                        f"{vram_libre_mib} MiB libres y supera su base de "
+                        f"{base} tokens",
+                    )
+
+    def test_menos_vram_decrece_sin_superar_la_base(self):
+        """`RF-009`: a menor VRAM libre el valor decrece en múltiplos de 1024."""
+        for escenario in self.ajustados:
+            base = escenario["contexto"]["declarado_tokens"]
+            bloques_base = base // MULTIPLO_CONTEXTO_TOKENS
+            bloques_reducidos = bloques_base // 2 + 1
+            vram_reducida = _vram_no_kv(escenario) + int(
+                bloques_reducidos * CONSUMO_KV_POR_1024_MIB
+            )
+
+            with self.subTest(escenario=escenario["id"]):
+                holgado = self._resolver(escenario, VRAM_HOLGADA_MIB)
+                reducido = self._resolver(escenario, vram_reducida)
+
+                self.assertEqual(
+                    base, holgado, f"{escenario['id']} no alcanza su base"
+                )
+                self.assertLess(
+                    reducido,
+                    holgado,
+                    f"{escenario['id']} deriva {reducido} tokens con "
+                    f"{vram_reducida} MiB libres y {holgado} con "
+                    f"{VRAM_HOLGADA_MIB} MiB",
+                )
+                self.assertGreater(
+                    reducido,
+                    SUELO_CONTEXTO_RESUELTO_TOKENS,
+                    f"{escenario['id']} deriva {reducido} tokens con "
+                    f"{vram_reducida} MiB libres",
+                )
+                self.assertEqual(
+                    0,
+                    reducido % MULTIPLO_CONTEXTO_TOKENS,
+                    f"{escenario['id']} deriva {reducido} tokens y no 1 "
+                    f"múltiplo de {MULTIPLO_CONTEXTO_TOKENS}",
+                )
+                self.assertEqual(
+                    _contexto_esperado(escenario, vram_reducida),
+                    reducido,
+                    f"{escenario['id']} no aplica la regla de `DEC-008` con "
+                    f"{vram_reducida} MiB de VRAM libre",
+                )
+
+    def test_contexto_resuelto_menor_o_igual_4096_aborta(self):
+        """`CB-003`: 1 valor resuelto <= 4096 tokens se rechaza con su valor."""
+        escenario = next(
+            ajustado
+            for ajustado in self.ajustados
+            if ajustado["id"] == ESCENARIO_AJUSTADO_DE_REFERENCIA
+        )
+        no_kv = _vram_no_kv(escenario)
+
+        for bloques in (1, 3, 4):
+            vram_libre_mib = no_kv + int(
+                bloques * CONSUMO_KV_POR_1024_MIB
+            )
+            tokens = self._resolver(escenario, vram_libre_mib)
+            with self.subTest(tokens_resueltos=tokens):
+                self.assertLessEqual(
+                    tokens,
+                    SUELO_CONTEXTO_RESUELTO_TOKENS,
+                    f"{escenario['id']} deriva {tokens} tokens con "
+                    f"{vram_libre_mib} MiB libres y no 1 valor <= "
+                    f"{SUELO_CONTEXTO_RESUELTO_TOKENS}",
+                )
+                admisible, motivo = self._validar(escenario, tokens)
+                self.assertFalse(
+                    admisible,
+                    f"el contexto resuelto de {tokens} tokens figura "
+                    "admisible",
+                )
+                self.assertIn(
+                    str(tokens),
+                    motivo,
+                    "el motivo no declara el valor resuelto en tokens: "
+                    f"{motivo!r}",
+                )
+                self.assertIn(
+                    escenario["id"],
+                    motivo,
+                    "el motivo no declara el escenario afectado: "
+                    f"{motivo!r}",
+                )
+
+        tokens = self._resolver(
+            escenario, no_kv + int(5 * CONSUMO_KV_POR_1024_MIB)
+        )
+        self.assertEqual(
+            SUELO_CONTEXTO_RESUELTO_TOKENS + MULTIPLO_CONTEXTO_TOKENS,
+            tokens,
+            "el primer valor por encima del suelo no es 1 múltiplo de "
+            f"{MULTIPLO_CONTEXTO_TOKENS}",
+        )
+        admisible, motivo = self._validar(escenario, tokens)
+        self.assertTrue(
+            admisible,
+            f"el contexto resuelto de {tokens} tokens no admite lanzamiento: "
+            f"{motivo}",
+        )
+        self.assertFalse(
+            motivo, f"1 contexto admisible declara el motivo {motivo!r}"
+        )
+
+    def test_escenario_ajustado_sin_valor_no_seleccionable(self):
+        """`RF-010`: sin valor numérico resuelto no admite selección."""
+        escenario = _escenario_con_estado(
+            "declarado", identificador=ESCENARIO_AJUSTADO_DE_REFERENCIA
+        )
+        self.assertEqual(
+            "ajustado",
+            escenario["contexto"]["tipo"],
+            "el escenario de referencia no declara contexto ajustado",
+        )
+
+        admisible, motivo = self.modulo.validar_admisibilidad_escenario(
+            escenario
+        )
+        self.assertTrue(
+            admisible,
+            f"1 escenario ajustado con valor numérico no admite selección: "
+            f"{motivo}",
+        )
+        self.assertFalse(
+            motivo,
+            f"1 escenario ajustado admisible declara el motivo {motivo!r}",
+        )
+
+        sin_valor = json.loads(json.dumps(escenario))
+        sin_valor["contexto"]["efectivo_tokens"] = None
+        self.assertIsNone(
+            sin_valor["contexto"]["efectivo_tokens"],
+            "el escenario sintético conserva 1 valor numérico resuelto",
+        )
+
+        admisible, motivo = self.modulo.validar_admisibilidad_escenario(
+            sin_valor
+        )
+        self.assertFalse(
+            admisible,
+            "1 escenario ajustado sin valor numérico resuelto figura como "
+            "seleccionable",
+        )
+        self.assertTrue(
+            motivo.strip(), "la inadmisibilidad no declara motivo"
+        )
+        self.assertIn(
+            "contexto",
+            motivo.lower(),
+            f"el motivo no informa de la falta del contexto resuelto: {motivo!r}",
         )
