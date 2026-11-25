@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 0 de 16 tareas.
+- Cerradas: 1 de 16 tareas.
 
 ## Tareas
 
@@ -16,8 +16,8 @@
 - **Archivos:** `tools/gemma/tests/test_escenarios.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios.TestCatalogoEstructura` en rojo con fallo por ausencia de `src/gemma/escenarios/catalogo.json`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios.TestCatalogoEstructura` imprimió `FFFFFFF` y 7 fallos, 1 por prueba de `TestCatalogoEstructura` —`test_campos_obligatorios_sin_vacios`, `test_conteo_exacto_nueve_escenarios`, `test_identificadores_canonicos_y_estados`, `test_nueve_escenarios_cobertura_completa`, `test_presupuestos_no_exceden_capacidad_gpu`, `test_presupuestos_vram_desglose_y_ram_sistema` y `test_siete_parametros_ejecucion_declarados`—, cada uno con `AssertionError: False is not true : falta el catálogo de escenarios: C:\Users\sebax\Documents\Workspaces\LLaMA\src\gemma\escenarios\catalogo.json` en `_catalogo`; el cierre fue `Ran 7 tests in 0.013s` y `FAILED (failures=7)` con código de salida `1`. El rojo acredita que `src/gemma/escenarios/catalogo.json` todavía no existe, cuya escritura corresponde a `T-002`, y que la suite declara el contrato `C-1` en rojo: 9 escenarios de la matriz 3 × 3 (0, 6 y 9 capas de expertos en CPU × 4096, ajustado y 131 072 tokens), los 9 identificadores canónicos con `ESC-M6-C131K` en `no_ejecutable` y el resto en `declarado`, presupuesto de VRAM en los 4 componentes `pesos_mib`, `cache_kv_mib`, `computo_mib` y `reserva_mib` con suma igual al total y margen libre mínimo de 512 MiB sobre 16 384 MiB, `ram_sistema_requerida_mib`, los 7 parámetros de ejecución obligatorios con su valor fijo y 0 campos vacíos. No se escribió `src/gemma/escenarios/catalogo.json` ni se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-002
 
