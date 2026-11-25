@@ -2699,6 +2699,724 @@ class TestLanzadorEscenarios(unittest.TestCase):
         )
 
 
+# `T-013`: forma de 1 línea del menú interactivo de `C-2`: número de orden,
+# identificador y los 4 datos que `RF-005` exige declarar por escenario; el
+# estado `no_ejecutable` se marca al final de la línea y no puede seleccionarse.
+PATRON_MENU_ESCENARIO = re.compile(
+    r"^\s*(\d+)\)\s+(ESC-[A-Za-z0-9]+-[A-Za-z0-9]+): capas_cpu_moe=(\d+), "
+    r"contexto_efectivo=(\d+) tokens, presupuesto_vram=(\d+) MiB"
+    r"(?P<marca>\s+\[NO EJECUTABLE\])?$"
+)
+
+# Encabezado literal del menú interactivo: la suite cuenta sus apariciones para
+# acreditar que 1 entrada inválida reimprime el menú y vuelve a preguntar.
+ENCABEZADO_MENU_ESCENARIOS = "Escenarios disponibles (--escenario <id>):"
+
+# Texto con el que el menú marca el escenario que no puede seleccionarse.
+MARCA_NO_EJECUTABLE = "[NO EJECUTABLE]"
+
+
+class _EntradaDoble:
+    """Doble de `LEER_ENTRADA`: entrega las líneas de la consola simulada.
+
+    Registra cada solicitud para que la prueba acredite cuántas veces el menú
+    volvió a preguntar; al agotar el guion falla, de modo que 1 menú que pida más
+    líneas de las previstas no pasa desapercibido.
+    """
+
+    def __init__(self, lineas):
+        self.lineas = list(lineas)
+        self.llamadas = []
+
+    def __call__(self, prompt=""):
+        self.llamadas.append(prompt)
+        if not self.lineas:
+            raise AssertionError(
+                "el menú interactivo solicitó más líneas de las previstas: "
+                f"{len(self.llamadas)} solicitudes"
+            )
+        return self.lineas.pop(0)
+
+
+class TestMenuInteractivoEscenarios(unittest.TestCase):
+    """Fija el selector interactivo de escenarios de `C-2` sobre `DEC-004`.
+
+    `T-013` declara en rojo el contrato que `T-014` implementa en
+    `tools/gemma/lanzador.py`:
+
+    - `main` sin `--perfil` ni `--escenario` presenta el menú interactivo; la
+      consola se lee por el punto inyectable `LEER_ENTRADA`, cuyo valor por
+      defecto es `input`, de modo que la suite entrega sus líneas por 1 doble.
+    - El menú enumera los 9 escenarios numerados del 1 al 9 en el orden de
+      `DEC-004`, con identificador, capas de expertos en CPU, contexto efectivo
+      en tokens y presupuesto de VRAM en MiB, bajo el encabezado literal
+      `Escenarios disponibles (--escenario <id>):`.
+    - `ESC-M6-C131K` figura marcado con `[NO EJECUTABLE]` y su selección no se
+      resuelve: el menú informa y vuelve a preguntar.
+    - 1 número entre 1 y 9 o 1 identificador canónico resuelve su escenario y lo
+      entrega al flujo de lanzamiento, que arranca con los 9 parámetros del
+      escenario y declara su identificador en consola.
+    - 1 línea vacía aborta con el código `2` de `C-2` sin lanzar el servidor; 1
+      línea inválida informa, reimprime el menú y vuelve a preguntar.
+    - Tras resolver el escenario, el flujo resuelve el perfil de base —por
+      selección o por el único perfil disponible— antes de lanzar; la suite
+      entrega 1 línea adicional para esa resolución.
+    Los dobles de `_sustituir_entorno` y `_sustituir_comprobacion_previa`
+    impiden que ningún caso ejecute el binario, consulte la GPU o cargue el
+    servidor, conforme a `DEC-012`.
+    """
+
+    def setUp(self):
+        DIRECTORIO_TMP.mkdir(parents=True, exist_ok=True)
+        self._temporal = tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP))
+        self.raiz = Path(self._temporal.name)
+        self.modulo = _cargar_modulo()
+        self._pila = contextlib.ExitStack()
+        self.addCleanup(self._pila.close)
+        self.addCleanup(self._temporal.cleanup)
+
+    def _crear_arbol(self, manifiestos=("rendimiento.json",), artefactos=True):
+        """Crea 1 raíz temporal con perfiles, catálogo y artefactos sintéticos.
+
+        El catálogo se copia de `src/gemma/escenarios/catalogo.json` y las rutas
+        relativas de `artefactos` se resuelven contra la raíz temporal que
+        recibe `--raiz`, de modo que ningún caso toca `bin/`, `models/` ni la GPU.
+        """
+        directorio = self.raiz / "src" / "gemma" / "perfiles"
+        directorio.mkdir(parents=True, exist_ok=True)
+        for nombre in manifiestos:
+            (directorio / nombre).write_text(
+                json.dumps(
+                    _manifiesto_de_perfil(nombre), ensure_ascii=False, indent=2
+                ),
+                encoding="utf-8",
+            )
+        if artefactos:
+            for nombre in manifiestos:
+                manifiesto = _manifiesto_de_perfil(nombre)
+                for relativa in manifiesto["artefactos"].values():
+                    if relativa is None:
+                        continue
+                    ruta = self.raiz / relativa
+                    ruta.parent.mkdir(parents=True, exist_ok=True)
+                    ruta.write_bytes(b"artefacto sintetico")
+        destino = self.raiz / "src" / "gemma" / "escenarios" / "catalogo.json"
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_text(
+            json.dumps(_catalogo_real(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return directorio
+
+    def _ejecutar_main(self, argumentos):
+        """Invoca `main` capturando las 2 salidas y devuelve el código real."""
+        salida = io.StringIO()
+        errores = io.StringIO()
+        with contextlib.redirect_stdout(salida), contextlib.redirect_stderr(errores):
+            codigo = self.modulo.main(argumentos)
+        self.assertIsInstance(
+            codigo,
+            int,
+            "main devuelve el código de C-2 como entero y no termina por sys.exit",
+        )
+        return codigo, salida.getvalue(), errores.getvalue()
+
+    def _texto(self, salida, errores):
+        """Une las 2 salidas porque el mensaje puede ir a cualquiera de ellas."""
+        return salida + errores
+
+    def _entrada(self, lineas):
+        """Sustituye `LEER_ENTRADA` por 1 doble con el guion de líneas recibido."""
+        doble = _EntradaDoble(lineas)
+        self._pila.enter_context(
+            mock.patch.object(self.modulo, "LEER_ENTRADA", doble, create=True)
+        )
+        return doble
+
+    def _sustituir_entorno(self, *, vram=16376.0):
+        """Sustituye lanzamiento, medición, sonda, salud y precheck de escenario.
+
+        `VRAM_LIBRE_MIB` y `medir.vram_libre_mib` reciben el mismo doble y
+        `precheck.ram_libre_host_mib` declara 8192 MiB, de modo que ninguna ruta
+        consulta la GPU ni PowerShell. `precheck.verificar_recursos_escenario` y
+        el punto `VERIFICAR_RECURSOS_ESCENARIO` del lanzador se sustituyen por el
+        doble de `C-4` con código `0`.
+        """
+        import binario
+        import medir
+        import precheck
+
+        lanzar = _LanzarDoble(salida=LOG_SERVIDOR)
+        memoria_doble = _MedirDoble([MEMORIA_INICIAL])
+        sonda_doble = _SondaDoble([SONDA_INICIAL])
+        vram_doble = _VramLibreDoble(vram)
+        precheck_escenario = _PrecheckEscenarioDoble()
+        self._pila.enter_context(
+            mock.patch.object(self.modulo, "LANZAR_SERVIDOR", lanzar)
+        )
+        self._pila.enter_context(
+            mock.patch.object(self.modulo, "MEDIR_MEMORIA", memoria_doble)
+        )
+        self._pila.enter_context(
+            mock.patch.object(self.modulo, "SONDEAR", sonda_doble)
+        )
+        self._pila.enter_context(
+            mock.patch.object(self.modulo, "VRAM_LIBRE_MIB", vram_doble)
+        )
+        self._pila.enter_context(
+            mock.patch.object(medir, "vram_libre_mib", vram_doble)
+        )
+        self._pila.enter_context(
+            mock.patch.object(precheck, "ram_libre_host_mib", lambda: 8192)
+        )
+        self._pila.enter_context(
+            mock.patch.object(
+                binario,
+                "opciones_aceptadas",
+                lambda ejecutable: dict(OPCIONES_ACEPTADAS),
+            )
+        )
+        self._pila.enter_context(
+            mock.patch.object(
+                binario,
+                "leer_version",
+                lambda ejecutable: {
+                    "version": "sintetica",
+                    "commit": "sintetico",
+                },
+            )
+        )
+        self._pila.enter_context(
+            mock.patch.object(
+                precheck, "verificar_recursos_escenario", precheck_escenario
+            )
+        )
+        self._pila.enter_context(
+            mock.patch.object(
+                self.modulo,
+                "VERIFICAR_RECURSOS_ESCENARIO",
+                precheck_escenario,
+                create=True,
+            )
+        )
+        return {
+            "lanzar": lanzar,
+            "precheck": precheck_escenario,
+            "vram": vram_doble,
+            "memorias": memoria_doble,
+            "sonda": sonda_doble,
+        }
+
+    def _sustituir_comprobacion_previa(self):
+        """Sustituye `precheck.ejecutar` para no leer artefactos del repositorio."""
+        import precheck
+
+        doble = _EjecutarDoble()
+        self._pila.enter_context(mock.patch.object(precheck, "ejecutar", doble))
+        return doble
+
+    def _valor_de(self, argumentos, forma):
+        """Valor que el lanzamiento declara para la forma larga indicada."""
+        if forma not in argumentos:
+            return None
+        return argumentos[argumentos.index(forma) + 1]
+
+    def _registros_del_menu(self, texto):
+        """Líneas del menú que declaran 1 escenario numerado, con sus grupos."""
+        registros = []
+        for linea in texto.splitlines():
+            coincidencia = PATRON_MENU_ESCENARIO.match(linea)
+            if coincidencia is not None:
+                registros.append(coincidencia)
+        return registros
+
+    def _encabezados_del_menu(self, texto):
+        """Número de veces que la salida imprime el encabezado del menú."""
+        return sum(
+            1
+            for linea in texto.splitlines()
+            if linea.strip() == ENCABEZADO_MENU_ESCENARIOS
+        )
+
+    def test_menu_enumera_los_9_escenarios_en_orden(self):
+        """`RF-005` y `CA-002`: 9 líneas numeradas en orden jerárquico con sus datos.
+
+        La raíz temporal declara el catálogo y `rendimiento`, de modo que el menú
+        no depende del directorio actual; el código es `0` y las líneas declaran
+        identificador, capas de expertos en CPU, contexto efectivo en tokens y
+        presupuesto de VRAM en MiB, con `ESC-M6-C131K` marcado como no ejecutable.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        self._sustituir_entorno()
+        entrada = self._entrada(["1", "1"])
+
+        with mock.patch(
+            "urllib.request.urlopen", return_value=_respuesta_de_salud()
+        ):
+            codigo, salida, errores = self._ejecutar_main(
+                ["--raiz", str(self.raiz), "--modo", "servir"]
+            )
+        texto = self._texto(salida, errores)
+        registros = self._registros_del_menu(texto)
+
+        self.assertEqual(
+            0,
+            codigo,
+            "el menú interactivo con 1 selección válida devuelve el código 0 de C-2",
+        )
+        self.assertEqual(
+            1,
+            self._encabezados_del_menu(texto),
+            "el menú se imprime 1 sola vez cuando la primera selección es válida",
+        )
+        self.assertEqual(
+            IDS_CANONICOS,
+            tuple(coincidencia.group(2) for coincidencia in registros),
+            "el menú enumera los 9 identificadores en el orden de DEC-004",
+        )
+        catalogo = _catalogo_real()["escenarios"]
+        for indice, coincidencia in enumerate(registros, start=1):
+            (
+                numero,
+                identificador,
+                capas,
+                efectivo,
+                presupuesto,
+                marca,
+            ) = coincidencia.groups()
+            with self.subTest(escenario=identificador):
+                self.assertEqual(
+                    str(indice),
+                    numero,
+                    "la numeración del menú es correlativa desde 1",
+                )
+                declarado = catalogo[identificador]
+                self.assertEqual(
+                    declarado["capas_cpu_moe"],
+                    int(capas),
+                    "la línea declara las capas de expertos en CPU del catálogo",
+                )
+                self.assertEqual(
+                    declarado["contexto"]["efectivo_tokens"],
+                    int(efectivo),
+                    "la línea declara el contexto efectivo en tokens del catálogo",
+                )
+                self.assertEqual(
+                    declarado["presupuesto_vram"]["total_mib"],
+                    int(presupuesto),
+                    "la línea declara el presupuesto de VRAM en MiB del catálogo",
+                )
+                if declarado["estado"] == "no_ejecutable":
+                    self.assertIsNotNone(
+                        marca,
+                        "el escenario no ejecutable figura marcado en el menú",
+                    )
+                else:
+                    self.assertIsNone(
+                        marca,
+                        "0 escenarios ejecutables figuran marcados como no ejecutables",
+                    )
+        self.assertIn(
+            MARCA_NO_EJECUTABLE,
+            texto,
+            "el menú marca el escenario que no puede seleccionarse",
+        )
+        self.assertTrue(
+            entrada.llamadas,
+            "el menú lee la consola por el punto inyectable LEER_ENTRADA",
+        )
+
+        print(
+            "test_menu_enumera_los_9_escenarios_en_orden: "
+            f"codigo={codigo} escenarios={len(registros)} "
+            f"orden={','.join(c.group(2) for c in registros)} "
+            f"solicitudes={len(entrada.llamadas)}"
+        )
+
+    def test_numero_valido_resuelve_el_escenario(self):
+        """`RF-003`: el número del menú resuelve el escenario de esa posición.
+
+        La cuarta línea del orden de `DEC-004` es `ESC-M6-C4K`: el lanzamiento
+        declara sus 6 capas de expertos en CPU y su contexto efectivo de 4096
+        tokens, y la consola anuncia el identificador resuelto.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        self._entrada(["4", "1"])
+
+        with mock.patch(
+            "urllib.request.urlopen", return_value=_respuesta_de_salud()
+        ):
+            codigo, salida, errores = self._ejecutar_main(
+                ["--raiz", str(self.raiz), "--modo", "servir"]
+            )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(
+            0,
+            codigo,
+            "1 número válido del menú devuelve el código 0 de C-2",
+        )
+        self.assertEqual(
+            1,
+            len(entorno["lanzar"].llamadas),
+            "1 número válido arranca el servidor 1 sola vez",
+        )
+        argumentos = entorno["lanzar"].llamadas[0]["argumentos"]
+        self.assertEqual(
+            "6",
+            self._valor_de(argumentos, "--n-cpu-moe"),
+            "la cuarta línea del menú resuelve ESC-M6-C4K con 6 capas en CPU",
+        )
+        self.assertEqual(
+            "4096",
+            self._valor_de(argumentos, "--ctx-size"),
+            "la cuarta línea del menú resuelve el contexto efectivo de ESC-M6-C4K",
+        )
+        self.assertIn(
+            "ESC-M6-C4K",
+            texto,
+            "la consola declara el identificador del escenario resuelto por número",
+        )
+        self.assertEqual(
+            ["ESC-M6-C4K"],
+            [
+                llamada["escenario"].get("id")
+                for llamada in entorno["precheck"].llamadas
+            ],
+            "el precheck recibe el escenario resuelto por número",
+        )
+
+        print(
+            "test_numero_valido_resuelve_el_escenario: "
+            f"codigo={codigo} escenario=ESC-M6-C4K "
+            f"ncmoe={self._valor_de(argumentos, '--n-cpu-moe')} "
+            f"ctx_size={self._valor_de(argumentos, '--ctx-size')}"
+        )
+
+    def test_identificador_valido_resuelve_el_escenario(self):
+        """`RF-003`: 1 identificador canónico también resuelve su escenario.
+
+        `ESC-M0-CADJ` declara 8192 tokens nominales y la VRAM libre del doble
+        sostiene el valor nominal; el lanzamiento arranca con 0 capas de expertos
+        en CPU y el contexto ajustado resuelto.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        self._entrada([ESCENARIO_AJUSTADO, "1"])
+
+        with mock.patch(
+            "urllib.request.urlopen", return_value=_respuesta_de_salud()
+        ):
+            codigo, salida, errores = self._ejecutar_main(
+                ["--raiz", str(self.raiz), "--modo", "servir"]
+            )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(
+            0,
+            codigo,
+            "1 identificador válido del menú devuelve el código 0 de C-2",
+        )
+        self.assertEqual(
+            1,
+            len(entorno["lanzar"].llamadas),
+            "1 identificador válido arranca el servidor 1 sola vez",
+        )
+        argumentos = entorno["lanzar"].llamadas[0]["argumentos"]
+        self.assertEqual(
+            "0",
+            self._valor_de(argumentos, "--n-cpu-moe"),
+            "ESC-M0-CADJ declara 0 capas de expertos en CPU",
+        )
+        self.assertEqual(
+            str(CONTEXTO_DECLARADO_AJUSTADO),
+            self._valor_de(argumentos, "--ctx-size"),
+            "el contexto ajustado se resuelve con la VRAM libre del lanzamiento",
+        )
+        self.assertIn(
+            ESCENARIO_AJUSTADO,
+            texto,
+            "la consola declara el identificador resuelto por identificador",
+        )
+
+        print(
+            "test_identificador_valido_resuelve_el_escenario: "
+            f"codigo={codigo} escenario={ESCENARIO_AJUSTADO} "
+            f"ncmoe={self._valor_de(argumentos, '--n-cpu-moe')} "
+            f"ctx_size={self._valor_de(argumentos, '--ctx-size')}"
+        )
+
+    def test_entrada_vacia_aborta_sin_lanzar(self):
+        """`C-2`: 1 selección vacía devuelve 2 y no arranca el servidor.
+
+        El menú informa la selección vacía y aborta con el código de uso
+        incorrecto, sin invocar el precheck de recursos ni el lanzamiento.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        self._entrada([""])
+
+        codigo, salida, errores = self._ejecutar_main(
+            ["--raiz", str(self.raiz), "--modo", "servir"]
+        )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(
+            2,
+            codigo,
+            "1 selección vacía devuelve el código 2 de C-2",
+        )
+        self.assertEqual(
+            [],
+            entorno["lanzar"].llamadas,
+            "1 selección vacía no arranca el servidor",
+        )
+        self.assertEqual(
+            [],
+            entorno["precheck"].llamadas,
+            "1 selección vacía no verifica recursos de escenario alguno",
+        )
+        self.assertIn(
+            "[ERROR]",
+            texto,
+            "1 selección vacía informa el rechazo",
+        )
+        self.assertIn(
+            "vacía",
+            texto.lower(),
+            "el mensaje declara que la selección está vacía",
+        )
+
+        print(
+            "test_entrada_vacia_aborta_sin_lanzar: "
+            f"codigo={codigo} lanzamientos={len(entorno['lanzar'].llamadas)}"
+        )
+
+    def test_entrada_invalida_vuelve_al_menu(self):
+        """`C-2`: 1 entrada inválida informa y reimprime el menú sin lanzar.
+
+        Primero se entrega 1 número fuera de rango y después 1 identificador que
+        no figura en el catálogo; el menú se reimprime tras cada rechazo y solo
+        la tercera línea válida resuelve el escenario y arranca el servidor.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        entrada = self._entrada(["99", ESCENARIO_INEXISTENTE, "1", "1"])
+
+        with mock.patch(
+            "urllib.request.urlopen", return_value=_respuesta_de_salud()
+        ):
+            codigo, salida, errores = self._ejecutar_main(
+                ["--raiz", str(self.raiz), "--modo", "servir"]
+            )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(
+            0,
+            codigo,
+            "1 entrada inválida no aborta: el menú vuelve a preguntar y resuelve",
+        )
+        self.assertEqual(
+            3,
+            self._encabezados_del_menu(texto),
+            "el menú se reimprime tras cada una de las 2 entradas inválidas",
+        )
+        self.assertEqual(
+            1,
+            len(entorno["lanzar"].llamadas),
+            "solo la selección válida arranca el servidor, 1 sola vez",
+        )
+        self.assertIn(
+            "99",
+            texto,
+            "el rechazo nombra el número fuera de rango",
+        )
+        self.assertIn(
+            ESCENARIO_INEXISTENTE,
+            texto,
+            "el rechazo nombra el identificador que no figura en el catálogo",
+        )
+        self.assertIn(
+            "[ERROR]",
+            texto,
+            "cada entrada inválida informa el rechazo",
+        )
+        self.assertGreaterEqual(
+            len(entrada.llamadas),
+            4,
+            "el menú solicita 1 línea por intento: 2 inválidos y la selección válida",
+        )
+
+        print(
+            "test_entrada_invalida_vuelve_al_menu: "
+            f"codigo={codigo} menu_impreso={self._encabezados_del_menu(texto)} "
+            f"lanzamientos={len(entorno['lanzar'].llamadas)}"
+        )
+
+    def test_escenario_no_ejecutable_marcado_y_no_seleccionable(self):
+        """`CB-007`: `ESC-M6-C131K` figura marcado y su selección no se resuelve.
+
+        La sexta línea del menú es el escenario no ejecutable: el menú informa el
+        rechazo, vuelve a preguntar y solo la selección siguiente, `ESC-M0-C4K`,
+        llega al lanzamiento. Ningún caso invoca el binario real.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        self._entrada(["6", "1", "1"])
+
+        with mock.patch(
+            "urllib.request.urlopen", return_value=_respuesta_de_salud()
+        ):
+            codigo, salida, errores = self._ejecutar_main(
+                ["--raiz", str(self.raiz), "--modo", "servir"]
+            )
+        texto = self._texto(salida, errores)
+        lineas_marcadas = [
+            linea
+            for linea in texto.splitlines()
+            if MARCA_NO_EJECUTABLE in linea
+        ]
+
+        self.assertEqual(
+            0,
+            codigo,
+            "la selección posterior a 1 escenario no ejecutable devuelve el código 0",
+        )
+        self.assertEqual(
+            1,
+            len(lineas_marcadas),
+            "el menú marca exactamente 1 escenario como no ejecutable",
+        )
+        self.assertIn(
+            ESCENARIO_NO_EJECUTABLE,
+            lineas_marcadas[0],
+            "la marca corresponde a ESC-M6-C131K",
+        )
+        self.assertEqual(
+            2,
+            self._encabezados_del_menu(texto),
+            "el menú se reimprime tras rechazar el escenario no ejecutable",
+        )
+        self.assertEqual(
+            1,
+            len(entorno["lanzar"].llamadas),
+            "el escenario no ejecutable no arranca el servidor",
+        )
+        argumentos = entorno["lanzar"].llamadas[0]["argumentos"]
+        self.assertEqual(
+            "0",
+            self._valor_de(argumentos, "--n-cpu-moe"),
+            "el lanzamiento corresponde a ESC-M0-C4K y no al escenario rechazado",
+        )
+        self.assertEqual(
+            ["ESC-M0-C4K"],
+            [
+                llamada["escenario"].get("id")
+                for llamada in entorno["precheck"].llamadas
+            ],
+            "el precheck recibe el escenario ejecutable seleccionado después",
+        )
+        rechazos = [
+            linea
+            for linea in texto.splitlines()
+            if "[ERROR]" in linea and ESCENARIO_NO_EJECUTABLE in linea
+        ]
+        self.assertEqual(
+            1,
+            len(rechazos),
+            "el rechazo informa el escenario no ejecutable por su identificador",
+        )
+
+        print(
+            "test_escenario_no_ejecutable_marcado_y_no_seleccionable: "
+            f"codigo={codigo} marcados={len(lineas_marcadas)} "
+            f"lanzamientos={len(entorno['lanzar'].llamadas)} "
+            f"precheck={entorno['precheck'].llamadas[-1]['escenario'].get('id')}"
+        )
+
+    def test_seleccion_interactiva_lanza_con_los_parametros_del_escenario(self):
+        """`RF-003`: el lanzamiento declara los 9 parámetros del escenario elegido.
+
+        El menú resuelve `ESC-M0-C4K` y el servidor arranca con los 9 ejes de
+        `C-2` que declara el escenario, sin ejecutar el binario: `LANZAR_SERVIDOR`
+        es 1 doble y `subprocess.Popen` no se invoca.
+        """
+        self._crear_arbol()
+        self._sustituir_comprobacion_previa()
+        entorno = self._sustituir_entorno()
+        self._entrada(["1", "1"])
+        esperados = {
+            "--n-gpu-layers": "99",
+            "--flash-attn": "on",
+            "--ctx-size": "4096",
+            "--ubatch-size": "1120",
+            "--n-cpu-moe": "0",
+            "--load-mode": "none",
+            "--parallel": "1",
+            "--cache-type-k": "q8_0",
+            "--cache-type-v": "q8_0",
+        }
+
+        with mock.patch("subprocess.Popen") as popen:
+            with mock.patch(
+                "urllib.request.urlopen", return_value=_respuesta_de_salud()
+            ):
+                codigo, salida, errores = self._ejecutar_main(
+                    ["--raiz", str(self.raiz), "--modo", "servir"]
+                )
+        texto = self._texto(salida, errores)
+
+        self.assertEqual(
+            0,
+            codigo,
+            "la selección interactiva de 1 escenario ejecutable devuelve el código 0",
+        )
+        self.assertFalse(
+            popen.called,
+            "la selección interactiva no ejecuta el binario del servidor",
+        )
+        self.assertEqual(
+            1,
+            len(entorno["lanzar"].llamadas),
+            "la selección interactiva arranca el servidor 1 sola vez",
+        )
+        argumentos = entorno["lanzar"].llamadas[0]["argumentos"]
+        for forma, valor in esperados.items():
+            with self.subTest(forma=forma):
+                self.assertEqual(
+                    valor,
+                    self._valor_de(argumentos, forma),
+                    f"el servidor arranca con el valor del escenario en {forma}",
+                )
+        self.assertEqual(
+            [ESCENARIO_DE_PRUEBA],
+            [
+                llamada["escenario"].get("id")
+                for llamada in entorno["precheck"].llamadas
+            ],
+            "el precheck de recursos recibe el escenario elegido en el menú",
+        )
+        self.assertIn(
+            ESCENARIO_DE_PRUEBA,
+            texto,
+            "la consola declara el identificador del escenario elegido en el menú",
+        )
+
+        print(
+            "test_seleccion_interactiva_lanza_con_los_parametros_del_escenario: "
+            f"codigo={codigo} escenario={ESCENARIO_DE_PRUEBA} "
+            f"parametros={len(esperados)} "
+            f"lanzamientos={len(entorno['lanzar'].llamadas)}"
+        )
+
+
 class LanzadorBatTest(unittest.TestCase):
     """Fija el lanzador `.bat` de `RF-001` y `CB-001` sobre `DEC-014`, `DEC-015` y `DEC-018`."""
 
