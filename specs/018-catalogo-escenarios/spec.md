@@ -237,7 +237,7 @@ Cubre: `CB-007`.
 <!-- Sección protegida: solo la escribe el propietario mediante un commit firmado. Dos casillas y ninguna más: G1 y G4. -->
 
 - [x] G1: `- Approved by: Agent Sebaxtian` (2026-11-25)
-- [ ] G4: `- Approved by: Agent Sebaxtian` (YYYY-MM-DD)
+- [x] G4: `- Approved by: Agent Sebaxtian` (2026-11-25)
 
 ## Historial de cambios
 
