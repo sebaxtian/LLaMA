@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: implementing
-version: 0.8.1
+status: implemented
+version: 0.8.2
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -254,6 +254,7 @@ Cubre: `CB-007`.
 | 0.7.0   | 2026-11-25 | Reapertura del plan tras T11: DEC-012 fija el bloque de aprobación con los 4 valores conservados y su comparación en la admisibilidad, se corrigen los 7 instrumentos de la matriz con nombre inexistente y se incorpora la suite de registro a la naturaleza del entregable |
 | 0.8.0   | 2026-11-25 | Tareas de la reapertura: T-017 fija las pruebas de la revocación de la aprobación y T-018 implementa la validación del bloque aprobacion y su comparación en la admisibilidad, conforme a DEC-012 |
 | 0.8.1   | 2026-11-25 | Transición tasked → implementing por T4 de la reapertura: G2 verificada por el orquestador con OK: sin hallazgos sobre el contrato 0.8.0 y 16 de 18 tareas cerradas; la versión incrementa PATCH porque la etapa Implement no cambia el contrato y la regla de versionado reserva el MINOR a clarify, plan, tasks y validación |
+| 0.8.2   | 2026-11-25 | Transición implementing → implemented por T5 de la reapertura: T-017 y T-018 cerradas con su evidencia transcrita y G3 verificada por el orquestador con OK: sin hallazgos sobre el contrato 0.8.0, en el que la admisibilidad compara los 4 valores conservados en el bloque aprobacion; la versión incrementa PATCH porque la etapa Implement no cambia el contrato |
 
 ### Historial de transiciones
 
@@ -270,5 +271,6 @@ Cubre: `CB-007`.
 | 2026-11-25  | T2         | clarified    | planned        | planner     | G1 del contrato reformulado aprobada en el commit firmado d574f58 y plan.md actualizado con DEC-012 y la matriz corregida                                                                               |
 | 2026-11-25  | T3         | planned      | tasked         | planner     | tasks.md con T-017 y T-018, sus 8 campos y la cobertura de RF-011, CB-006 y CA-008 |
 | 2026-11-25 | T4 | tasked | implementing | planner | G2 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G2, que devolvió OK: sin hallazgos, y 16 de 18 tareas cerradas con T-017 y T-018 abiertas |
+| 2026-11-25 | T5 | implementing | implemented | planner | G3 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G3, que devolvió OK: sin hallazgos, y 18 de 18 tareas cerradas con su evidencia transcrita |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
