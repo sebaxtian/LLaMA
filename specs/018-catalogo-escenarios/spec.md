@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: planned
-version: 0.7.0
+status: tasked
+version: 0.8.0
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -252,6 +252,7 @@ Cubre: `CB-007`.
 | 0.5.0   | 2026-11-25 | Reapertura por T11 autorizada por el propietario: la validación detectó que CB-006 no está implementado ni verificado, porque plan.md designa 1 instrumento inexistente y escenarios.py no conserva ni compara los valores que sostuvieron la aprobación; la aprobación G1 anterior deja de cubrir el contrato y se exige nueva clarificación y nueva aprobación firmada de G1                                 |
 | 0.6.0   | 2026-11-25 | Reapertura de la clarificación con AMB-013: se registra la brecha de CB-006, se fija el contenido del registro de aprobación que sostiene el estado aprobado y se decide la tarea T-017 que implementa la revocación                                                                                                                                                                                           |
 | 0.7.0   | 2026-11-25 | Reapertura del plan tras T11: DEC-012 fija el bloque de aprobación con los 4 valores conservados y su comparación en la admisibilidad, se corrigen los 7 instrumentos de la matriz con nombre inexistente y se incorpora la suite de registro a la naturaleza del entregable |
+| 0.8.0   | 2026-11-25 | Tareas de la reapertura: T-017 fija las pruebas de la revocación de la aprobación y T-018 implementa la validación del bloque aprobacion y su comparación en la admisibilidad, conforme a DEC-012 |
 
 ### Historial de transiciones
 
@@ -265,6 +266,7 @@ Cubre: `CB-007`.
 | 2026-11-25  | T5         | implementing | implemented    | planner     | G3 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G3, que devolvió OK: sin hallazgos, y 16 de 16 tareas cerradas con su evidencia transcrita                      |
 | 2026-11-25  | T11        | implemented  | draft          | propietario | reapertura autorizada por escrito por el propietario por brecha de implementación de CB-006 detectada en el reporte de validación con dictamen NO CONVERGIDO; la aprobación G1 anterior queda sin efecto |
 | 2026-11-25  | T1         | draft        | clarified      | planner     | clarify.md reabierto con AMB-013 cerrado y parches aplicados                                                                                                                                             |
-| 2026-11-25  | T2         | clarified    | planned        | planner     | G1 del contrato reformulado aprobada en el commit firmado d574f58 y plan.md actualizado con DEC-012 y la matriz corregida                                                                              |
+| 2026-11-25  | T2         | clarified    | planned        | planner     | G1 del contrato reformulado aprobada en el commit firmado d574f58 y plan.md actualizado con DEC-012 y la matriz corregida                                                                               |
+| 2026-11-25  | T3         | planned      | tasked         | planner     | tasks.md con T-017 y T-018, sus 8 campos y la cobertura de RF-011, CB-006 y CA-008 |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
