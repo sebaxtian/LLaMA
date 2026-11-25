@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 6 de 16 tareas.
+- Cerradas: 7 de 16 tareas.
 
 ## Tareas
 
@@ -82,8 +82,8 @@
 - **Archivos:** `tools/gemma/tests/test_precheck.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_precheck.TestPrecheckEscenarios` en rojo por ausencia de la función `verificar_recursos_escenario` en `tools/gemma/precheck.py`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_precheck.TestPrecheckEscenarios` imprimió `EEEEEE` y el cierre literal `Ran 6 tests in 0.021s` y `FAILED (errors=6)` con código de salida `1`. Los 6 errores son 1 por prueba de la clase nueva —`test_contexto_ajustado_insuficiente_aborta_en_precheck`, `test_escenario_ejecutable_con_recursos_suficientes_no_aborta`, `test_escenario_no_ejecutable_aborta_en_precheck`, `test_ram_host_insuficiente_moe_cpu_aborta`, `test_recursos_insuficientes_aborta` y `test_vram_no_medible_aborta_sin_estimar`—, los 6 con `AttributeError: module 'precheck' has no attribute 'verificar_recursos_escenario'` en `_verificar` (`tools/gemma/tests/test_precheck.py:1166`), invocado desde `test_precheck.py:1372`, `test_precheck.py:1405`, `test_precheck.py:1209`, `test_precheck.py:1329`, `test_precheck.py:1247` y `test_precheck.py:1288` respectivamente. La suite completa, `python -m unittest tools.gemma.tests.test_precheck`, imprimió `..............EEEEEE` con el cierre literal `Ran 20 tests in 0.099s` y `FAILED (errors=6)`: los 14 puntos previos acreditan que las pruebas existentes siguen intactas y solo los 6 errores nuevos corresponden a la clase añadida. El rojo acredita que `tools/gemma/precheck.py` todavía no declara `verificar_recursos_escenario`, cuya escritura corresponde a `T-008`, y que la clase fija el contrato `C-4`: `verificar_recursos_escenario(escenario, *, medidor_vram=None, medidor_ram=None)` devuelve 1 diccionario con `codigo` (`0` sin hallazgos y `3` con 1 aborto de `C-2`), `escenario_id`, `contexto_solicitado_tokens` —el `contexto.declarado_tokens` solicitado— y `hallazgos`, 1 secuencia de líneas `[FALLO] ` vacía con el código `0`; `medidor_vram` y `medidor_ram` son invocables sin argumentos que devuelven MiB o `None` cuando la medición no está disponible, se inyectan siempre para no invocar `nvidia-smi`, no consultar la RAM real ni cargar el servidor, y `medidor_ram` se consulta solo cuando `capas_cpu_moe > 0`; el orden de las condiciones es estado `no_ejecutable` (`CB-007`), contexto ajustado resuelto menor o igual a 4096 tokens (`CB-003`), VRAM no medible (`CB-001`), presupuesto mayor que la VRAM disponible (`RF-007`) y RAM libre del host menor a 8192 MiB (`CB-008`); y los diagnósticos literales son `[FALLO] Escenario no ejecutable: `, `[FALLO] Contexto ajustado resuelto insuficiente: 4096 <= 4096`, `[FALLO] VRAM disponible no medible` sin ningún valor en MiB, `[FALLO] Presupuesto excede VRAM disponible: requerido <req> MiB, disponible <disp> MiB` y `[FALLO] RAM libre de host insuficiente: disponible <disp> MiB, requerida 8192 MiB`. El contexto resuelto de 1 escenario ajustado se toma de su `contexto.efectivo_tokens`, porque la derivación con la VRAM real corresponde a `escenarios.resolver_contexto_ajustado` y el recálculo previo al lanzamiento a `lanzador.py` (`CB-005`). No se modificó `tools/gemma/precheck.py`, `tools/gemma/escenarios.py` ni el catálogo, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-008
 

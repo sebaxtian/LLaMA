@@ -48,6 +48,17 @@ rechaza la clave retirada `kv_por_1024_tokens_mib` con `ValueError`, conforme a
 `DEC-028`; los bloques sintéticos de la suite declaran esas 4 claves y los casos
 que leen 1 manifiesto versionado sustituyen su bloque, porque los 3 manifiestos
 conservan la clave retirada hasta `T-077`.
+
+`T-007` de `SPEC-018` añade `TestPrecheckEscenarios`, que fija
+`verificar_recursos_escenario(...)` de `C-4` sobre el catálogo de 9 escenarios:
+el aborto con código `3` del escenario `no_ejecutable` sin medir recursos
+(`CB-007`), el del presupuesto mayor que la VRAM disponible (`RF-007`), el de la
+VRAM no medible sin estimar valor (`CB-001`), el de la RAM libre del host menor a
+8192 MiB con capas de expertos en CPU (`CB-008`, `AMB-011`) y el del contexto
+ajustado resuelto menor o igual a 4096 tokens (`CB-003`), más el camino sin
+hallazgos con código `0`. Las mediciones se inyectan como invocables, de modo
+que la suite no invoca `nvidia-smi`, no consulta la RAM real y no carga el
+servidor.
 """
 
 import json
@@ -187,6 +198,19 @@ ARTEFACTOS = {
     "draft": "modelos/draft.gguf",
 }
 
+# Escenarios del catálogo de SPEC-018 que pone a prueba `TestPrecheckEscenarios`:
+# el `no_ejecutable` de `CB-007`, el de 6 capas con expertos en CPU, el de 0 capas
+# y 1 de contexto ajustado.
+ESCENARIO_NO_EJECUTABLE = "ESC-M6-C131K"
+ESCENARIO_MOE_CPU = "ESC-M6-C4K"
+ESCENARIO_SIN_MOE_CPU = "ESC-M0-C4K"
+ESCENARIO_AJUSTADO = "ESC-M0-CADJ"
+
+# Umbral de RAM libre de host de `CB-008` y código de aborto de precheck de `C-2`.
+RAM_LIBRE_MINIMA_HOST_MIB = 8192
+CODIGO_SIN_HALLAZGOS = 0
+CODIGO_ABORTO_PRECHECK = 3
+
 
 def _cargar_modulo():
     """Importa el módulo bajo prueba.
@@ -202,6 +226,54 @@ def _cargar_modulo():
     import precheck
 
     return precheck
+
+
+def _cargar_escenarios():
+    """Importa `tools/gemma/escenarios.py`, que aporta el catálogo canónico.
+
+    El módulo se importa como `escenarios` con el directorio `tools/gemma/` en
+    `sys.path`, igual que `precheck` y que `test_escenarios.py`; el catálogo se
+    lee siempre por su ruta canónica.
+    """
+    if str(DIRECTORIO_HERRAMIENTAS) not in sys.path:
+        sys.path.insert(0, str(DIRECTORIO_HERRAMIENTAS))
+    import escenarios
+
+    return escenarios
+
+
+def _escenario_del_catalogo(identificador):
+    """Devuelve 1 copia del escenario canónico `identificador`.
+
+    La copia se hace con `json` y no con `copy.deepcopy` para que el caso que
+    sustituye 1 campo —el contexto resuelto de `CB-003`— no altere el catálogo
+    cargado ni el archivo versionado.
+    """
+    catalogo = _cargar_escenarios().cargar_catalogo()
+    escenarios = catalogo["escenarios"]
+    if identificador not in escenarios:
+        raise AssertionError(
+            f"el catálogo no declara el escenario {identificador!r}: "
+            f"{', '.join(sorted(escenarios))}"
+        )
+    return json.loads(json.dumps(escenarios[identificador]))
+
+
+class _MedidorFijo:
+    """Doble de medición: devuelve 1 valor ya conocido y cuenta las consultas.
+
+    La comprobación previa recibe sus mediciones como invocables sin argumentos,
+    de modo que la suite no invoca `nvidia-smi` ni consulta la RAM del host,
+    conforme a `DEC-012`. El valor `None` representa 1 medición no disponible.
+    """
+
+    def __init__(self, valor):
+        self.valor = valor
+        self.invocaciones = 0
+
+    def __call__(self):
+        self.invocaciones += 1
+        return self.valor
 
 
 def _leer_manifiesto(nombre, presupuesto=None):
@@ -1050,6 +1122,301 @@ class SalidaTest(CasoDeComprobacionPrevia):
             "COMPROBACIÓN PREVIA: 5 de 5 comprobaciones superadas",
             lineas[5],
             "el perfil con el presupuesto completo declara las 5 superadas",
+        )
+
+
+class TestPrecheckEscenarios(unittest.TestCase):
+    """Contrato de `verificar_recursos_escenario` de `C-4` (`T-007`).
+
+    Fija `RF-007`, `CB-001`, `CB-003`, `CB-007` y `CB-008` de `SPEC-018` sobre
+    `tools/gemma/precheck.py`, con las mediciones inyectadas para que la suite no
+    invoque `nvidia-smi`, no consulte la RAM real y no cargue el servidor,
+    conforme a `DEC-012`, `AMB-009` y `AMB-011`.
+
+    Contrato que estas pruebas fijan:
+
+    - ``verificar_recursos_escenario(escenario, *, medidor_vram=None,
+      medidor_ram=None)`` recibe 1 escenario del catálogo —tal como lo devuelve
+      ``escenarios.cargar_catalogo()['escenarios'][<id>]``— y devuelve 1
+      diccionario con ``codigo`` (`0` sin hallazgos y `3` con 1 aborto de `C-2`),
+      ``escenario_id``, ``contexto_solicitado_tokens`` —el
+      ``contexto.declarado_tokens`` del escenario, que es el contexto que el
+      operador solicitó— y ``hallazgos``, 1 secuencia de líneas de diagnóstico
+      que empieza por ``[FALLO] `` y está vacía cuando ``codigo`` es `0`.
+    - ``medidor_vram`` y ``medidor_ram`` son invocables sin argumentos que
+      devuelven MiB o ``None`` cuando la medición no está disponible; con
+      ``None`` el módulo usa la medición real y las pruebas siempre inyectan las
+      2 para no tocar la GPU ni el host. ``medidor_ram`` se consulta solo cuando
+      ``capas_cpu_moe > 0`` (`CB-008`).
+    - Orden de `C-4`: (1) estado ``no_ejecutable`` (`CB-007`), (2) contexto
+      ajustado resuelto menor o igual a 4096 tokens (`CB-003`), (3) VRAM no
+      medible (`CB-001`), (4) presupuesto mayor que la VRAM disponible
+      (`RF-007`) y (5) RAM libre del host menor a 8192 MiB con capas de
+      expertos en CPU (`CB-008`).
+    - El contexto resuelto de 1 escenario ajustado es su
+      ``contexto.efectivo_tokens``: la derivación con la VRAM real corresponde a
+      ``escenarios.resolver_contexto_ajustado`` y el recálculo previo al
+      lanzamiento a `lanzador.py` (`CB-005`), de modo que la comprobación no
+      vuelve a derivarlo.
+    """
+
+    def _verificar(self, escenario, medidor_vram, medidor_ram):
+        """Invoca la comprobación con las mediciones inyectadas y valida su forma."""
+        modulo = _cargar_modulo()
+        resultado = modulo.verificar_recursos_escenario(
+            escenario,
+            medidor_vram=medidor_vram,
+            medidor_ram=medidor_ram,
+        )
+
+        self.assertIsInstance(resultado, dict)
+        for clave in (
+            "codigo",
+            "escenario_id",
+            "contexto_solicitado_tokens",
+            "hallazgos",
+        ):
+            self.assertIn(clave, resultado, f"el resultado declara {clave}")
+        self.assertIn(
+            resultado["codigo"],
+            (CODIGO_SIN_HALLAZGOS, CODIGO_ABORTO_PRECHECK),
+            "el código pertenece a C-2: 0 sin hallazgos y 3 con 1 aborto",
+        )
+        self.assertIsInstance(resultado["hallazgos"], (list, tuple))
+        return resultado
+
+    def _detalle(self, resultado):
+        """Une los hallazgos en 1 texto para contrastar el diagnóstico."""
+        return " ".join(str(hallazgo) for hallazgo in resultado["hallazgos"])
+
+    def test_escenario_no_ejecutable_aborta_en_precheck(self):
+        """`CB-007` de `AMB-009`: `ESC-M6-C131K` aborta antes de medir recursos.
+
+        El escenario figura en el catálogo con estado ``no_ejecutable`` y la
+        comprobación aborta con el código `3` de `C-2`, declara el escenario y su
+        contexto solicitado en tokens y no consulta ni la GPU ni la RAM: el
+        servidor no llega a intentar cargarse.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_NO_EJECUTABLE)
+        self.assertEqual(
+            "no_ejecutable",
+            escenario["estado"],
+            "el caso usa el escenario no_ejecutable del catálogo",
+        )
+        medidor_vram = _MedidorFijo(16384)
+        medidor_ram = _MedidorFijo(RAM_LIBRE_MINIMA_HOST_MIB)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_ABORTO_PRECHECK, resultado["codigo"])
+        self.assertEqual(ESCENARIO_NO_EJECUTABLE, resultado["escenario_id"])
+        self.assertEqual(
+            131072,
+            resultado["contexto_solicitado_tokens"],
+            "el resultado declara el contexto solicitado en tokens (CA-010)",
+        )
+        detalle = self._detalle(resultado)
+        self.assertIn(
+            "[FALLO] Escenario no ejecutable: ", detalle, "el diagnóstico de C-4"
+        )
+        self.assertIn(
+            ESCENARIO_NO_EJECUTABLE,
+            detalle,
+            "el diagnóstico nombra el escenario seleccionado",
+        )
+        self.assertEqual(
+            0, medidor_vram.invocaciones, "el aborto no consulta la VRAM"
+        )
+        self.assertEqual(
+            0, medidor_ram.invocaciones, "el aborto no consulta la RAM del host"
+        )
+
+    def test_recursos_insuficientes_aborta(self):
+        """`RF-007` y `CA-005`: el presupuesto excedido declara ambos valores.
+
+        Con la VRAM disponible por debajo del presupuesto total del escenario, la
+        comprobación aborta con el código `3` y el diagnóstico declara el
+        presupuesto requerido y la VRAM disponible en MiB.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_SIN_MOE_CPU)
+        requerido_mib = escenario["presupuesto_vram"]["total_mib"]
+        disponible_mib = requerido_mib - 2100
+        medidor_vram = _MedidorFijo(disponible_mib)
+        medidor_ram = _MedidorFijo(RAM_LIBRE_MINIMA_HOST_MIB)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_ABORTO_PRECHECK, resultado["codigo"])
+        self.assertEqual(ESCENARIO_SIN_MOE_CPU, resultado["escenario_id"])
+        detalle = self._detalle(resultado)
+        self.assertIn(
+            "[FALLO] Presupuesto excede VRAM disponible: ",
+            detalle,
+            "el diagnóstico de C-4",
+        )
+        self.assertIn(
+            f"requerido {requerido_mib} MiB",
+            detalle,
+            "el diagnóstico declara el presupuesto requerido en MiB",
+        )
+        self.assertIn(
+            f"disponible {disponible_mib} MiB",
+            detalle,
+            "el diagnóstico declara la VRAM disponible en MiB",
+        )
+        self.assertEqual(
+            1, medidor_vram.invocaciones, "el caso mide la VRAM 1 sola vez"
+        )
+        self.assertEqual(
+            0,
+            medidor_ram.invocaciones,
+            "sin capas de expertos en CPU no se consulta la RAM del host",
+        )
+
+    def test_vram_no_medible_aborta_sin_estimar(self):
+        """`CB-001` y `CA-005`: sin medición de VRAM no se estima ningún valor.
+
+        El medidor devuelve `None`, que es lo que devuelve
+        ``medir.vram_libre_mib`` cuando `nvidia-smi` no está disponible: la
+        comprobación aborta con el código `3`, declara el escenario y la ausencia
+        de la medición, y no declara ningún valor de VRAM en MiB.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_SIN_MOE_CPU)
+        medidor_vram = _MedidorFijo(None)
+        medidor_ram = _MedidorFijo(RAM_LIBRE_MINIMA_HOST_MIB)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_ABORTO_PRECHECK, resultado["codigo"])
+        self.assertEqual(ESCENARIO_SIN_MOE_CPU, resultado["escenario_id"])
+        detalle = self._detalle(resultado)
+        self.assertIn(
+            "[FALLO] VRAM disponible no medible",
+            detalle,
+            "el diagnóstico declara la ausencia de la medición",
+        )
+        self.assertIn(
+            ESCENARIO_SIN_MOE_CPU,
+            detalle,
+            "el diagnóstico nombra el escenario seleccionado",
+        )
+        self.assertNotRegex(
+            detalle,
+            r"\d+\s*MiB",
+            "la ausencia de medición no se sustituye por 1 valor estimado",
+        )
+        self.assertEqual(1, medidor_vram.invocaciones)
+        self.assertEqual(0, medidor_ram.invocaciones)
+
+    def test_ram_host_insuficiente_moe_cpu_aborta(self):
+        """`CB-008`, `AMB-011` y `CA-005`: la RAM del host declara ambos valores.
+
+        El escenario deriva capas de expertos a CPU y el presupuesto de VRAM
+        cabe; con 7000 MiB libres en el host, por debajo del mínimo de 8192 MiB,
+        la comprobación aborta con el código `3` y declara la RAM disponible y la
+        requerida en MiB.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_MOE_CPU)
+        self.assertGreater(
+            escenario["capas_cpu_moe"],
+            0,
+            "el caso usa 1 escenario con capas de expertos en CPU",
+        )
+        disponible_ram_mib = 7000
+        medidor_vram = _MedidorFijo(16384)
+        medidor_ram = _MedidorFijo(disponible_ram_mib)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_ABORTO_PRECHECK, resultado["codigo"])
+        self.assertEqual(ESCENARIO_MOE_CPU, resultado["escenario_id"])
+        detalle = self._detalle(resultado)
+        self.assertIn(
+            "[FALLO] RAM libre de host insuficiente: ",
+            detalle,
+            "el diagnóstico de C-4",
+        )
+        self.assertIn(
+            f"disponible {disponible_ram_mib} MiB",
+            detalle,
+            "el diagnóstico declara la RAM libre disponible en MiB",
+        )
+        self.assertIn(
+            f"requerida {RAM_LIBRE_MINIMA_HOST_MIB} MiB",
+            detalle,
+            "el diagnóstico declara la RAM requerida en MiB",
+        )
+        self.assertEqual(1, medidor_vram.invocaciones)
+        self.assertEqual(
+            1, medidor_ram.invocaciones, "con capas en CPU se consulta la RAM 1 vez"
+        )
+
+    def test_contexto_ajustado_insuficiente_aborta_en_precheck(self):
+        """`CB-003` y `CA-007`: el contexto resuelto declara valor y escenario.
+
+        El escenario ajustado llega con ``contexto.efectivo_tokens`` resuelto en
+        4096 tokens —el valor que lanzador recalcula antes del lanzamiento
+        (`CB-005`)— y la comprobación aborta con el código `3`, declara el valor
+        resuelto, el escenario afectado y el contexto solicitado en tokens.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_AJUSTADO)
+        self.assertEqual(
+            "ajustado",
+            escenario["contexto"]["tipo"],
+            "el caso usa 1 escenario de contexto ajustado",
+        )
+        escenario["contexto"]["efectivo_tokens"] = 4096
+        medidor_vram = _MedidorFijo(16384)
+        medidor_ram = _MedidorFijo(RAM_LIBRE_MINIMA_HOST_MIB)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_ABORTO_PRECHECK, resultado["codigo"])
+        self.assertEqual(ESCENARIO_AJUSTADO, resultado["escenario_id"])
+        self.assertEqual(
+            8192,
+            resultado["contexto_solicitado_tokens"],
+            "el contexto solicitado es el valor nominal declarado del escenario",
+        )
+        detalle = self._detalle(resultado)
+        self.assertIn(
+            "[FALLO] Contexto ajustado resuelto insuficiente: 4096 <= 4096",
+            detalle,
+            "el diagnóstico declara el valor resuelto en tokens",
+        )
+        self.assertIn(
+            ESCENARIO_AJUSTADO,
+            detalle,
+            "el diagnóstico nombra el escenario afectado",
+        )
+
+    def test_escenario_ejecutable_con_recursos_suficientes_no_aborta(self):
+        """Camino sin hallazgos: escenario ejecutable con recursos suficientes.
+
+        Con la VRAM disponible por encima del presupuesto y 8192 MiB libres en el
+        host —el mínimo de `CB-008`—, la comprobación se resuelve con el código
+        `0`, sin hallazgos, y declara el escenario y su contexto solicitado.
+        """
+        escenario = _escenario_del_catalogo(ESCENARIO_MOE_CPU)
+        self.assertEqual("declarado", escenario["estado"])
+        medidor_vram = _MedidorFijo(16384)
+        medidor_ram = _MedidorFijo(RAM_LIBRE_MINIMA_HOST_MIB)
+
+        resultado = self._verificar(escenario, medidor_vram, medidor_ram)
+
+        self.assertEqual(CODIGO_SIN_HALLAZGOS, resultado["codigo"])
+        self.assertEqual(ESCENARIO_MOE_CPU, resultado["escenario_id"])
+        self.assertEqual(4096, resultado["contexto_solicitado_tokens"])
+        self.assertEqual(
+            [],
+            list(resultado["hallazgos"]),
+            "sin hallazgos no se declara ningún diagnóstico",
+        )
+        self.assertEqual(1, medidor_vram.invocaciones)
+        self.assertEqual(
+            1,
+            medidor_ram.invocaciones,
+            "el mínimo de 8192 MiB libres es suficiente y no aborta",
         )
 
 
