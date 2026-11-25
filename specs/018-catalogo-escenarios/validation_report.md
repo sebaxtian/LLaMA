@@ -112,7 +112,10 @@ Sin observaciones abiertas. La única observación de severidad alta de la pasad
 - `plan.md` citaba `spec.md` en su versión 0.7.0 y estado `planned`; el commit `532e28f` actualizó esa referencia a la versión 0.8.2 y el estado `implemented`, de modo que la observación de la pasada anterior queda cerrada y la referencia vigente coincide con el contrato validado. Ese mismo commit sustituyó el SHA `d574f58` por `e1030b3` en `plan.md` y en `spec.md`, y el commit `b031c6f` reemplazó después esa atribución por el SHA firmado `6790686`: la referencia vigente de los 2 artefactos ya no cita `e1030b3`.
 - La fila de la estrategia de testing de `plan.md` correspondiente al lanzador `.bat` cita `DEC-015`, decisión de `SPEC-017` que no figura entre `DEC-001` a `DEC-012` de esta spec.
 - `T-003` y `T-004` declaran `CB-006` en «Requisitos cubiertos» con evidencia anterior a la reapertura; la comparación de los 4 valores conservados se acredita en `T-017` y `T-018`. La cobertura acumulada queda completa y esta observación solo registra el momento de cada evidencia.
-- La sección de aprobaciones de `spec.md` conserva `G4` sin marcar y la línea de registro sin fecha. El reporte no la escribe: la aprobación y su registro corresponden al propietario mediante commit firmado con una clave de `docs/sdd/firmantes_autorizados`.
+
+## Cierre de compuertas
+
+- `G4`: aprobada por el propietario en el commit firmado `cc92982fbe9dc1cdfa34f5fd50ef93379911310b`, cuyo cuerpo declara `Spec: SPEC-018` y cuya firma ED25519 verifica `git verify-commit` para `sebaxtianrioss@gmail.com` con la clave `SHA256:strw3vZ7xct0YMz+hGHAYjDOfv/zO0JyAI9Om3Olhqc`; la única modificación del commit es la casilla de G4 de `spec.md`, que pasa de la casilla sin marcar con el marcador de fecha a la casilla marcada con el registro fechado el 2026-11-25. El orquestador verificó la compuerta con `python tools\sdd\validate.py --spec SPEC-018 --gate G4 --git`, que devolvió `OK: sin hallazgos`. La constancia registra el cierre verificado y no declara la compuerta: el registro de la aprobación vive en la sección de aprobaciones de `spec.md`.
 
 ## Dictamen
 
