@@ -10,6 +10,18 @@ vMAJOR.MINOR.PATCH
 
 ## [Unreleased]
 
+### Added
+
+- Catálogo de 9 escenarios de ejecución del modelo (`SPEC-018`): 1 escenario por combinación de 0, 6 y 9 capas de expertos en CPU con contexto de 4 096 tokens, 131 072 tokens y contexto ajustado, con identificadores canónicos `ESC-M0-C4K` a `ESC-M9-CADJ`, presupuesto de VRAM desglosado en 4 componentes con margen libre mínimo de 512 MiB y memoria de sistema requerida por escenario.
+- Selector de escenario por argumento de línea de órdenes y por menú interactivo, con enumeración determinista, código de salida específico para identificador inexistente y verificación de recursos antes del lanzamiento.
+- Registro de conformidad presupuestaria por escenario, con el exceso declarado en MiB y la medición conservada íntegra.
+- Revocación de la aprobación de un escenario cuando cambia cualquiera de los 4 valores que la sostuvieron, con motivo que nombra el valor y exigencia de medición nueva.
+
+### Changed
+
+- Deuda del régimen registrada durante `SPEC-018`: la comprobación `C-17` exige la línea `Merge: <sha>` cuando la spec pasa a `validated`, y ese identificador solo existe después de integrar la rama que transporta la transición `T6`. La integración se hace por tanto en 2 pasos: primero con la spec en `implemented`, después con la transición y el identificador reales.
+- Deuda del régimen registrada durante `SPEC-018`: el protocolo no declara transición desde `implemented` para una brecha de implementación descubierta en la etapa Validate; la reapertura practicable es `T11`, que exige cambio de requisito aprobado y anula la aprobación `G1`.
+
 ## [v0.8.0] - 2026-11-24
 
 ### Added

@@ -77,6 +77,39 @@ servidor añade ``--spec-type draft-mtp --spec-draft-n-max <techo>`` después de
 y el campo 11 del registro de `C-6` transcribe ese bloque y no la presencia del
 artefacto.
 
+Selector de escenarios de `SPEC-018`: ``--listar-escenarios`` enumera los 9
+escenarios del catálogo canónico de ``src/gemma/escenarios/catalogo.json`` en el
+orden jerárquico de `DEC-004`, con 1 línea por escenario que declara los 5 datos
+de `RF-005`, y devuelve el código `0` sin lanzar el servidor. ``--escenario
+<id>`` selecciona 1 escenario del catálogo por su identificador exacto: la
+ejecución aplica los 9 valores del escenario —los 7 parámetros de
+``parametros_ejecucion``, las capas de expertos en CPU y el contexto efectivo—,
+declara el identificador en consola y lo transcribe en el bloque ``escenario``
+del registro, junto al presupuesto declarado del escenario y las 2 mediciones de
+VRAM. Un identificador ausente del catálogo devuelve el código `2` y enumera los
+9 identificadores canónicos (`RF-004`); el precheck de recursos de `C-4` se
+invoca por el punto ``VERIFICAR_RECURSOS_ESCENARIO`` y su aborto devuelve el
+código `3` sin arrancar el servidor (`CB-007`, `RF-007`, `CB-001`, `CB-008`,
+`CB-003`). El contexto de 1 escenario ajustado se recalcula con la VRAM libre
+medida en el momento del lanzamiento mediante la regla de `RF-009` y `DEC-008`,
+de modo que el lanzamiento no reutiliza el valor declarado (`CB-005`).
+
+Selector interactivo de `SPEC-018`: sin `--perfil` ni `--escenario`, el flujo
+presenta el menú de los 9 escenarios numerados del 1 al 9 en el orden de
+`DEC-004`, con el identificador, las capas de expertos en CPU, el contexto
+efectivo en tokens y el presupuesto de VRAM en MiB de `RF-005`, y marca
+`[NO EJECUTABLE]` al escenario que `CB-007` no permite seleccionar. La consola se
+lee por el punto inyectable ``LEER_ENTRADA``, cuyo valor por omisión es
+``input``; 1 selección vacía informa el rechazo y devuelve el código `2` sin
+precheck ni lanzamiento, y 1 selección inválida o 1 escenario no ejecutable
+informan el rechazo, reimprimen la numeración y vuelven a preguntar. El número
+del menú o el identificador canónico resuelven el escenario y, después, el flujo
+resuelve el perfil de base —por número o por identificador de la lista de
+`DEC-001`— antes de aplicar el flujo de `C-2` y `C-4` a la ejecución. Con la
+entrada por omisión, el menú exige 1 terminal y 1 perfil de base único; con
+varios perfiles disponibles y sin consola, la invocación sin `--perfil` conserva
+el listado de `DEC-001` y devuelve el código `2`.
+
 Contrato:
 
 - ``main(argv=None) -> int`` devuelve el código de `C-8` y no termina por
@@ -128,6 +161,7 @@ from pathlib import Path
 
 import binario
 import comparar
+import escenarios
 import estado
 import medir
 import perfiles
@@ -146,9 +180,26 @@ RAIZ_POR_DEFECTO = Path(__file__).resolve().parents[2]
 DIRECTORIO_PERFILES = Path("src") / "gemma" / "perfiles"
 SUFIJO_MANIFIESTO = ".json"
 
+# `SPEC-018`, `C-1` y `DEC-001`: el catálogo canónico de escenarios cuelga de la
+# raíz recibida, de modo que la suite lo copia a su árbol temporal.
+RUTA_CATALOGO_ESCENARIOS = (
+    Path("src") / "gemma" / "escenarios" / "catalogo.json"
+)
+
 # Manifiesto de los 9 ejes de `C-2`: no es 1 perfil, de modo que no se lista ni
 # se selecciona con `--perfil`.
 MANIFIESTO_INICIAL = "parametros_iniciales"
+
+# `SPEC-018` y `C-2`: el selector interactivo lee la consola por este punto
+# inyectable, cuyo valor por omisión es `input`; la suite lo sustituye por 1
+# doble que entrega sus líneas sin consola real, conforme a `DEC-012`.
+LEER_ENTRADA = input
+
+# Encabezados literales de los 2 menús del flujo interactivo de `DEC-001` y la
+# marca del escenario que `CB-007` no permite seleccionar.
+ENCABEZADO_MENU_ESCENARIOS = "Escenarios disponibles (--escenario <id>):"
+ENCABEZADO_MENU_PERFILES = "Perfiles disponibles (--perfil <id>):"
+MARCA_NO_EJECUTABLE = "[NO EJECUTABLE]"
 
 # Los 4 modos de `C-8` y ningún otro.
 MODOS = ("comprobar", "servir", "medir", "comparar")
@@ -162,6 +213,7 @@ MODO_COMPARAR = "comparar"
 # que no llega a quedar en servicio y por tanto no se puede medir.
 CODIGO_OK = 0
 CODIGO_USO_INCORRECTO = 2
+CODIGO_PRECHECK_ESCENARIO = 3
 CODIGO_MEDICION_NO_DISPONIBLE = 7
 
 # Punto de acceso del servidor (`DEC-011`): la URL base y el puerto son
@@ -269,6 +321,16 @@ def _crear_parser():
         help="identificador del perfil; sin él se listan los disponibles",
     )
     parser.add_argument(
+        "--escenario",
+        default=None,
+        help="identificador del escenario del catálogo de SPEC-018",
+    )
+    parser.add_argument(
+        "--listar-escenarios",
+        action="store_true",
+        help="enumera los 9 escenarios del catálogo y termina",
+    )
+    parser.add_argument(
         "--modo",
         default=MODO_POR_DEFECTO,
         help="modo de ejecución: " + "|".join(MODOS),
@@ -311,9 +373,346 @@ def _leer_manifiesto(raiz, identificador):
 def _listar_perfiles(raiz, identificadores):
     """Imprime la raíz resuelta y la lista de perfiles de `DEC-001`."""
     print(f"Raíz: {raiz}")
-    print("Perfiles disponibles (--perfil <id>):")
+    print(ENCABEZADO_MENU_PERFILES)
     for identificador in identificadores:
         print(f"  {identificador}")
+
+
+def _cargar_catalogo(raiz):
+    """Carga el catálogo de escenarios de `C-1` bajo la raíz recibida.
+
+    La ruta relativa ``src/gemma/escenarios/catalogo.json`` se resuelve contra la
+    raíz que llega por ``--raiz`` y nunca contra el directorio actual, de modo
+    que la suite trabaja sobre su árbol temporal (`DEC-001`).
+    """
+    return escenarios.cargar_catalogo(Path(raiz) / RUTA_CATALOGO_ESCENARIOS)
+
+
+def _listar_escenarios(raiz):
+    """Modo ``--listar-escenarios`` de `C-2`: enumera los 9 y devuelve `0`.
+
+    Cada línea declara los 5 datos de `RF-005` —identificador, estado, capas de
+    expertos en CPU, contexto efectivo en tokens y presupuesto de VRAM en MiB—
+    en el orden jerárquico de `DEC-004`, sin lanzar el servidor ni verificar los
+    recursos de escenario alguno.
+    """
+    catalogo = _cargar_catalogo(raiz)
+    print("Raíz: " + str(Path(raiz)))
+    print(ENCABEZADO_MENU_ESCENARIOS)
+    for escenario in escenarios.listar_escenarios(catalogo):
+        contexto = escenario.get("contexto") or {}
+        presupuesto = escenario.get("presupuesto_vram") or {}
+        print(
+            f"  {escenario['id']}: estado={escenario['estado']}, "
+            f"capas_cpu_moe={escenario['capas_cpu_moe']}, "
+            f"contexto_efectivo={contexto.get('efectivo_tokens')} tokens, "
+            f"presupuesto_vram={presupuesto.get('total_mib')} MiB"
+        )
+    return CODIGO_OK
+
+
+def _escenario_declarado(catalogo, identificador):
+    """Devuelve el escenario de `id` exacto que declara el catálogo, o `None`."""
+    declarados = catalogo.get("escenarios") or {}
+    escenario = declarados.get(identificador)
+    return escenario if isinstance(escenario, dict) else None
+
+
+def _rechazar_escenario_inexistente(catalogo, identificador):
+    """Rechazo de `RF-004`: nombra el identificador y enumera los 9 canónicos."""
+    print(
+        f"[ERROR] escenario no declarado: {identificador}; --escenario debe "
+        "nombrar 1 identificador del catálogo",
+        file=sys.stderr,
+    )
+    disponibles = [
+        escenario["id"] for escenario in escenarios.listar_escenarios(catalogo)
+    ]
+    print("Escenarios disponibles: " + ", ".join(disponibles))
+
+
+def _entrada_interactiva(identificadores):
+    """Indica si la invocación sin `--perfil` presenta el menú de `C-2`.
+
+    Con ``LEER_ENTRADA`` sustituido por 1 punto inyectable, el menú se presenta
+    siempre; con el ``input`` por omisión exige 1 perfil de base único y 1
+    terminal en la entrada estándar. Con varios perfiles disponibles y sin
+    consola, la invocación sin `--perfil` conserva el listado de `DEC-001` y
+    devuelve el código `2`, de modo que ninguna ejecución queda a la espera de
+    una línea que no va a llegar.
+    """
+    if LEER_ENTRADA is not input:
+        return True
+    if len(identificadores) != 1:
+        return False
+    entrada = getattr(sys, "stdin", None)
+    try:
+        return bool(entrada is not None and entrada.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+def _leer_seleccion():
+    """Lee 1 línea de la consola por ``LEER_ENTRADA`` y la devuelve sin espacios.
+
+    El final de la entrada se declara como selección vacía, de modo que el flujo
+    aborta con el código `2` de `C-2` en lugar de propagar la excepción.
+    """
+    try:
+        linea = LEER_ENTRADA("Selección: ")
+    except EOFError:
+        return ""
+    if linea is None:
+        return ""
+    return str(linea).strip()
+
+
+def _imprimir_menu_escenarios(listado):
+    """Imprime el menú detallado de `C-2` con la numeración de `DEC-004`.
+
+    Cada línea declara el identificador, las capas de expertos en CPU, el
+    contexto efectivo en tokens y el presupuesto de VRAM en MiB que enumera
+    `RF-005`, y añade la marca al escenario que `CB-007` no permite seleccionar.
+    """
+    print(ENCABEZADO_MENU_ESCENARIOS)
+    for numero, escenario in enumerate(listado, start=1):
+        contexto = escenario.get("contexto") or {}
+        presupuesto = escenario.get("presupuesto_vram") or {}
+        linea = (
+            f"  {numero}) {escenario['id']}: "
+            f"capas_cpu_moe={escenario.get('capas_cpu_moe')}, "
+            f"contexto_efectivo={contexto.get('efectivo_tokens')} tokens, "
+            f"presupuesto_vram={presupuesto.get('total_mib')} MiB"
+        )
+        if escenario.get("estado") == escenarios.ESTADO_NO_EJECUTABLE:
+            linea = f"{linea} {MARCA_NO_EJECUTABLE}"
+        print(linea)
+
+
+def _recordar_menu_escenarios(listado):
+    """Reimprime el encabezado y la numeración del menú tras 1 rechazo.
+
+    La reimpresión repite el encabezado literal y la numeración de `DEC-004` sin
+    los datos de detalle ni la marca del escenario no ejecutable, que figura 1
+    sola vez en el menú detallado; el operador conserva así la referencia de
+    números para la línea siguiente.
+    """
+    print(ENCABEZADO_MENU_ESCENARIOS)
+    for numero, escenario in enumerate(listado, start=1):
+        print(f"  {numero}) {escenario['id']}")
+
+
+def _resolver_seleccion_escenario(catalogo, listado, texto):
+    """Devuelve el escenario declarado que nombra la selección, o `None`.
+
+    `RF-003` y `RF-004`: 1 número dentro de la numeración resuelve el escenario
+    de esa posición y 1 identificador resuelve el declarado con esa clave. 1
+    número fuera de rango y 1 identificador ausente del catálogo informan el
+    rechazo sin resolver, y `CB-007` rechaza el escenario no ejecutable nombrando
+    su identificador.
+    """
+    if texto.isdigit():
+        numero = int(texto)
+        if not 1 <= numero <= len(listado):
+            print(
+                f"[ERROR] selección fuera de rango: {texto}; el menú numera los "
+                f"{len(listado)} escenarios del 1 al {len(listado)}",
+                file=sys.stderr,
+            )
+            return None
+        escenario = _escenario_declarado(catalogo, listado[numero - 1]["id"])
+        if escenario is None:
+            _rechazar_escenario_inexistente(catalogo, listado[numero - 1]["id"])
+            return None
+    else:
+        escenario = _escenario_declarado(catalogo, texto)
+        if escenario is None:
+            _rechazar_escenario_inexistente(catalogo, texto)
+            return None
+    if escenario.get("estado") == escenarios.ESTADO_NO_EJECUTABLE:
+        print(
+            f"[ERROR] escenario no ejecutable: {escenario.get('id')}; el menú "
+            "no lo selecciona por su estado y vuelve a preguntar",
+            file=sys.stderr,
+        )
+        return None
+    return escenario
+
+
+def _seleccionar_escenario(catalogo):
+    """Resuelve 1 escenario por número o por identificador (`RF-003`).
+
+    El menú admite la numeración de `DEC-004` y el identificador canónico exacto.
+    1 selección vacía informa el rechazo y devuelve `None`, de modo que el flujo
+    aborta con el código `2` de `C-2` sin precheck ni lanzamiento; 1 selección
+    inválida y 1 escenario no ejecutable informan el rechazo, reimprimen la
+    numeración y vuelven a preguntar.
+    """
+    listado = escenarios.listar_escenarios(catalogo)
+    _imprimir_menu_escenarios(listado)
+    while True:
+        texto = _leer_seleccion()
+        if not texto:
+            print(
+                "[ERROR] selección vacía: el menú espera 1 número del 1 al "
+                f"{len(listado)} o 1 identificador del catálogo",
+                file=sys.stderr,
+            )
+            return None
+        escenario = _resolver_seleccion_escenario(catalogo, listado, texto)
+        if escenario is not None:
+            return escenario
+        _recordar_menu_escenarios(listado)
+
+
+def _imprimir_menu_perfiles(raiz, identificadores):
+    """Imprime la raíz resuelta y la numeración de perfiles de `DEC-001`."""
+    print(f"Raíz: {raiz}")
+    print(ENCABEZADO_MENU_PERFILES)
+    for numero, identificador in enumerate(identificadores, start=1):
+        print(f"  {numero}) {identificador}")
+
+
+def _seleccionar_perfil(raiz, identificadores):
+    """Resuelve el perfil de base del flujo interactivo, por número o por id.
+
+    Tras resolver el escenario, `C-2` exige 1 perfil de base para los artefactos
+    y la comprobación previa. 1 selección vacía informa el rechazo y devuelve
+    `None` para abortar con el código `2`; 1 número fuera de la numeración y 1
+    identificador ausente de la lista informan el rechazo, reimprimen la
+    numeración y vuelven a preguntar.
+    """
+    _imprimir_menu_perfiles(raiz, identificadores)
+    while True:
+        texto = _leer_seleccion()
+        if not texto:
+            print(
+                "[ERROR] selección vacía: el menú espera 1 número de perfil o 1 "
+                "identificador de la lista",
+                file=sys.stderr,
+            )
+            return None
+        if texto in identificadores:
+            return texto
+        if texto.isdigit():
+            numero = int(texto)
+            if 1 <= numero <= len(identificadores):
+                return identificadores[numero - 1]
+        print(
+            f"[ERROR] perfil no declarado: {texto}; el menú espera 1 número del "
+            f"1 al {len(identificadores)} o 1 identificador de la lista",
+            file=sys.stderr,
+        )
+        _imprimir_menu_perfiles(raiz, identificadores)
+
+
+def _anunciar_escenario(escenario):
+    """Declara en consola el escenario seleccionado y su presupuesto (`RF-003`)."""
+    contexto = escenario.get("contexto") or {}
+    presupuesto = escenario.get("presupuesto_vram") or {}
+    print(
+        f"ESCENARIO {escenario.get('id')}: contexto solicitado "
+        f"{contexto.get('declarado_tokens')} tokens, presupuesto declarado "
+        f"{presupuesto.get('total_mib')} MiB"
+    )
+
+
+def _opciones_del_escenario(escenario, contexto_efectivo):
+    """Los 9 ejes de `C-2` con el valor declarado por el escenario.
+
+    Los 7 parámetros de ``parametros_ejecucion`` de `DEC-011` aportan
+    ``gpu_layers``, ``flash_attn``, ``ubatch``, ``load_mode``, ``parallel`` y los
+    2 tipos de caché KV; ``ncmoe`` toma las capas de expertos en CPU del
+    escenario y ``ctx_size`` el contexto efectivo resuelto del lanzamiento.
+    """
+    parametros = escenario.get("parametros_ejecucion") or {}
+    return {
+        "gpu_layers": parametros.get("gpu_layers"),
+        "flash_attn": parametros.get("flash_attn"),
+        "ctx_size": contexto_efectivo,
+        "ubatch": parametros.get("ubatch"),
+        "ncmoe": escenario.get("capas_cpu_moe"),
+        "load_mode": parametros.get("load_mode"),
+        "parallel": parametros.get("parallel"),
+        "cache_type_k": parametros.get("cache_type_k"),
+        "cache_type_v": parametros.get("cache_type_v"),
+    }
+
+
+def _efectivas_del_escenario(escenario):
+    """Opciones efectivas del escenario, con el contexto ajustado recalculado.
+
+    `CB-005` y `DEC-008`: el escenario de contexto ajustado deriva sus tokens de
+    la VRAM libre medida en el momento del lanzamiento y no del valor declarado
+    en la selección; el valor derivado se valida con `CB-003` antes de arrancar.
+    Devuelve ``(efectivas, None)`` o ``(None, motivo)`` cuando la VRAM no se
+    puede medir o el contexto resuelto no supera el suelo.
+    """
+    contexto = escenario.get("contexto") or {}
+    tokens = contexto.get("efectivo_tokens")
+    if contexto.get("tipo") == escenarios.TIPO_CONTEXTO_AJUSTADO:
+        vram_libre = _vram_libre_para_comprobar()
+        if vram_libre is None:
+            return (
+                None,
+                "VRAM disponible no medible: el contexto ajustado del escenario "
+                f"{escenario.get('id')} no se recalcula ni se estima (CB-001)",
+            )
+        try:
+            tokens = escenarios.resolver_contexto_ajustado(escenario, vram_libre)
+        except (TypeError, ValueError) as error:
+            return (
+                None,
+                "contexto ajustado no resoluble en el escenario "
+                f"{escenario.get('id')}: {error}",
+            )
+        admisible, motivo = escenarios.validar_contexto_ajustado(escenario, tokens)
+        if not admisible:
+            return (None, motivo)
+    return (
+        {"opciones": _opciones_del_escenario(escenario, tokens), "omitidas": []},
+        None,
+    )
+
+
+def _verificar_recursos_del_escenario(escenario):
+    """Precheck de recursos de `C-4` por el punto ``VERIFICAR_RECURSOS_ESCENARIO``.
+
+    Imprime los hallazgos ``[FALLO]`` que declara el resultado y devuelve su
+    código, que es `3` en el primer aborto y `0` sin hallazgos; el lanzamiento no
+    se invoca en ningún caso desde aquí.
+    """
+    resultado = VERIFICAR_RECURSOS_ESCENARIO(escenario)
+    hallazgos = list(resultado.get("hallazgos") or ())
+    for linea in hallazgos:
+        print(linea)
+    codigo = resultado.get("codigo")
+    if isinstance(codigo, bool) or not isinstance(codigo, int):
+        return CODIGO_PRECHECK_ESCENARIO if hallazgos else CODIGO_OK
+    return codigo
+
+
+def _comprobar_escenario(escenario):
+    """Modo ``comprobar`` con escenario: diagnóstico de `C-4` sin carga."""
+    _anunciar_escenario(escenario)
+    return _verificar_recursos_del_escenario(escenario)
+
+
+def _bloque_de_conformidad(escenario, memoria):
+    """Las 4 entradas del bloque ``escenario`` de `C-5` de `SPEC-018`.
+
+    ``registro`` deriva después ``delta_presupuesto_mib``, ``dictamen`` y
+    ``conforme_presupuesto`` bajo la regla ``consumo <= presupuesto`` de
+    `AMB-010`; sin medición de VRAM asignada, la clave correspondiente vale
+    ``None`` y el dictamen declara la ausencia.
+    """
+    presupuesto = escenario.get("presupuesto_vram") or {}
+    return {
+        "escenario_id": escenario.get("id"),
+        "presupuesto_vram_declarado_mib": presupuesto.get("total_mib"),
+        "vram_asignada_medida_mib": memoria.get("vram_usada_mib"),
+        "vram_libre_medida_mib": memoria.get("vram_libre_mib"),
+    }
 
 
 def _ruta_ejecutable(manifiesto, raiz):
@@ -944,6 +1343,7 @@ def _construir_registro(
     comparacion=None,
     instante=None,
     salida_servidor=None,
+    escenario=None,
 ):
     """Construye en memoria el registro de `C-5` y devuelve su carpeta.
 
@@ -955,7 +1355,9 @@ def _construir_registro(
     reloj del sistema. ``comparacion`` añade a la clave opcional de `C-7` el
     bloque que la campaña calcula antes de escribir el registro y
     ``salida_servidor`` es el texto capturado del binario del que el campo 22
-    toma la memoria de expertos en host.
+    toma la memoria de expertos en host. ``escenario`` añade el bloque de
+    conformidad presupuestaria de `C-5` de `SPEC-018` cuando la ejecución
+    declara 1 escenario del catálogo.
     """
     momento = instante if instante is not None else datetime.now(timezone.utc)
     identificador = manifiesto.get("id") or argumentos.perfil
@@ -996,6 +1398,7 @@ def _construir_registro(
         frontmatter,
         campos,
         instante=momento,
+        escenario=escenario,
     )
     return construido, directorio
 
@@ -1010,6 +1413,7 @@ def _crear_registro(
     sonda,
     estabilidad,
     salida_servidor=None,
+    escenario=None,
 ):
     """Crea el registro de `C-5` de 1 ejecución y devuelve su ruta.
 
@@ -1017,7 +1421,9 @@ def _crear_registro(
     las efectivas, conforme a `DEC-020`; la carpeta de registros cuelga de la
     raíz recibida, de modo que la suite escribe en su árbol temporal.
     ``salida_servidor`` es el texto capturado del binario, del que el campo 22
-    toma la memoria de expertos en host.
+    toma la memoria de expertos en host. ``escenario`` es el bloque de
+    conformidad presupuestaria de `C-5` de `SPEC-018`, presente solo cuando la
+    ejecución declara 1 escenario del catálogo.
     """
     construido, directorio = _construir_registro(
         manifiesto,
@@ -1029,6 +1435,7 @@ def _crear_registro(
         sonda,
         estabilidad,
         salida_servidor=salida_servidor,
+        escenario=escenario,
     )
     ruta = registro.escribir_registro(directorio, construido)
     print(f"REGISTRO: {construido['id']}")
@@ -1549,7 +1956,7 @@ def _comparar(manifiesto, raiz, argumentos):
     return _reportar_elegibilidad(manifiesto, registros)
 
 
-def _servir_o_medir(manifiesto, raiz, argumentos):
+def _servir_o_medir(manifiesto, raiz, argumentos, escenario=None):
     """Modos `servir` y `medir`: carga medida del perfil de `C-1`.
 
     Sigue el flujo de una ejecución de `plan.md`: comprobación previa completa,
@@ -1561,15 +1968,39 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
     comprobación 4 y el lanzamiento, de modo que el presupuesto se contrasta con
     el contexto que el servidor usa. Solo `medir` escribe el registro de `C-5`;
     `servir` deja 0 registros y declara el campo 22 como fuente ausente.
+
+    Con ``escenario``, la ejecución aplica los 9 valores del escenario del
+    catálogo en lugar de los ejes del perfil: declara el identificador en
+    consola, ejecuta el precheck de recursos de `C-4` por
+    ``VERIFICAR_RECURSOS_ESCENARIO`` antes de arrancar y recalcula el contexto
+    ajustado con la VRAM libre del lanzamiento (`CB-005`). El registro de
+    `medir` transcribe además el bloque de conformidad presupuestaria de `C-5`
+    de `SPEC-018`.
     """
     # `C-3` y `DEC-008`: el valor efectivo de cada eje es el inicial mientras su
     # desviación no declare 1 comparación completa y pasa a ser el propuesto en
     # cuanto esa comparación consta entre los registros del perfil.
-    efectivas = _opciones_efectivas(manifiesto, raiz, argumentos)
+    efectivas_perfil = _opciones_efectivas(manifiesto, raiz, argumentos)
 
-    codigo = _comprobacion_previa(manifiesto, raiz, efectivas)
+    if escenario is not None:
+        # `C-2` y `C-4`: el escenario se anuncia y su precheck de recursos
+        # aborta con el código 3 antes de lanzar nada.
+        _anunciar_escenario(escenario)
+        codigo_escenario = _verificar_recursos_del_escenario(escenario)
+        if codigo_escenario != CODIGO_OK:
+            return codigo_escenario
+
+    codigo = _comprobacion_previa(manifiesto, raiz, efectivas_perfil)
     if codigo != CODIGO_OK:
         return codigo
+
+    if escenario is None:
+        efectivas = efectivas_perfil
+    else:
+        efectivas, motivo = _efectivas_del_escenario(escenario)
+        if efectivas is None:
+            print(f"[FALLO] {motivo}", file=sys.stderr)
+            return CODIGO_PRECHECK_ESCENARIO
 
     _imprimir_opciones_efectivas(efectivas)
 
@@ -1639,6 +2070,13 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
     if argumentos.modo == MODO_SERVIR:
         return CODIGO_OK
 
+    bloque_escenario = None
+    if escenario is not None:
+        # `C-5` de `SPEC-018`: el bloque declara el identificador, el
+        # presupuesto del escenario y las 2 mediciones de VRAM; `registro`
+        # deriva el delta y el dictamen de conformidad.
+        bloque_escenario = _bloque_de_conformidad(escenario, memoria)
+
     try:
         _crear_registro(
             manifiesto,
@@ -1650,6 +2088,7 @@ def _servir_o_medir(manifiesto, raiz, argumentos):
             sonda,
             estabilidad,
             salida_servidor,
+            escenario=bloque_escenario,
         )
     except ValueError as error:
         print(f"[ERROR] registro no declarable: {error}", file=sys.stderr)
@@ -1668,11 +2107,20 @@ def main(argv=None):
         return CODIGO_USO_INCORRECTO
 
     raiz = Path(argumentos.raiz).resolve()
-    identificadores = _perfiles_disponibles(raiz)
 
-    if argumentos.perfil is None:
-        _listar_perfiles(raiz, identificadores)
-        return CODIGO_USO_INCORRECTO
+    # `SPEC-018` y `C-2`: el listado de escenarios no exige `--perfil` y
+    # devuelve el código 0 sin lanzar el servidor.
+    if argumentos.listar_escenarios:
+        try:
+            return _listar_escenarios(raiz)
+        except ValueError as error:
+            print(
+                f"[ERROR] catálogo de escenarios no disponible: {error}",
+                file=sys.stderr,
+            )
+            return CODIGO_USO_INCORRECTO
+
+    identificadores = _perfiles_disponibles(raiz)
 
     if argumentos.modo not in MODOS:
         print(
@@ -1682,12 +2130,53 @@ def main(argv=None):
         )
         return CODIGO_USO_INCORRECTO
 
-    if argumentos.perfil not in identificadores:
-        print(
-            f"[ERROR] perfil no declarado: {argumentos.perfil}",
-            file=sys.stderr,
-        )
-        return CODIGO_USO_INCORRECTO
+    # `SPEC-018` y `C-2`: sin `--perfil` ni `--escenario` el flujo interactivo
+    # resuelve primero el escenario del catálogo y después el perfil de base; con
+    # varios perfiles y sin consola, el listado de `DEC-001` se conserva.
+    escenario = None
+    if argumentos.perfil is None:
+        if argumentos.escenario or not _entrada_interactiva(identificadores):
+            _listar_perfiles(raiz, identificadores)
+            return CODIGO_USO_INCORRECTO
+        try:
+            catalogo = _cargar_catalogo(raiz)
+        except ValueError as error:
+            print(
+                f"[ERROR] catálogo de escenarios no disponible: {error}",
+                file=sys.stderr,
+            )
+            return CODIGO_USO_INCORRECTO
+        escenario = _seleccionar_escenario(catalogo)
+        if escenario is None:
+            return CODIGO_USO_INCORRECTO
+        identificador = _seleccionar_perfil(raiz, identificadores)
+        if identificador is None:
+            return CODIGO_USO_INCORRECTO
+        argumentos.perfil = identificador
+    else:
+        if argumentos.perfil not in identificadores:
+            print(
+                f"[ERROR] perfil no declarado: {argumentos.perfil}",
+                file=sys.stderr,
+            )
+            return CODIGO_USO_INCORRECTO
+
+        # `RF-004` y `C-2`: el identificador de escenario se contrasta con el
+        # catálogo antes de resolver los argumentos del modo; 1 identificador
+        # ausente devuelve el código 2 y enumera los 9 canónicos.
+        if argumentos.escenario:
+            try:
+                catalogo = _cargar_catalogo(raiz)
+            except ValueError as error:
+                print(
+                    f"[ERROR] catálogo de escenarios no disponible: {error}",
+                    file=sys.stderr,
+                )
+                return CODIGO_USO_INCORRECTO
+            escenario = _escenario_declarado(catalogo, argumentos.escenario)
+            if escenario is None:
+                _rechazar_escenario_inexistente(catalogo, argumentos.escenario)
+                return CODIGO_USO_INCORRECTO
 
     if argumentos.modo == MODO_COMPARAR and argumentos.parametro is None:
         print(
@@ -1708,21 +2197,25 @@ def main(argv=None):
     manifiesto = _leer_manifiesto(raiz, argumentos.perfil)
 
     if argumentos.modo == "comprobar":
+        if escenario is not None:
+            return _comprobar_escenario(escenario)
         return _comprobar(manifiesto, raiz, argumentos)
 
     if argumentos.modo in (MODO_SERVIR, MODO_MEDIR):
-        return _servir_o_medir(manifiesto, raiz, argumentos)
+        return _servir_o_medir(manifiesto, raiz, argumentos, escenario)
 
     return _comparar(manifiesto, raiz, argumentos)
 
 
 # Puntos inyectables de la suite, conforme a `DEC-012`: la medición de memoria,
-# la consulta de VRAM libre de solo lectura, la sonda y la ejecución del binario
-# se sustituyen por dobles sin opciones de línea de comandos fuera de `C-8`.
+# la consulta de VRAM libre de solo lectura, la sonda, la ejecución del binario y
+# el precheck de recursos del escenario se sustituyen por dobles sin opciones de
+# línea de comandos fuera de `C-2` y `C-8`.
 MEDIR_MEMORIA = medir.medir_memoria
 VRAM_LIBRE_MIB = medir.vram_libre_mib
 SONDEAR = probe.sondear
 LANZAR_SERVIDOR = _lanzar_servidor
+VERIFICAR_RECURSOS_ESCENARIO = precheck.verificar_recursos_escenario
 
 
 if __name__ == "__main__":

@@ -78,6 +78,20 @@ mientras `T-025` no escriba el módulo: la importación de `registro` falla con
 el bloque en JSON compacto y de claves ordenadas, que `comparar.leer_registro`
 ignora al leer las 11 claves de `C-5`, y 1 registro sin ella escribe el mismo
 archivo que `T-025`, con las 11 claves en su orden y 0 líneas `comparacion:`.
+
+`T-009` de `SPEC-018` fija la extensión del registro para `RF-008`, `CB-002` y
+`CA-006` sobre el contrato `C-5` de su `plan.md`: 1 bloque opcional `escenario`
+del frontmatter, con las 4 entradas que aporta el orquestador —`escenario_id`,
+`presupuesto_vram_declarado_mib`, `vram_asignada_medida_mib` y
+`vram_libre_medida_mib`— y las 3 claves que el registro deriva de ellas
+—`delta_presupuesto_mib`, `dictamen` y `conforme_presupuesto`—, bajo la regla
+`consumo <= presupuesto` de `AMB-010`: el consumo medido es conforme solo si no
+excede el presupuesto declarado, y cuando lo excede el registro declara el
+exceso en MiB, conserva la medición íntegra y no declara el escenario conforme
+(`CB-002`). Sin presupuesto declarado o sin medición del consumo, el bloque no
+inventa valores: declara `None` en las claves no contrastables y 1 `dictamen`
+que lo declara. Sin el bloque, el archivo conserva las 11 claves de `C-5` y las
+22 filas de `C-6` con su orden y su contenido.
 """
 
 import json
@@ -272,6 +286,48 @@ LINEA_COMPARACION_ESPERADA = (
     '"valor_propuesto":131072}'
 )
 
+# `C-5` de `SPEC-018`: el bloque de conformidad presupuestaria viaja en esta
+# clave opcional del frontmatter y no altera las 11 claves de `C-5`.
+CLAVE_ESCENARIO = "escenario"
+
+# `C-5` de `SPEC-018`: las 4 entradas que aporta el orquestador. Ausente 1 de
+# ellas, el registro no inventa el valor y lo declara como no contrastable.
+ENTRADAS_ESCENARIO = (
+    "escenario_id",
+    "presupuesto_vram_declarado_mib",
+    "vram_asignada_medida_mib",
+    "vram_libre_medida_mib",
+)
+
+# `C-5` de `SPEC-018`: las 7 claves del bloque, con las 4 entradas y las 3 que
+# el registro deriva, en el orden en que se declaran.
+CLAVES_ESCENARIO = (
+    "escenario_id",
+    "presupuesto_vram_declarado_mib",
+    "vram_asignada_medida_mib",
+    "vram_libre_medida_mib",
+    "delta_presupuesto_mib",
+    "dictamen",
+    "conforme_presupuesto",
+)
+
+# `C-5` de `SPEC-018`: caso base conforme, con el consumo por debajo del
+# presupuesto y con las filas 13 y 14 de `C-6` coherentes con la medición.
+ESCENARIO_ID = "ESC-M9-C4K"
+PRESUPUESTO_MIB = 15500
+VRAM_ASIGNADA_MIB = 14872
+VRAM_LIBRE_MIB = 1449
+
+DICTAMEN_CONFORME = "conforme"
+DICTAMEN_SIN_PRESUPUESTO = "no contrastable: falta el presupuesto declarado"
+DICTAMEN_SIN_MEDICION = (
+    "no contrastable: falta la medición de VRAM asignada"
+)
+DICTAMEN_SIN_AMBOS = (
+    "no contrastable: faltan el presupuesto declarado y la medición de VRAM "
+    "asignada"
+)
+
 
 def _cargar_modulo():
     """Importa el módulo bajo prueba.
@@ -338,6 +394,38 @@ def _construir(modulo, *, proposito=PROPOSITO, frontmatter=None, campos=None):
         _frontmatter() if frontmatter is None else frontmatter,
         _campos() if campos is None else campos,
         instante=INSTANTE,
+    )
+
+
+def _escenario(**cambios):
+    """Entradas de `C-5` de `SPEC-018` que aporta el orquestador."""
+    datos = {
+        "escenario_id": ESCENARIO_ID,
+        "presupuesto_vram_declarado_mib": PRESUPUESTO_MIB,
+        "vram_asignada_medida_mib": VRAM_ASIGNADA_MIB,
+        "vram_libre_medida_mib": VRAM_LIBRE_MIB,
+    }
+    datos.update(cambios)
+    return datos
+
+
+def _construir_con_escenario(
+    modulo,
+    escenario,
+    *,
+    proposito=PROPOSITO,
+    frontmatter=None,
+    campos=None,
+):
+    """Construye 1 registro que declara el bloque de escenario de `C-5`."""
+    return modulo.construir_registro(
+        PERFIL,
+        PRUEBA,
+        proposito,
+        _frontmatter() if frontmatter is None else frontmatter,
+        _campos() if campos is None else campos,
+        instante=INSTANTE,
+        escenario=escenario,
     )
 
 
@@ -833,6 +921,357 @@ class ComparacionTest(unittest.TestCase):
 
             # Sin el bloque, el archivo es idéntico al que escribe `T-025`.
             self.assertEqual(texto, _texto_esperado_sin_comparacion())
+
+
+class TestRegistroEscenarios(unittest.TestCase):
+    """`RF-008`, `CB-002` y `CA-006`: conformidad presupuestaria del escenario.
+
+    Fija la extensión de `SPEC-018` sobre el registro de `SPEC-017`: 1 bloque
+    opcional `escenario` del frontmatter, con el identificador canónico, el
+    presupuesto declarado, la VRAM asignada y la VRAM libre medidas, la
+    diferencia en MiB entre el consumo medido y el presupuesto y el dictamen
+    determinista de `AMB-010`, que declara conforme solo cuando el consumo no
+    excede el presupuesto. Las 22 filas de `C-6` conservan su orden y su
+    contenido, y sin presupuesto o sin medición el bloque no inventa valores.
+    """
+
+    def test_registro_declara_escenario_y_conformidad(self):
+        modulo = _cargar_modulo()
+        _preparar_tmp()
+
+        with tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP)) as temporal:
+            carpeta = Path(temporal)
+            registro = _construir_con_escenario(modulo, _escenario())
+            bloque = registro["frontmatter"][CLAVE_ESCENARIO]
+
+            self.assertEqual(
+                tuple(bloque),
+                CLAVES_ESCENARIO,
+                "el bloque declara las 7 claves del dictamen en el orden de "
+                "C-5 de SPEC-018",
+            )
+            self.assertEqual(bloque["escenario_id"], ESCENARIO_ID)
+            self.assertEqual(
+                bloque["presupuesto_vram_declarado_mib"], PRESUPUESTO_MIB
+            )
+            self.assertEqual(
+                bloque["vram_asignada_medida_mib"], VRAM_ASIGNADA_MIB
+            )
+            self.assertEqual(bloque["vram_libre_medida_mib"], VRAM_LIBRE_MIB)
+            self.assertEqual(
+                bloque["delta_presupuesto_mib"],
+                VRAM_ASIGNADA_MIB - PRESUPUESTO_MIB,
+                "la diferencia es el consumo medido menos el presupuesto",
+            )
+            self.assertIs(
+                bloque["conforme_presupuesto"],
+                True,
+                "consumo < presupuesto es conforme bajo AMB-010",
+            )
+            self.assertEqual(bloque["dictamen"], DICTAMEN_CONFORME)
+            self.assertEqual(
+                set(registro["frontmatter"]),
+                set(CLAVES_FRONTMATTER) | {CLAVE_ESCENARIO},
+                "el bloque se suma a las 11 claves de C-5 sin sustituirlas",
+            )
+
+            ruta = modulo.escribir_registro(carpeta, registro)
+            texto = ruta.read_text(encoding="utf-8")
+            lineas = texto.splitlines()
+            cierre = lineas.index("---", 1)
+            claves = [linea.partition(":")[0] for linea in lineas[1:cierre]]
+            self.assertEqual(
+                claves,
+                list(CLAVES_FRONTMATTER) + [CLAVE_ESCENARIO],
+                "el bloque se escribe después de las 11 claves de C-5",
+            )
+            self.assertEqual(cierre, len(CLAVES_FRONTMATTER) + 2)
+            self.assertEqual(
+                sum(
+                    1
+                    for linea in lineas[1:cierre]
+                    if linea.startswith(f"{CLAVE_ESCENARIO}:")
+                ),
+                1,
+                "el bloque ocupa 1 sola línea del frontmatter",
+            )
+
+            decodificado = json.loads(
+                _lineas_frontmatter(texto)[CLAVE_ESCENARIO]
+            )
+            self.assertEqual(decodificado, bloque)
+            self.assertIs(decodificado["conforme_presupuesto"], True)
+            self.assertIsInstance(decodificado["conforme_presupuesto"], bool)
+            self.assertEqual(
+                decodificado["delta_presupuesto_mib"],
+                VRAM_ASIGNADA_MIB - PRESUPUESTO_MIB,
+            )
+
+            # El consumo igual al presupuesto es el límite de la regla.
+            en_el_limite = _construir_con_escenario(
+                modulo,
+                _escenario(vram_asignada_medida_mib=PRESUPUESTO_MIB),
+            )
+            bloque = en_el_limite["frontmatter"][CLAVE_ESCENARIO]
+            self.assertEqual(bloque["delta_presupuesto_mib"], 0)
+            self.assertIs(
+                bloque["conforme_presupuesto"],
+                True,
+                "consumo == presupuesto sigue siendo conforme",
+            )
+
+            # Con bloque de comparación, el escenario se escribe después.
+            registro = _construir_con_escenario(
+                modulo,
+                _escenario(),
+                proposito="comparacion",
+                frontmatter=_frontmatter(
+                    comparacion=dict(BLOQUE_COMPARACION)
+                ),
+            )
+            ruta = modulo.escribir_registro(carpeta, registro)
+            lineas = ruta.read_text(encoding="utf-8").splitlines()
+            cierre = lineas.index("---", 1)
+            claves = [linea.partition(":")[0] for linea in lineas[1:cierre]]
+            self.assertEqual(
+                claves,
+                list(CLAVES_FRONTMATTER)
+                + [CLAVE_COMPARACION, CLAVE_ESCENARIO],
+                "el bloque de escenario se escribe después de las 11 claves "
+                "de C-5 y del bloque de comparación",
+            )
+
+    def test_consumo_excede_presupuesto_conserva_medicion(self):
+        modulo = _cargar_modulo()
+        _preparar_tmp()
+
+        exceso = 327
+        asignada = PRESUPUESTO_MIB + exceso
+        dictamen = f"excede presupuesto por {exceso} MiB"
+        campos = _campos({"VRAM asignada": f"{asignada} MiB"})
+
+        with tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP)) as temporal:
+            carpeta = Path(temporal)
+            registro = _construir_con_escenario(
+                modulo,
+                _escenario(vram_asignada_medida_mib=asignada),
+                campos=campos,
+            )
+            bloque = registro["frontmatter"][CLAVE_ESCENARIO]
+
+            self.assertEqual(bloque["delta_presupuesto_mib"], exceso)
+            self.assertIs(
+                bloque["conforme_presupuesto"],
+                False,
+                "consumo > presupuesto no es conforme bajo AMB-010",
+            )
+            self.assertEqual(bloque["dictamen"], dictamen)
+            self.assertEqual(bloque["vram_asignada_medida_mib"], asignada)
+            self.assertEqual(
+                bloque["presupuesto_vram_declarado_mib"], PRESUPUESTO_MIB
+            )
+            self.assertEqual(bloque["vram_libre_medida_mib"], VRAM_LIBRE_MIB)
+
+            # CB-002: la medición se conserva íntegra en el archivo escrito.
+            ruta = modulo.escribir_registro(carpeta, registro)
+            self.assertTrue(
+                ruta.is_file(), "el exceso no invalida ni descarta la medición"
+            )
+            texto = ruta.read_text(encoding="utf-8")
+            filas = _filas_del_archivo(texto)
+            self.assertEqual(
+                [numero for numero, _, _ in filas], list(range(1, 23))
+            )
+            self.assertEqual([campo for _, campo, _ in filas], list(CAMPOS_C6))
+            self.assertEqual(
+                filas[12], (13, "VRAM asignada", f"{asignada} MiB")
+            )
+            self.assertEqual(
+                filas[13], (14, "VRAM libre", f"{VRAM_LIBRE_MIB} MiB")
+            )
+
+            decodificado = json.loads(
+                _lineas_frontmatter(texto)[CLAVE_ESCENARIO]
+            )
+            self.assertEqual(decodificado, bloque)
+            self.assertIs(decodificado["conforme_presupuesto"], False)
+            self.assertEqual(decodificado["delta_presupuesto_mib"], exceso)
+            self.assertEqual(decodificado["dictamen"], dictamen)
+
+        # 1 MiB de exceso tampoco es conforme; la igualdad sí lo es.
+        con_1_mib = _construir_con_escenario(
+            modulo,
+            _escenario(vram_asignada_medida_mib=PRESUPUESTO_MIB + 1),
+        )
+        bloque = con_1_mib["frontmatter"][CLAVE_ESCENARIO]
+        self.assertIs(bloque["conforme_presupuesto"], False)
+        self.assertEqual(bloque["delta_presupuesto_mib"], 1)
+        self.assertEqual(bloque["dictamen"], "excede presupuesto por 1 MiB")
+
+    def test_sin_presupuesto_o_sin_medicion_no_inventa_valores(self):
+        modulo = _cargar_modulo()
+        _preparar_tmp()
+
+        sin_presupuesto = _escenario()
+        del sin_presupuesto["presupuesto_vram_declarado_mib"]
+        casos = (
+            (
+                sin_presupuesto,
+                DICTAMEN_SIN_PRESUPUESTO,
+                ("presupuesto_vram_declarado_mib",),
+            ),
+            (
+                _escenario(vram_asignada_medida_mib=None),
+                DICTAMEN_SIN_MEDICION,
+                ("vram_asignada_medida_mib",),
+            ),
+            (
+                {"escenario_id": ESCENARIO_ID},
+                DICTAMEN_SIN_AMBOS,
+                ("presupuesto_vram_declarado_mib", "vram_asignada_medida_mib"),
+            ),
+        )
+
+        for entradas, dictamen, ausentes in casos:
+            with self.subTest(dictamen=dictamen):
+                registro = _construir_con_escenario(modulo, entradas)
+                bloque = registro["frontmatter"][CLAVE_ESCENARIO]
+
+                self.assertEqual(bloque["dictamen"], dictamen)
+                self.assertIsNone(
+                    bloque["delta_presupuesto_mib"],
+                    "sin contraste no se declara diferencia alguna",
+                )
+                self.assertIsNone(
+                    bloque["conforme_presupuesto"],
+                    "sin contraste no se declara conforme ni no conforme",
+                )
+                self.assertEqual(bloque["escenario_id"], ESCENARIO_ID)
+                for clave in ausentes:
+                    self.assertIsNone(bloque[clave])
+                self.assertEqual(tuple(bloque), CLAVES_ESCENARIO)
+
+        with tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP)) as temporal:
+            registro = _construir_con_escenario(modulo, casos[1][0])
+            ruta = modulo.escribir_registro(Path(temporal), registro)
+            texto = ruta.read_text(encoding="utf-8")
+            decodificado = json.loads(
+                _lineas_frontmatter(texto)[CLAVE_ESCENARIO]
+            )
+            self.assertIsNone(decodificado["vram_asignada_medida_mib"])
+            self.assertIsNone(decodificado["delta_presupuesto_mib"])
+            self.assertIsNone(decodificado["conforme_presupuesto"])
+            self.assertEqual(
+                decodificado["presupuesto_vram_declarado_mib"],
+                PRESUPUESTO_MIB,
+                "el presupuesto declarado se conserva aunque falte la medición",
+            )
+            self.assertEqual(
+                decodificado["vram_libre_medida_mib"],
+                VRAM_LIBRE_MIB,
+                "la VRAM libre medida se conserva",
+            )
+            self.assertEqual(decodificado["dictamen"], DICTAMEN_SIN_MEDICION)
+            self.assertIn(
+                '"conforme_presupuesto":null',
+                texto,
+                "la ausencia de dictamen se declara con null, no con 0 ni con "
+                "false",
+            )
+
+        # La falta de VRAM libre no impide el dictamen del consumo medido.
+        sin_libre = _construir_con_escenario(
+            modulo, _escenario(vram_libre_medida_mib=None)
+        )
+        bloque = sin_libre["frontmatter"][CLAVE_ESCENARIO]
+        self.assertIsNone(bloque["vram_libre_medida_mib"])
+        self.assertEqual(
+            bloque["delta_presupuesto_mib"],
+            VRAM_ASIGNADA_MIB - PRESUPUESTO_MIB,
+        )
+        self.assertIs(bloque["conforme_presupuesto"], True)
+        self.assertEqual(bloque["dictamen"], DICTAMEN_CONFORME)
+
+    def test_22_campos_previos_conservan_orden_y_contenido(self):
+        modulo = _cargar_modulo()
+        _preparar_tmp()
+
+        inicio_tabla = "| N.º | Campo | Valor |"
+
+        with tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP)) as temporal:
+            carpeta = Path(temporal)
+            sin_bloque = modulo.escribir_registro(carpeta, _construir(modulo))
+            con_bloque = modulo.escribir_registro(
+                carpeta / "escenario",
+                _construir_con_escenario(modulo, _escenario()),
+            )
+            texto_sin = sin_bloque.read_text(encoding="utf-8")
+            texto_con = con_bloque.read_text(encoding="utf-8")
+
+            # Sin el bloque, el registro sigue siendo el de SPEC-017.
+            self.assertNotIn(f"{CLAVE_ESCENARIO}:", texto_sin)
+            self.assertEqual(texto_sin, _texto_esperado_sin_comparacion())
+
+            # Con el bloque, la tabla de 22 filas no cambia ni se renumera.
+            self.assertEqual(
+                texto_con[texto_con.index(inicio_tabla):],
+                texto_sin[texto_sin.index(inicio_tabla):],
+                "el bloque de escenario no altera la tabla de 22 campos",
+            )
+
+            filas = _filas_del_archivo(texto_con)
+            self.assertEqual(
+                [numero for numero, _, _ in filas],
+                list(range(1, 23)),
+                "las 22 filas de C-6 conservan su orden",
+            )
+            self.assertEqual([campo for _, campo, _ in filas], list(CAMPOS_C6))
+            self.assertEqual(
+                filas[12], (13, "VRAM asignada", f"{VRAM_ASIGNADA_MIB} MiB")
+            )
+            self.assertEqual(
+                filas[13], (14, "VRAM libre", f"{VRAM_LIBRE_MIB} MiB")
+            )
+
+            lineas = texto_con.splitlines()
+            cierre = lineas.index("---", 1)
+            claves = [linea.partition(":")[0] for linea in lineas[1:cierre]]
+            self.assertEqual(
+                claves, list(CLAVES_FRONTMATTER) + [CLAVE_ESCENARIO]
+            )
+            self.assertEqual(
+                set(claves), set(CLAVES_FRONTMATTER) | {CLAVE_ESCENARIO}
+            )
+
+    def test_entradas_del_escenario_se_validan_nombrando_la_clave(self):
+        modulo = _cargar_modulo()
+
+        with self.assertRaises(ValueError) as capturado:
+            _construir_con_escenario(modulo, [ESCENARIO_ID])
+        self.assertIn(CLAVE_ESCENARIO, str(capturado.exception))
+
+        sin_id = _escenario()
+        del sin_id["escenario_id"]
+        for entradas in (
+            sin_id,
+            _escenario(escenario_id=""),
+            _escenario(escenario_id="M9-C4K"),
+        ):
+            with self.assertRaises(ValueError) as capturado:
+                _construir_con_escenario(modulo, entradas)
+            self.assertIn("escenario_id", str(capturado.exception))
+
+        with self.assertRaises(ValueError) as capturado:
+            _construir_con_escenario(modulo, _escenario(clave_ajena=1))
+        self.assertIn("clave_ajena", str(capturado.exception))
+
+        for clave in ENTRADAS_ESCENARIO[1:]:
+            for invalido in (-1, True, "14872"):
+                with self.assertRaises(ValueError) as capturado:
+                    _construir_con_escenario(
+                        modulo, _escenario(**{clave: invalido})
+                    )
+                self.assertIn(clave, str(capturado.exception))
 
 
 if __name__ == "__main__":

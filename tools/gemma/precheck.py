@@ -67,17 +67,45 @@ que se resuelven las rutas relativas del bloque ``artefactos``. El lector de
 metadatos se inyecta para que la suite use 1 doble y no lea ``bin/``,
 ``models/`` ni la GPU, conforme a `DEC-012`; por omisión se usa
 ``gguf.leer_metadatos``.
+
+``verificar_recursos_escenario(escenario, *, medidor_vram=None,
+medidor_ram=None)`` implementa el precheck de recursos de `C-4` de `SPEC-018`
+sobre 1 escenario ya cargado del catálogo y devuelve 1 diccionario con
+``codigo`` —`3` en el primer aborto y `0` sin hallazgos—, ``escenario_id``,
+``contexto_solicitado_tokens`` —el ``contexto.declarado_tokens`` solicitado— y
+``hallazgos``, 1 secuencia de líneas ``[FALLO] `` vacía cuando el código es `0`.
+Evalúa las condiciones en el orden de `C-4`: (1) el estado ``no_ejecutable``
+aborta sin medir recursos (`CB-007`, `DEC-003`); (2) el contexto ajustado cuyo
+valor resuelto es menor o igual a 4096 tokens aborta con el valor declarado
+(`CB-003`, `DEC-008`), y el que no declara valor numérico resuelto también
+(`RF-010`); (3) la VRAM no medible aborta sin estimar valor alguno (`CB-001`);
+(4) el presupuesto mayor que la VRAM disponible declara ambos valores en MiB
+(`RF-007`); (5) la RAM libre del host menor a 8192 MiB con capas de expertos en
+CPU declara ambos valores en MiB (`CB-008`, `DEC-006`), y su ausencia de
+medición aborta sin estimar. ``medidor_vram`` y ``medidor_ram`` son invocables
+sin argumentos que devuelven MiB o `None`; con `None` se usan
+``medir.vram_libre_mib`` y ``ram_libre_host_mib``, de modo que la suite inyecta
+siempre sus dobles y no toca la GPU ni el host, conforme a `DEC-012`.
+`medidor_ram` se consulta solo cuando ``capas_cpu_moe > 0``.
 """
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import binario
+import escenarios
 import gguf
+import medir
 import perfiles
 
-__all__ = ["ejecutar", "formatear_salida"]
+__all__ = [
+    "ejecutar",
+    "formatear_salida",
+    "ram_libre_host_mib",
+    "verificar_recursos_escenario",
+]
 
 # Las 5 comprobaciones de `C-9`, en el orden en que se ejecutan y se imprimen.
 NOMBRES_COMPROBACIONES = (
@@ -142,6 +170,21 @@ TOKENS_POR_CALCULO_KV = 1024
 
 # Estados que el manifiesto solo conserva con 1 registro de huella coincidente.
 ESTADOS_PROMOVIDOS = ("medido", "aprobado")
+
+# `C-4` y `C-2`: el código `3` del aborto del precheck de recursos —el mismo
+# valor que la opción rechazada de `C-8`, con otro significado— y el mínimo de
+# RAM libre del host cuando el escenario deriva capas de expertos a CPU
+# (`CB-008`, `DEC-006`).
+CODIGO_ABORTO_RECURSOS = 3
+RAM_LIBRE_MINIMA_HOST_MIB = 8192
+
+# Consulta de solo lectura de la RAM física libre del host en KiB: la misma vía
+# no interactiva de PowerShell que usa `medir` para los procesos, sin depender
+# del perfil del usuario ni del directorio actual (`DEC-006`).
+COMANDO_RAM_LIBRE = list(medir.POWERSHELL) + [
+    "Get-CimInstance -ClassName Win32_OperatingSystem | "
+    "Select-Object -ExpandProperty FreePhysicalMemory"
+]
 
 
 def _detalle_artefactos_ausentes(ausentes):
@@ -519,3 +562,152 @@ def formatear_salida(resultado):
     if "milisegundos" in resultado:
         lineas.append(f"TIEMPO: {resultado['milisegundos']} ms")
     return lineas
+
+
+def ram_libre_host_mib():
+    """Devuelve la RAM física libre del host en MiB, o `None` sin PowerShell.
+
+    Consulta de solo lectura de `CB-008` y `DEC-006`: lee ``FreePhysicalMemory``
+    del sistema operativo, que llega en KiB, y lo convierte a MiB sin redondear
+    hacia arriba. 1 herramienta ausente, 1 consulta fallida y 1 valor no
+    numérico devuelven `None` y no estiman magnitud alguna, de modo que el
+    precheck aborta sin sustituir la medición por 1 valor inventado.
+    """
+    try:
+        proceso = subprocess.run(
+            COMANDO_RAM_LIBRE,
+            capture_output=True,
+            check=False,
+            timeout=medir.TIEMPO_LIMITE_SEGUNDOS,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proceso.returncode != 0:
+        return None
+    salida = (proceso.stdout or b"").decode("utf-8-sig", errors="replace")
+    linea = next((texto.strip() for texto in salida.splitlines() if texto.strip()), "")
+    try:
+        kib = int(linea)
+    except ValueError:
+        return None
+    return kib // 1024
+
+
+def _resultado_recursos(escenario, hallazgos):
+    """Resultado de `C-4`: código, escenario, contexto solicitado y hallazgos."""
+    contexto = escenario.get("contexto") or {}
+    return {
+        "codigo": CODIGO_ABORTO_RECURSOS if hallazgos else CODIGO_OK,
+        "escenario_id": escenario.get("id"),
+        "contexto_solicitado_tokens": contexto.get("declarado_tokens"),
+        "hallazgos": list(hallazgos),
+    }
+
+
+def _token_resuelto(contexto):
+    """Tokens efectivos resueltos de 1 contexto ajustado, o `None` sin valor."""
+    tokens = contexto.get("efectivo_tokens")
+    if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
+        return None
+    return tokens
+
+
+def verificar_recursos_escenario(escenario, *, medidor_vram=None, medidor_ram=None):
+    """Precheck de recursos de `C-4` sobre 1 escenario del catálogo.
+
+    Evalúa las condiciones en el orden de `C-4` y aborta en la primera que no se
+    cumple, con 1 línea ``[FALLO] `` que declara el motivo y el escenario: el
+    estado ``no_ejecutable`` sin medir recursos (`CB-007`), el contexto ajustado
+    resuelto menor o igual a 4096 tokens o sin valor numérico (`CB-003`,
+    `RF-010`), la VRAM no medible sin estimar (`CB-001`), el presupuesto mayor
+    que la VRAM disponible (`RF-007`) y la RAM libre del host insuficiente o no
+    medible con capas de expertos en CPU (`CB-008`). Sin hallazgos devuelve el
+    código `0` y 1 secuencia vacía. ``medidor_vram`` y ``medidor_ram`` son
+    invocables sin argumentos que devuelven MiB o `None`; con `None` se usan
+    ``medir.vram_libre_mib`` y ``ram_libre_host_mib``. La VRAM se mide 1 sola
+    vez y la RAM solo cuando ``capas_cpu_moe > 0``.
+    """
+    medir_vram = medir.vram_libre_mib if medidor_vram is None else medidor_vram
+    medir_ram = ram_libre_host_mib if medidor_ram is None else medidor_ram
+    identificador = escenario.get("id")
+
+    if escenario.get("estado") == escenarios.ESTADO_NO_EJECUTABLE:
+        return _resultado_recursos(
+            escenario,
+            [
+                f"[FALLO] Escenario no ejecutable: {identificador}: la "
+                "combinación declarada no alcanza el estado de servicio en la "
+                "GPU objetivo (CB-007)"
+            ],
+        )
+
+    contexto = escenario.get("contexto") or {}
+    if contexto.get("tipo") == escenarios.TIPO_CONTEXTO_AJUSTADO:
+        tokens = _token_resuelto(contexto)
+        if tokens is None:
+            return _resultado_recursos(
+                escenario,
+                [
+                    "[FALLO] Contexto ajustado sin valor numérico resuelto: el "
+                    f"escenario {identificador} no declara «efectivo_tokens» "
+                    "positivo y no admite selección (RF-010)"
+                ],
+            )
+        if tokens <= escenarios.SUELO_CONTEXTO_RESUELTO_TOKENS:
+            return _resultado_recursos(
+                escenario,
+                [
+                    "[FALLO] Contexto ajustado resuelto insuficiente: "
+                    f"{tokens} <= {escenarios.SUELO_CONTEXTO_RESUELTO_TOKENS} "
+                    f"tokens en el escenario {identificador} (CB-003)"
+                ],
+            )
+
+    vram_disponible_mib = medir_vram()
+    if vram_disponible_mib is None:
+        return _resultado_recursos(
+            escenario,
+            [
+                "[FALLO] VRAM disponible no medible: se aborta el escenario "
+                f"{identificador} sin estimar valor alguno (CB-001)"
+            ],
+        )
+
+    presupuesto = escenario.get("presupuesto_vram") or {}
+    requerido_mib = presupuesto.get("total_mib")
+    if requerido_mib is not None and vram_disponible_mib < requerido_mib:
+        return _resultado_recursos(
+            escenario,
+            [
+                "[FALLO] Presupuesto excede VRAM disponible: requerido "
+                f"{_texto_mib(requerido_mib)} MiB, disponible "
+                f"{_texto_mib(vram_disponible_mib)} MiB en el escenario "
+                f"{identificador} (RF-007)"
+            ],
+        )
+
+    capas_cpu_moe = escenario.get("capas_cpu_moe") or 0
+    if capas_cpu_moe > 0:
+        ram_libre_mib = medir_ram()
+        if ram_libre_mib is None:
+            return _resultado_recursos(
+                escenario,
+                [
+                    "[FALLO] RAM libre de host no medible: se aborta el "
+                    f"escenario {identificador}, que deriva {capas_cpu_moe} "
+                    "capas de expertos a CPU, sin estimar valor alguno (CB-008)"
+                ],
+            )
+        if ram_libre_mib < RAM_LIBRE_MINIMA_HOST_MIB:
+            return _resultado_recursos(
+                escenario,
+                [
+                    "[FALLO] RAM libre de host insuficiente: disponible "
+                    f"{_texto_mib(ram_libre_mib)} MiB, requerida "
+                    f"{RAM_LIBRE_MINIMA_HOST_MIB} MiB en el escenario "
+                    f"{identificador}, que deriva {capas_cpu_moe} capas de "
+                    "expertos a CPU (CB-008)"
+                ],
+            )
+
+    return _resultado_recursos(escenario, [])
