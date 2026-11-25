@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 2 de 16 tareas.
+- Cerradas: 3 de 16 tareas.
 
 ## Tareas
 
@@ -38,8 +38,8 @@
 - **Archivos:** `tools/gemma/tests/test_escenarios.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios.TestOrdenamientoEscenarios tools.gemma.tests.test_escenarios.TestAdmisibilidadEscenarios` en rojo por ausencia del módulo `tools/gemma/escenarios.py`.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios` imprimió `EEEEE.......EEEEEEE` y el cierre `Ran 19 tests in 0.532s` y `FAILED (errors=12)` con código de salida `1`. Los 12 errores son 1 por prueba de las 2 clases nuevas —5 de `TestAdmisibilidadEscenarios` (`test_aprobado_sin_aprobacion_no_es_seleccionable`, `test_catalogo_real_declara_la_admisibilidad_por_estado`, `test_escenario_declarado_es_seleccionable`, `test_escenario_medido_es_seleccionable` y `test_escenario_no_ejecutable_no_es_seleccionable`) y 7 de `TestOrdenamientoEscenarios` (`test_carga_del_catalogo_canonico`, `test_carga_rechaza_json_invalido`, `test_carga_rechaza_manifiesto_ausente`, `test_declaracion_duplicada_del_par_se_rechaza`, `test_identificador_ausente_no_se_resuelve_y_enumera_los_nueve`, `test_orden_independe_del_orden_de_declaracion` y `test_orden_jerarquico_determinista`)—, los 12 con `ModuleNotFoundError: No module named 'escenarios'` en `_cargar_modulo` (`tools/gemma/tests/test_escenarios.py:593`, instrucción `import escenarios`) invocado desde `setUp` (`test_escenarios.py:843` en `TestAdmisibilidadEscenarios` y `test_escenarios.py:627` en `TestOrdenamientoEscenarios`). Los 7 puntos corresponden a las 7 pruebas de `TestCatalogoEstructura`, que siguen en verde porque no importan el módulo. El rojo acredita que `tools/gemma/escenarios.py` todavía no existe, cuya escritura corresponde a `T-004`, y que las 12 pruebas nuevas declaran en rojo el contrato `C-3` del plan: `cargar_catalogo(ruta_catalogo: Path | None = None) -> dict` desde la ruta canónica con error explícito ante manifiesto ausente y ante JSON inválido, `listar_escenarios(catalogo: dict) -> list[dict]` con orden jerárquico determinista —capas de expertos en CPU ascendente 0, 6 y 9 y, dentro de cada valor, contexto efectivo ascendente 4096, ajustado y 131 072 tokens— independiente del orden de declaración, rechazo de la declaración duplicada del par de capas y contexto identificando el identificador duplicado (`CB-004`), no resolución del identificador ausente con los 9 identificadores disponibles (`RF-004`) y `validar_admisibilidad_escenario(escenario) -> tuple[bool, str]` con `declarado` y `medido` seleccionables, `no_ejecutable` rechazado con motivo declarado y `aprobado` sin bloque `aprobacion` rechazado (`RF-011`, `CB-006`, `CA-008`). Se añadieron las 2 clases al final de `tools/gemma/tests/test_escenarios.py`, con `sys` y `tempfile` en los imports, las constantes `DIRECTORIO_HERRAMIENTAS`, `DIRECTORIO_TMP`, `ORDEN_CANONICO`, `CAMPOS_LISTADO` e `IDENTIFICADOR_AUSENTE` y los auxiliares `_cargar_modulo` y `_escenario_con_estado`; no se escribió `tools/gemma/escenarios.py`, no se modificó `src/gemma/escenarios/catalogo.json` ni artefacto alguno fuera de `tools/gemma/tests/test_escenarios.py` y `specs/018-catalogo-escenarios/tasks.md`, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-004
 
