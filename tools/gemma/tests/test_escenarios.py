@@ -36,6 +36,18 @@ conservan su contenido antes y después de operar el catálogo y comprueba por l
 funciones públicas de `tools/gemma/escenarios.py` que los 9 escenarios declaran
 su presupuesto de 4 componentes y los 7 parámetros de ejecución sin campos
 vacíos.
+
+`T-017` fija en rojo la revocación de `CB-006` conforme a `DEC-012`: añade a
+`TestAdmisibilidadEscenarios` la coincidencia de los 4 valores conservados en el
+bloque `aprobacion` y la diferencia en `capas_cpu_moe`, en
+`contexto_efectivo_tokens`, en `parametros_ejecucion` y en
+`presupuesto_vram_total_mib`, con el motivo que nombra el valor que difiere y
+exige 1 medición nueva, más el caso del escenario `aprobado` sin bloque de
+aprobación; añade además `TestValidacionAprobacionEnCarga`, que fija la
+validación del bloque en `cargar_catalogo`. La comparación en
+`validar_admisibilidad_escenario` y la validación en la carga corresponden a
+`T-018`, de modo que las pruebas de la diferencia fallan mientras el módulo
+resuelve la admisibilidad solo por la veracidad de `aprobacion`.
 """
 
 import json
@@ -851,6 +863,59 @@ class TestOrdenamientoEscenarios(unittest.TestCase):
         )
 
 
+# `C-1`, `RF-011` y `DEC-012`: las 6 claves obligatorias del bloque
+# `aprobacion` y los 4 valores que la admisibilidad compara.
+CLAVES_APROBACION = (
+    "capas_cpu_moe",
+    "contexto_efectivo_tokens",
+    "parametros_ejecucion",
+    "presupuesto_vram_total_mib",
+    "medicion",
+    "confirmacion_propietario",
+)
+VALORES_CONSERVADOS = (
+    "capas_cpu_moe",
+    "contexto_efectivo_tokens",
+    "parametros_ejecucion",
+    "presupuesto_vram_total_mib",
+)
+
+# `C-1` y `RF-011`: referencia de medición y confirmación sintéticas del bloque.
+MEDICION_SINTETICA = "results/gemma/medicion-sintetica-de-prueba.md"
+CONFIRMACION_SINTETICA = "confirmacion sintetica de la prueba de revocacion"
+
+# `C-1` y `DEC-012`: escenario de referencia que sostiene la aprobación sintética.
+ESCENARIO_APROBADO_DE_REFERENCIA = "ESC-M6-C4K"
+
+
+def _bloque_aprobacion(escenario):
+    """Devuelve 1 bloque `aprobacion` que conserva los 4 valores declarados.
+
+    El bloque replica lo que `C-1` y `DEC-012` exigen conservar para que la
+    aprobación conste vigente: las capas de expertos en CPU, el contexto
+    efectivo en tokens, los parámetros de ejecución y el presupuesto de VRAM en
+    MiB, más la referencia de la medición registrada y la confirmación escrita
+    del propietario.
+    """
+    return {
+        "capas_cpu_moe": escenario["capas_cpu_moe"],
+        "contexto_efectivo_tokens": escenario["contexto"]["efectivo_tokens"],
+        "parametros_ejecucion": json.loads(
+            json.dumps(escenario["parametros_ejecucion"])
+        ),
+        "presupuesto_vram_total_mib": escenario["presupuesto_vram"]["total_mib"],
+        "medicion": MEDICION_SINTETICA,
+        "confirmacion_propietario": CONFIRMACION_SINTETICA,
+    }
+
+
+def _escenario_aprobado(identificador=ESCENARIO_APROBADO_DE_REFERENCIA):
+    """Devuelve 1 copia del escenario canónico aprobado con su bloque vigente."""
+    escenario = _escenario_con_estado("aprobado", identificador=identificador)
+    escenario["aprobacion"] = _bloque_aprobacion(escenario)
+    return escenario
+
+
 class TestAdmisibilidadEscenarios(unittest.TestCase):
     """Acredita el contrato `C-3` de admisibilidad de selección.
 
@@ -986,6 +1051,234 @@ class TestAdmisibilidadEscenarios(unittest.TestCase):
         self.assertTrue(
             motivo.strip(), "la inadmisibilidad no declara motivo"
         )
+
+    def _assert_revocacion(self, escenario, clave):
+        """Acredita `CB-006` y `DEC-012`: la diferencia revoca la aprobación."""
+        admisible, motivo = self._admisibilidad(escenario)
+        self.assertFalse(
+            admisible,
+            f"1 escenario aprobado con `{clave}` distinto del valor conservado "
+            f"figura como configuración aprobada: {motivo}",
+        )
+        self.assertTrue(motivo.strip(), "la revocación no declara motivo")
+        self.assertIn(
+            clave,
+            motivo,
+            f"el motivo no nombra la clave `{clave}` que difiere: {motivo!r}",
+        )
+        self.assertIn(
+            "medici",
+            motivo.lower(),
+            "el motivo no exige 1 medición nueva: "
+            f"{motivo!r}",
+        )
+        return motivo
+
+    def test_aprobacion_coincidente_conserva_la_condicion_de_aprobado(self):
+        """`RF-011` y `DEC-012`: los 4 valores coincidentes conservan la aprobación."""
+        escenario = _escenario_aprobado()
+        bloque = escenario["aprobacion"]
+        self.assertEqual(
+            sorted(CLAVES_APROBACION),
+            sorted(bloque),
+            f"el bloque sintético declara las claves {sorted(bloque)} y no las 6 "
+            "de `C-1`",
+        )
+        for clave in VALORES_CONSERVADOS:
+            with self.subTest(valor=clave):
+                self.assertEqual(
+                    _bloque_aprobacion(escenario)[clave],
+                    bloque[clave],
+                    f"el bloque sintético no conserva `{clave}`",
+                )
+
+        admisible, motivo = self._admisibilidad(escenario)
+
+        self.assertTrue(
+            admisible,
+            "1 escenario aprobado cuyos 4 valores conservados coinciden con los "
+            f"declarados no figura seleccionable: {motivo}",
+        )
+        self.assertFalse(
+            motivo,
+            f"1 escenario aprobado y vigente declara el motivo {motivo!r}",
+        )
+
+    def test_modificacion_de_escenario_aprobado_revoca_la_aprobacion(self):
+        """`CB-006` y `CA-008`: 1 modificación posterior revoca la aprobación.
+
+        El escenario aprobado conserva los 4 valores que sostuvieron la
+        aprobación; al modificar 2 de ellos —las capas de expertos en CPU y el
+        presupuesto de VRAM— la comparación de `C-3` revoca la condición de
+        aprobado, nombra el valor que difiere y exige 1 medición nueva.
+        """
+        escenario = _escenario_aprobado()
+        conservado = escenario["aprobacion"]["capas_cpu_moe"]
+        self.assertEqual(
+            conservado,
+            escenario["capas_cpu_moe"],
+            "el escenario sintético no parte de 1 aprobación vigente",
+        )
+
+        escenario["capas_cpu_moe"] = conservado + 3
+        escenario["presupuesto_vram"]["total_mib"] += 700
+
+        motivo = self._assert_revocacion(escenario, "capas_cpu_moe")
+        self.assertIn(
+            str(conservado + 3),
+            motivo,
+            f"el motivo no nombra el valor declarado {conservado + 3}: {motivo!r}",
+        )
+        self.assertIn(
+            str(conservado),
+            motivo,
+            f"el motivo no nombra el valor conservado {conservado}: {motivo!r}",
+        )
+
+        restaurado = _escenario_aprobado()
+        restaurado["presupuesto_vram"]["total_mib"] += 700
+        motivo = self._assert_revocacion(restaurado, "presupuesto_vram_total_mib")
+        self.assertIn(
+            str(restaurado["presupuesto_vram"]["total_mib"]),
+            motivo,
+            "el motivo no nombra el presupuesto declarado: "
+            f"{motivo!r}",
+        )
+        self.assertIn(
+            str(restaurado["aprobacion"]["presupuesto_vram_total_mib"]),
+            motivo,
+            "el motivo no nombra el presupuesto conservado: "
+            f"{motivo!r}",
+        )
+
+    def test_diferencia_en_capas_cpu_moe_revoca_la_aprobacion(self):
+        """`CB-006`: 1 diferencia en las capas de expertos en CPU revoca."""
+        escenario = _escenario_aprobado()
+        conservado = escenario["aprobacion"]["capas_cpu_moe"]
+        escenario["capas_cpu_moe"] = conservado + 3
+
+        motivo = self._assert_revocacion(escenario, "capas_cpu_moe")
+
+        self.assertIn(
+            str(conservado + 3),
+            motivo,
+            f"el motivo no nombra el valor declarado {conservado + 3}: {motivo!r}",
+        )
+        self.assertIn(
+            str(conservado),
+            motivo,
+            f"el motivo no nombra el valor conservado {conservado}: {motivo!r}",
+        )
+
+    def test_diferencia_en_contexto_efectivo_tokens_revoca_la_aprobacion(self):
+        """`CB-006`: 1 diferencia en el contexto efectivo revoca la aprobación."""
+        escenario = _escenario_aprobado()
+        conservado = escenario["aprobacion"]["contexto_efectivo_tokens"]
+        escenario["contexto"]["efectivo_tokens"] = 15360
+
+        motivo = self._assert_revocacion(
+            escenario, "contexto_efectivo_tokens"
+        )
+
+        self.assertIn(
+            "15360",
+            motivo,
+            f"el motivo no nombra el contexto declarado 15360: {motivo!r}",
+        )
+        self.assertIn(
+            str(conservado),
+            motivo,
+            f"el motivo no nombra el contexto conservado {conservado}: {motivo!r}",
+        )
+
+    def test_diferencia_en_parametros_ejecucion_revoca_la_aprobacion(self):
+        """`CB-006`: 1 diferencia en los parámetros de ejecución revoca."""
+        escenario = _escenario_aprobado()
+        conservado = escenario["aprobacion"]["parametros_ejecucion"]
+        self.assertEqual(
+            1120, conservado["ubatch"], "el bloque sintético no conserva ubatch"
+        )
+        escenario["parametros_ejecucion"]["ubatch"] = 640
+
+        motivo = self._assert_revocacion(escenario, "parametros_ejecucion")
+
+        self.assertIn(
+            "ubatch",
+            motivo,
+            f"el motivo no nombra el parámetro `ubatch` que difiere: {motivo!r}",
+        )
+        self.assertIn(
+            "640",
+            motivo,
+            f"el motivo no nombra el valor declarado 640: {motivo!r}",
+        )
+        self.assertIn(
+            str(conservado["ubatch"]),
+            motivo,
+            "el motivo no nombra el valor conservado 1120: "
+            f"{motivo!r}",
+        )
+
+    def test_diferencia_en_presupuesto_vram_total_mib_revoca_la_aprobacion(self):
+        """`CB-006`: 1 diferencia en el presupuesto de VRAM revoca la aprobación."""
+        escenario = _escenario_aprobado()
+        conservado = escenario["aprobacion"]["presupuesto_vram_total_mib"]
+        escenario["presupuesto_vram"]["total_mib"] = conservado + 700
+
+        motivo = self._assert_revocacion(
+            escenario, "presupuesto_vram_total_mib"
+        )
+
+        self.assertIn(
+            str(conservado + 700),
+            motivo,
+            "el motivo no nombra el presupuesto declarado "
+            f"{conservado + 700}: {motivo!r}",
+        )
+        self.assertIn(
+            str(conservado),
+            motivo,
+            f"el motivo no nombra el presupuesto conservado {conservado}: "
+            f"{motivo!r}",
+        )
+
+    def test_aprobado_sin_bloque_de_aprobacion_exige_medicion_nueva(self):
+        """`CB-006` y `C-3`: el bloque nulo o ausente exige 1 medición nueva."""
+        nulo = _escenario_con_estado("aprobado")
+        self.assertIn(
+            "aprobacion",
+            nulo,
+            "el escenario sintético no declara la clave `aprobacion`",
+        )
+        self.assertIsNone(nulo["aprobacion"], "el bloque nulo no figura nulo")
+
+        ausente = _escenario_aprobado()
+        del ausente["aprobacion"]
+        self.assertNotIn(
+            "aprobacion",
+            ausente,
+            "el escenario sintético conserva la clave `aprobacion`",
+        )
+
+        for descripcion, escenario in (("nulo", nulo), ("ausente", ausente)):
+            with self.subTest(bloque=descripcion):
+                admisible, motivo = self._admisibilidad(escenario)
+                self.assertFalse(
+                    admisible,
+                    f"1 escenario aprobado con el bloque {descripcion} figura "
+                    "como configuración aprobada",
+                )
+                self.assertTrue(
+                    motivo.strip(),
+                    f"la inadmisibilidad del bloque {descripcion} no declara "
+                    "motivo",
+                )
+                self.assertIn(
+                    "medici",
+                    motivo.lower(),
+                    "el motivo no exige 1 medición nueva: "
+                    f"{motivo!r}",
+                )
 
 
 # `DEC-008` y `C-3`: consumo de caché KV por bloque de 1024 tokens, en MiB, con
@@ -1829,3 +2122,122 @@ class TestRendimientoResolucion(unittest.TestCase):
             f"parametros_obligatorios={len(PARAMETROS_OBLIGATORIOS)} "
             f"campos={campos} vacios=0"
         )
+
+
+# `C-1` y `RF-011`: valor conservado con tipo inválido por cada uno de los 4
+# valores del bloque `aprobacion`, rechazado por `cargar_catalogo`.
+VALORES_CONSERVADOS_CON_TIPO_INVALIDO = {
+    "capas_cpu_moe": "6",
+    "contexto_efectivo_tokens": "4096",
+    "parametros_ejecucion": "no-objeto",
+    "presupuesto_vram_total_mib": "11200",
+}
+
+
+class TestValidacionAprobacionEnCarga(unittest.TestCase):
+    """Acredita `C-1` y `DEC-012` sobre la validación del bloque `aprobacion`.
+
+    Cubre `RF-011` y `CB-006` en la carga: `cargar_catalogo` rechaza el
+    manifiesto con `ValueError` que nombra la clave cuando el bloque existe y le
+    falta 1 de sus 6 claves obligatorias o cuando 1 de los 4 valores conservados
+    declara 1 tipo inválido, y acepta el bloque completo cuyos valores coinciden
+    con los declarados por el escenario. Los manifiestos se escriben en el
+    directorio temporal de la suite sobre 1 copia del catálogo canónico, de modo
+    que `src/gemma/escenarios/catalogo.json` no se modifica.
+    """
+
+    def setUp(self):
+        self.modulo = _cargar_modulo()
+        DIRECTORIO_TMP.mkdir(parents=True, exist_ok=True)
+        self._temporal = tempfile.TemporaryDirectory(dir=str(DIRECTORIO_TMP))
+        self.addCleanup(self._temporal.cleanup)
+        self.directorio = Path(self._temporal.name)
+
+    def _escribir_manifiesto(self, nombre, bloque):
+        """Escribe 1 copia del catálogo con el bloque de aprobación indicado."""
+        datos = json.loads(RUTA_CATALOGO.read_text(encoding="utf-8"))
+        escenario = datos["escenarios"][ESCENARIO_APROBADO_DE_REFERENCIA]
+        escenario["estado"] = "aprobado"
+        escenario["aprobacion"] = bloque
+        ruta = self.directorio / nombre
+        ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+        return ruta
+
+    def test_carga_acepta_bloque_completo_con_los_cuatro_valores(self):
+        """`C-1`: el bloque con las 6 claves y los 4 valores se acepta."""
+        escenario = _escenario_aprobado()
+        ruta = self._escribir_manifiesto(
+            "catalogo_aprobado.json", escenario["aprobacion"]
+        )
+
+        catalogo = self.modulo.cargar_catalogo(ruta)
+        cargado = catalogo["escenarios"][ESCENARIO_APROBADO_DE_REFERENCIA]
+
+        self.assertEqual(
+            "aprobado",
+            cargado["estado"],
+            f"la carga declara el estado {cargado['estado']!r} y no `aprobado`",
+        )
+        self.assertIsInstance(
+            cargado["aprobacion"],
+            dict,
+            "la carga no conserva el bloque `aprobacion` del manifiesto",
+        )
+        self.assertEqual(
+            sorted(CLAVES_APROBACION),
+            sorted(cargado["aprobacion"]),
+            f"el bloque cargado declara {sorted(cargado['aprobacion'])} y no las "
+            "6 claves de `C-1`",
+        )
+        self.assertEqual(
+            _bloque_aprobacion(cargado),
+            cargado["aprobacion"],
+            "el bloque cargado no conserva los 4 valores declarados por el "
+            "escenario aprobado",
+        )
+
+    def test_carga_rechaza_bloque_sin_clave_obligatoria(self):
+        """`C-1`: al bloque presente le falta 1 clave y la carga nombra la clave."""
+        for clave in CLAVES_APROBACION:
+            with self.subTest(clave=clave):
+                bloque = _bloque_aprobacion(_escenario_aprobado())
+                del bloque[clave]
+                self.assertNotIn(
+                    clave,
+                    bloque,
+                    f"el bloque sintético conserva la clave `{clave}`",
+                )
+                ruta = self._escribir_manifiesto(
+                    f"catalogo_sin_{clave}.json", bloque
+                )
+
+                with self.assertRaises(ValueError) as error:
+                    self.modulo.cargar_catalogo(ruta)
+
+                self.assertIn(
+                    clave,
+                    str(error.exception),
+                    "el error no nombra la clave obligatoria "
+                    f"`{clave}`: {error.exception}",
+                )
+
+    def test_carga_rechaza_valor_conservado_con_tipo_invalido(self):
+        """`C-1`: 1 valor conservado con tipo inválido aborta nombrando la clave."""
+        for clave, invalido in VALORES_CONSERVADOS_CON_TIPO_INVALIDO.items():
+            with self.subTest(valor=clave):
+                bloque = _bloque_aprobacion(_escenario_aprobado())
+                bloque[clave] = invalido
+                ruta = self._escribir_manifiesto(
+                    f"catalogo_tipo_{clave}.json", bloque
+                )
+
+                with self.assertRaises(ValueError) as error:
+                    self.modulo.cargar_catalogo(ruta)
+
+                self.assertIn(
+                    clave,
+                    str(error.exception),
+                    "el error no nombra la clave del valor con tipo inválido "
+                    f"`{clave}`: {error.exception}",
+                )
+
