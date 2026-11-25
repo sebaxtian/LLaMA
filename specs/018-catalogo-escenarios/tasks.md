@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 3 de 16 tareas.
+- Cerradas: 4 de 16 tareas.
 
 ## Tareas
 
@@ -49,8 +49,8 @@
 - **Archivos:** `tools/gemma/escenarios.py`.
 - **Estimación:** 25 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios.TestOrdenamientoEscenarios tools.gemma.tests.test_escenarios.TestAdmisibilidadEscenarios` en verde con `OK`: valida carga, orden jerárquico determinista (MoE CPU asc, contexto efectivo asc), detección y rechazo de duplicados (`CB-004`) y revocación de estado aprobado ante modificaciones (`CB-006`).
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios` imprimió `...................`, 1 punto por cada una de las 19 pruebas de la suite —las 7 de `TestCatalogoEstructura`, las 7 de `TestOrdenamientoEscenarios` y las 5 de `TestAdmisibilidadEscenarios`—, con el cierre `Ran 19 tests in 0.041s` y `OK`, sin fallos ni errores, y código de salida `0`. Se creó `tools/gemma/escenarios.py` con el contrato `C-3`: `cargar_catalogo(ruta_catalogo=None)` resuelve la ruta canónica `src/gemma/escenarios/catalogo.json` con `Path(__file__).resolve().parents[2]`, lee el manifiesto en UTF-8 y devuelve su objeto raíz tras validar las claves raíz `version`, `modelo` y `escenarios`, los campos obligatorios de cada escenario —`id` coincidente con su clave, `estado` entre los 4 admitidos, `capas_cpu_moe` entero no negativo, `contexto` con `tipo` `fijo` o `ajustado` y `declarado_tokens` y `efectivo_tokens` enteros positivos, `presupuesto_vram` con `total_mib` positivo y los 4 componentes `pesos_mib`, `cache_kv_mib`, `computo_mib` y `reserva_mib` enteros no negativos cuya suma iguala el total, `ram_sistema_requerida_mib` entero no negativo y `parametros_ejecucion` no vacío— y el par (capas de expertos en CPU, contexto efectivo) de los 9 escenarios, de modo que la declaración repetida del par aborta con `ValueError` que nombra los identificadores implicados (`CB-004`); el manifiesto ausente, ilegible o no UTF-8 y el JSON inválido abortan con `ValueError` que nombra el archivo. `listar_escenarios(catalogo)` devuelve exactamente `ESC-M0-C4K`, `ESC-M0-CADJ`, `ESC-M0-C131K`, `ESC-M6-C4K`, `ESC-M6-CADJ`, `ESC-M6-C131K`, `ESC-M9-C4K`, `ESC-M9-CADJ` y `ESC-M9-C131K` por orden de `capas_cpu_moe` ascendente y, dentro de cada valor, de `contexto.efectivo_tokens` ascendente con el identificador como desempate, independiente del orden de declaración del JSON (`DEC-004`), y cada entrada declara `id`, `estado`, `capas_cpu_moe`, `contexto` y `presupuesto_vram` (`RF-005`). `validar_admisibilidad_escenario(escenario)` devuelve `(True, "")` para los estados `declarado` y `medido`, `(False, motivo)` con motivo no vacío para `no_ejecutable` y `(False, motivo)` para `aprobado` cuyo bloque `aprobacion` es nulo, al que exige 1 medición nueva y la confirmación escrita del propietario (`RF-011`, `CB-006`). La suite no se modificó y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-005
 
