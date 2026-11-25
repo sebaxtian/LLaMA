@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: clarified
-version: 0.2.0
+status: tasked
+version: 0.4.0
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -245,12 +245,16 @@ Cubre: `CB-007`.
 | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
 | 0.1.0   | 2026-11-24 | Redacción inicial del contrato del catálogo de escenarios, el selector de escenario y el presupuesto por escenario |
 | 0.2.0   | 2026-11-25 | Clarificación de ambigüedades AMB-001 a AMB-012, incorporación de CB-008 y parches aplicados a requisitos          |
+| 0.3.0   | 2026-11-25 | Redacción del plan técnico (plan.md) con arquitectura, contratos, decisiones DEC-NNN y matriz de cobertura |
+| 0.4.0   | 2026-11-25 | Descomposición en tareas atómicas (tasks.md) con dependencias, estimaciones y cobertura completa |
 
 ### Historial de transiciones
 
-| Fecha (UTC) | Transición | Origen  | Destino     | Responsable | Evidencia                                                                                                                             |
-| ----------- | ---------- | ------- | ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-24  | creación   | —       | `draft`     | `planner`   | redacción inicial de `spec.md` con 13 requisitos funcionales, 5 requisitos no funcionales, 7 casos borde y 10 criterios de aceptación |
-| 2026-11-25  | T1         | `draft` | `clarified` | `planner`   | `clarify.md` cerrado sin casillas abiertas y parches aplicados                                                                        |
+| Fecha (UTC) | Transición | Origen      | Destino     | Responsable | Evidencia                                                                                                                             |
+| ----------- | ---------- | ----------- | ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-24  | creación   | —           | `draft`     | `planner`   | redacción inicial de `spec.md` con 13 requisitos funcionales, 5 requisitos no funcionales, 7 casos borde y 10 criterios de aceptación |
+| 2026-11-25  | T1         | `draft`     | `clarified` | `planner`   | `clarify.md` cerrado sin casillas abiertas y parches aplicados                                                                        |
+| 2026-11-25  | T2         | `clarified` | `planned`   | `planner`   | G1 aprobada y plan.md redactado con arquitectura, contratos y decisiones DEC-NNN |
+| 2026-11-25  | T3         | `planned`   | `tasked`    | `planner`   | tasks.md con los campos obligatorios y cobertura completa de requisitos y casos borde |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
