@@ -4,7 +4,7 @@
 
 ## Referencias
 
-- `spec.md`: `SPEC-018`, versión 0.7.0, estado `planned`, con 13 requisitos funcionales (`RF-001` a `RF-013`), 5 requisitos no funcionales (`RNF-001` a `RNF-005`), 8 casos borde (`CB-001` a `CB-008`) y 10 criterios de aceptación (`CA-001` a `CA-010`); G1 del contrato reformulado aprobada por el propietario `Agent Sebaxtian` en el commit firmado `d574f58` (2026-11-25), con cuerpo `Spec: SPEC-018` y firma ED25519 verificada por `git verify-commit`.
+- `spec.md`: `SPEC-018`, versión 0.8.2, estado `implemented`, con 13 requisitos funcionales (`RF-001` a `RF-013`), 5 requisitos no funcionales (`RNF-001` a `RNF-005`), 8 casos borde (`CB-001` a `CB-008`) y 10 criterios de aceptación (`CA-001` a `CA-010`); G1 del contrato reformulado aprobada por el propietario `Agent Sebaxtian` en el commit firmado `e1030b3` (2026-11-25), con cuerpo `Spec: SPEC-018` y firma ED25519 verificada por `git verify-commit`.
 - `clarify.md`: `SPEC-018`, cerrado sin casillas pendientes con `AMB-001` a `AMB-013` resueltos —`AMB-013` fija lo que conserva el registro de aprobación y la tarea `T-017` que implementa la revocación—, incorporación del caso borde `CB-008`, parches aplicados a requisitos y 3 decisiones de negocio formalizadas.
 - `docs/constitution.md`: norma suprema de rango 1; §3 guardrails de carpetas protegidas (`llama.cpp/`, `bin/`, `models/`, `.env`); §5 principio de validación-first y prueba real; §9 prohibición de optimización declarada sin medición empírica.
 - `AGENTS.md`: norma operativa de rango 2 para agentes; roles y permisos; guardrails de hardware y de ejecución (.bat con `%~dp0`); mandatos de trazabilidad y validación.
