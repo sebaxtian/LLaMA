@@ -21,7 +21,7 @@ Registro canónico del proyecto. Cada feature, fix, refactor o cambio de configu
 | SPEC-015 | Cierre de la auditoría posterior al release | released | feat/cierre-auditoria-posterior | v0.7.1 | specs/015-cierre-auditoria-posterior/ |
 | SPEC-016 | Cierre de la auditoría de v0.7.1 | released | feat/reapertura-spec-016 | v0.7.2 | specs/016-cierre-auditoria-v0-7-1/ |
 | SPEC-017 | Configuración ejecutable y medible de Gemma-4-26B-A4B-it-qat-GGUF | released | feat/gemma-4-26b-a4b-it-qat-gguf | v0.8.0 | specs/017-configuracion-gemma-4-26b-a4b/ |
-| SPEC-018 | Catálogo de escenarios, selector y presupuesto por escenario | implemented | feat/catalogo-escenarios | | specs/018-catalogo-escenarios/ |
+| SPEC-018 | Catálogo de escenarios, selector y presupuesto por escenario | validated | feat/catalogo-escenarios | | specs/018-catalogo-escenarios/ |
 
 ## Reglas
 
