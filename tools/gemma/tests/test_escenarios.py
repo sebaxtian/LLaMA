@@ -26,11 +26,22 @@ acotada por la base, el rechazo del valor resuelto menor o igual a 4096 tokens
 con el valor y el escenario declarados (`CB-003`) y la inadmisibilidad de
 selección del escenario ajustado sin valor numérico (`RF-010`). `T-006` cierra
 el caso en `tools/gemma/escenarios.py`.
+
+`T-016` añade `TestRendimientoResolucion`, que cierra `RNF-001`, `RF-012`,
+`CA-004` y `CA-009` sin modificar el código de producción: mide con
+``time.perf_counter`` la carga, la validación, el orden y la admisibilidad del
+catálogo y la resolución de los 9 escenarios con su contexto ajustado frente al
+umbral de 5 s, contrasta que los 3 manifiestos de `src/gemma/perfiles/`
+conservan su contenido antes y después de operar el catálogo y comprueba por las
+funciones públicas de `tools/gemma/escenarios.py` que los 9 escenarios declaran
+su presupuesto de 4 componentes y los 7 parámetros de ejecución sin campos
+vacíos.
 """
 
 import json
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -1378,4 +1389,443 @@ class TestContextoAjustado(unittest.TestCase):
             "contexto",
             motivo.lower(),
             f"el motivo no informa de la falta del contexto resuelto: {motivo!r}",
+        )
+
+
+# `RNF-001`: umbral máximo de la resolución y la validación antes del lanzamiento.
+UMBRAL_RESOLUCION_SEGUNDOS = 5.0
+
+# `plan.md`, estrategia de testing: la resolución se espera muy por debajo del
+# umbral, con un margen planificado de 1 segundo.
+MARGEN_PLANIFICADO_SEGUNDOS = 1.0
+
+# `RF-012`: los 3 manifiestos de perfil vigentes del directorio de perfiles, que
+# el catálogo no debe alterar ni de los que debe depender.
+DIRECTORIO_PERFILES = RAIZ / "src" / "gemma" / "perfiles"
+MANIFIESTOS_VIGENTES = (
+    "rendimiento.json",
+    "resiliencia.json",
+    "sin_especulativa.json",
+)
+
+
+class TestRendimientoResolucion(unittest.TestCase):
+    """Acredita `RNF-001`, `RF-012`, `CA-004` y `CA-009` sobre el catálogo.
+
+    Cierra `T-016` sin modificar el código de producción, que `T-004` y `T-006`
+    completaron en `tools/gemma/escenarios.py`:
+
+    - la carga del catálogo, su validación, el listado ordenado y la
+      admisibilidad de los 9 escenarios se completan por debajo del umbral de
+      5 s de `RNF-001`, medido con ``time.perf_counter`` y con el margen
+      restante declarado en el mensaje de fallo;
+    - la resolución de 1 escenario seleccionado, incluida la derivación de su
+      contexto ajustado, se completa por debajo del mismo umbral (`RNF-001`);
+    - los 3 manifiestos de `src/gemma/perfiles/` conservan su contenido antes y
+      después de cargar el catálogo y de resolver 1 escenario, de modo que la
+      operación del catálogo no los altera (`RF-012`);
+    - los 9 escenarios declaran su presupuesto de 4 componentes con margen libre
+      sobre la GPU objetivo y los 7 parámetros de ejecución obligatorios sin
+      campos vacíos (`CA-004`, `CA-009`), enumerados por las funciones públicas
+      ``cargar_catalogo``, ``listar_escenarios`` y
+      ``validar_admisibilidad_escenario``.
+
+    Las mediciones de tiempo se imprimen para transcribir la evidencia de la
+    tarea, con la forma ``<prueba>: ... segundos=<n> margen=<n>``.
+    """
+
+    def setUp(self):
+        self.modulo = _cargar_modulo()
+        self.catalogo = self.modulo.cargar_catalogo()
+
+    def _medir(self, operacion):
+        """Ejecuta 1 operación y devuelve ``(resultado, segundos)``."""
+        inicio = time.perf_counter()
+        resultado = operacion()
+        return resultado, time.perf_counter() - inicio
+
+    def _assert_umbral(self, segundos, descripcion):
+        """Acredita `RNF-001` y devuelve el margen restante frente al umbral."""
+        margen = UMBRAL_RESOLUCION_SEGUNDOS - segundos
+        self.assertLess(
+            segundos,
+            UMBRAL_RESOLUCION_SEGUNDOS,
+            f"{descripcion} tardó {segundos:.4f} s ({segundos * 1000:.3f} ms) y "
+            f"deja un margen de {margen:.4f} s ({margen * 1000:.3f} ms) frente "
+            f"al umbral de {UMBRAL_RESOLUCION_SEGUNDOS:.3f} s de `RNF-001`",
+        )
+        return margen
+
+    def _dentro_del_margen_planificado(self, segundos):
+        """Indica si la medición cabe en el margen que declara la estrategia."""
+        return segundos <= UMBRAL_RESOLUCION_SEGUNDOS - MARGEN_PLANIFICADO_SEGUNDOS
+
+    def _operacion_de_catalogo(self):
+        """Carga, valida, ordena y evalúa la admisibilidad de los 9 escenarios."""
+        catalogo = self.modulo.cargar_catalogo()
+        listado = self.modulo.listar_escenarios(catalogo)
+        admisiones = {
+            identificador: self.modulo.validar_admisibilidad_escenario(escenario)
+            for identificador, escenario in catalogo["escenarios"].items()
+        }
+        return catalogo, listado, admisiones
+
+    def _resolver_seleccion(self):
+        """Resuelve la admisibilidad de los 9 escenarios y su contexto ajustado."""
+        resoluciones = {}
+        for escenario in self.modulo.listar_escenarios(self.catalogo):
+            identificador = escenario["id"]
+            admisible, motivo = self.modulo.validar_admisibilidad_escenario(
+                escenario
+            )
+            resoluciones[identificador] = {
+                "admisible": admisible,
+                "motivo": motivo,
+            }
+            if escenario["contexto"]["tipo"] != "ajustado":
+                continue
+            tokens = self.modulo.resolver_contexto_ajustado(
+                escenario, CAPACIDAD_GPU_MIB
+            )
+            valido, motivo_contexto = self.modulo.validar_contexto_ajustado(
+                escenario, tokens
+            )
+            resoluciones[identificador].update(
+                {
+                    "contexto": tokens,
+                    "contexto_admisible": valido,
+                    "motivo_contexto": motivo_contexto,
+                }
+            )
+        return resoluciones
+
+    def _instantanea_de_perfiles(self):
+        """Devuelve el contenido binario de los 3 manifiestos de perfil vigentes."""
+        instantanea = {}
+        for nombre in MANIFIESTOS_VIGENTES:
+            ruta = DIRECTORIO_PERFILES / nombre
+            self.assertTrue(
+                ruta.is_file(), f"falta el manifiesto de perfil vigente: {ruta}"
+            )
+            contenido = ruta.read_bytes()
+            self.assertTrue(
+                contenido, f"el manifiesto de perfil {nombre} declara 0 bytes"
+            )
+            instantanea[nombre] = contenido
+        return instantanea
+
+    def _entero(self, valor, campo):
+        """Comprueba que 1 campo declara 1 entero —nunca 1 booleano— y lo devuelve."""
+        self.assertNotIsInstance(
+            valor, bool, f"{campo} declara 1 booleano y no 1 entero"
+        )
+        self.assertIsInstance(
+            valor, int, f"{campo} declara {valor!r} y no 1 entero"
+        )
+        return valor
+
+    def _no_vacio(self, valor, campo):
+        """Comprueba que 1 campo declara valor y que 1 texto no queda en blanco."""
+        self.assertIsNotNone(valor, f"{campo} no declara valor")
+        if isinstance(valor, str):
+            self.assertTrue(valor.strip(), f"{campo} declara 1 texto vacío")
+        return valor
+
+    def test_carga_validacion_y_listado_menor_cinco_segundos(self):
+        """`RNF-001`: carga, validación, orden y admisibilidad por debajo de 5 s."""
+        (catalogo, listado, admisiones), segundos = self._medir(
+            self._operacion_de_catalogo
+        )
+        margen = self._assert_umbral(
+            segundos,
+            "la carga, la validación, el orden y la admisibilidad del catálogo",
+        )
+
+        self.assertEqual(
+            9, len(listado), f"el listado enumera {len(listado)} escenarios y no 9"
+        )
+        self.assertEqual(
+            ORDEN_CANONICO,
+            tuple(entrada["id"] for entrada in listado),
+            "el listado no respeta el orden determinista jerárquico",
+        )
+        self.assertEqual(
+            9,
+            len(admisiones),
+            f"la admisibilidad evalúa {len(admisiones)} escenarios y no 9",
+        )
+        no_admisibles = {
+            identificador
+            for identificador, (admisible, _) in admisiones.items()
+            if not admisible
+        }
+        self.assertEqual(
+            {"ESC-M6-C131K"},
+            no_admisibles,
+            f"los escenarios no admisibles son {sorted(no_admisibles)} y no solo "
+            "ESC-M6-C131K",
+        )
+        self.assertEqual(
+            sorted(IDENTIFICADORES_CANONICOS),
+            sorted(catalogo["escenarios"]),
+            "la carga medida no devuelve los 9 identificadores canónicos",
+        )
+
+        print(
+            "test_carga_validacion_y_listado_menor_cinco_segundos: "
+            f"escenarios={len(listado)} admisibles="
+            f"{len(admisiones) - len(no_admisibles)} "
+            f"no_admisibles={len(no_admisibles)} segundos={segundos:.4f} "
+            f"milisegundos={segundos * 1000:.3f} margen={margen:.4f} "
+            f"dentro_del_margen_planificado="
+            f"{self._dentro_del_margen_planificado(segundos)}"
+        )
+
+    def test_tiempo_resolucion_menor_cinco_segundos(self):
+        """`RNF-001`: selección y contexto ajustado resueltos por debajo de 5 s."""
+        resoluciones, segundos = self._medir(self._resolver_seleccion)
+        margen = self._assert_umbral(
+            segundos,
+            "la resolución de los 9 escenarios y de su contexto ajustado",
+        )
+
+        self.assertEqual(
+            9,
+            len(resoluciones),
+            f"la resolución cubre {len(resoluciones)} escenarios y no 9",
+        )
+        ajustados = {
+            identificador: datos
+            for identificador, datos in resoluciones.items()
+            if "contexto" in datos
+        }
+        self.assertEqual(
+            3,
+            len(ajustados),
+            f"la resolución deriva el contexto de {len(ajustados)} escenarios y "
+            "no 3",
+        )
+        for identificador, datos in sorted(ajustados.items()):
+            with self.subTest(escenario=identificador):
+                self.assertTrue(
+                    datos["admisible"],
+                    f"{identificador} no admite selección: {datos['motivo']}",
+                )
+                self.assertTrue(
+                    datos["contexto_admisible"],
+                    f"{identificador} declara 1 contexto no admisible: "
+                    f"{datos['motivo_contexto']}",
+                )
+                self.assertIsInstance(
+                    datos["contexto"],
+                    int,
+                    f"{identificador} declara el contexto "
+                    f"{datos['contexto']!r} y no 1 entero",
+                )
+                self.assertGreater(
+                    datos["contexto"],
+                    SUELO_CONTEXTO_RESUELTO_TOKENS,
+                    f"{identificador} declara {datos['contexto']} tokens y no "
+                    f"supera el suelo de {SUELO_CONTEXTO_RESUELTO_TOKENS} tokens",
+                )
+
+        contextos = ", ".join(
+            f"{identificador}={datos['contexto']}"
+            for identificador, datos in sorted(ajustados.items())
+        )
+        print(
+            "test_tiempo_resolucion_menor_cinco_segundos: "
+            f"escenarios={len(resoluciones)} ajustados={len(ajustados)} "
+            f"segundos={segundos:.4f} milisegundos={segundos * 1000:.3f} "
+            f"margen={margen:.4f} "
+            f"dentro_del_margen_planificado="
+            f"{self._dentro_del_margen_planificado(segundos)} "
+            f"contextos={contextos}"
+        )
+
+    def test_perfiles_vigentes_no_se_alteran(self):
+        """`RF-012`: los 3 manifiestos conservan su contenido íntegro."""
+        antes = self._instantanea_de_perfiles()
+        self.assertEqual(
+            len(MANIFIESTOS_VIGENTES),
+            len(antes),
+            f"se contrastan {len(antes)} manifiestos y no "
+            f"{len(MANIFIESTOS_VIGENTES)}",
+        )
+        for nombre, contenido in antes.items():
+            with self.subTest(manifiesto=nombre):
+                self.assertIn(
+                    "opciones",
+                    json.loads(contenido.decode("utf-8")),
+                    f"el manifiesto {nombre} no declara el bloque opciones",
+                )
+
+        catalogo = self.modulo.cargar_catalogo()
+        listado = self.modulo.listar_escenarios(catalogo)
+        for escenario in listado:
+            self.modulo.validar_admisibilidad_escenario(escenario)
+            if escenario["contexto"]["tipo"] != "ajustado":
+                continue
+            tokens = self.modulo.resolver_contexto_ajustado(
+                escenario, CAPACIDAD_GPU_MIB
+            )
+            self.modulo.validar_contexto_ajustado(escenario, tokens)
+
+        despues = self._instantanea_de_perfiles()
+        alterados = [
+            nombre
+            for nombre in MANIFIESTOS_VIGENTES
+            if antes[nombre] != despues[nombre]
+        ]
+        self.assertEqual(
+            [],
+            alterados,
+            f"la operación del catálogo alteró los manifiestos {alterados}",
+        )
+        self.assertEqual(
+            json.loads(RUTA_CATALOGO.read_text(encoding="utf-8")),
+            catalogo,
+            "el catálogo cargado no coincide con el contenido de su archivo",
+        )
+
+        print(
+            "test_perfiles_vigentes_no_se_alteran: "
+            f"manifiestos={len(despues)} intactos={not alterados} "
+            f"escenarios={len(listado)}"
+        )
+
+    def test_nueve_presupuestos_y_siete_parametros_sin_vacios(self):
+        """`CA-004` y `CA-009`: 9 presupuestos y 7 parámetros sin campos vacíos."""
+        listado = self.modulo.listar_escenarios(self.catalogo)
+        self.assertEqual(
+            9, len(listado), f"se contrastan {len(listado)} escenarios y no 9"
+        )
+        self.assertEqual(
+            ORDEN_CANONICO,
+            tuple(entrada["id"] for entrada in listado),
+            "el listado no enumera los 9 identificadores en el orden canónico",
+        )
+
+        campos = 0
+        for entrada in listado:
+            identificador = entrada["id"]
+            with self.subTest(escenario=identificador):
+                presupuesto = self._no_vacio(
+                    entrada.get("presupuesto_vram"),
+                    f"{identificador}.presupuesto_vram",
+                )
+                self.assertIsInstance(
+                    presupuesto,
+                    dict,
+                    f"{identificador}.presupuesto_vram no es 1 objeto",
+                )
+                total = self._entero(
+                    self._no_vacio(
+                        presupuesto.get("total_mib"),
+                        f"{identificador}.presupuesto_vram.total_mib",
+                    ),
+                    f"{identificador}.presupuesto_vram.total_mib",
+                )
+                self.assertGreater(
+                    total,
+                    0,
+                    f"{identificador}.presupuesto_vram.total_mib declara {total}",
+                )
+                self.assertLessEqual(
+                    total,
+                    CAPACIDAD_GPU_MIB,
+                    f"{identificador}.presupuesto_vram.total_mib declara {total} "
+                    f"MiB y excede los {CAPACIDAD_GPU_MIB} MiB de la GPU",
+                )
+                self.assertGreaterEqual(
+                    CAPACIDAD_GPU_MIB - total,
+                    MARGEN_LIBRE_MINIMO_MIB,
+                    f"{identificador}.presupuesto_vram.total_mib declara {total} "
+                    f"MiB y deja {CAPACIDAD_GPU_MIB - total} MiB libres, por "
+                    f"debajo del margen mínimo de {MARGEN_LIBRE_MINIMO_MIB} MiB",
+                )
+                desglose = self._no_vacio(
+                    presupuesto.get("desglose"),
+                    f"{identificador}.presupuesto_vram.desglose",
+                )
+                self.assertIsInstance(
+                    desglose,
+                    dict,
+                    f"{identificador}.presupuesto_vram.desglose no es 1 objeto",
+                )
+                suma = 0
+                for componente in COMPONENTES_VRAM:
+                    valor = self._entero(
+                        self._no_vacio(
+                            desglose.get(componente),
+                            f"{identificador}.presupuesto_vram.desglose."
+                            f"{componente}",
+                        ),
+                        f"{identificador}.presupuesto_vram.desglose.{componente}",
+                    )
+                    self.assertGreaterEqual(
+                        valor,
+                        0,
+                        f"{identificador}.presupuesto_vram.desglose.{componente} "
+                        f"declara {valor} MiB",
+                    )
+                    suma += valor
+                    campos += 1
+                self.assertEqual(
+                    total,
+                    suma,
+                    f"{identificador}.presupuesto_vram declara {total} MiB y sus "
+                    f"4 componentes suman {suma} MiB",
+                )
+                ram = self._entero(
+                    self._no_vacio(
+                        self.catalogo["escenarios"][identificador].get(
+                            "ram_sistema_requerida_mib"
+                        ),
+                        f"{identificador}.ram_sistema_requerida_mib",
+                    ),
+                    f"{identificador}.ram_sistema_requerida_mib",
+                )
+                self.assertGreaterEqual(
+                    ram,
+                    0,
+                    f"{identificador}.ram_sistema_requerida_mib declara {ram} MiB",
+                )
+
+                parametros = self._no_vacio(
+                    self.catalogo["escenarios"][identificador].get(
+                        "parametros_ejecucion"
+                    ),
+                    f"{identificador}.parametros_ejecucion",
+                )
+                self.assertIsInstance(
+                    parametros,
+                    dict,
+                    f"{identificador}.parametros_ejecucion no es 1 objeto",
+                )
+                for parametro, esperado in PARAMETROS_OBLIGATORIOS.items():
+                    with self.subTest(parametro=parametro):
+                        valor = self._no_vacio(
+                            parametros.get(parametro),
+                            f"{identificador}.parametros_ejecucion.{parametro}",
+                        )
+                        self.assertEqual(
+                            esperado,
+                            valor,
+                            f"{identificador}.parametros_ejecucion.{parametro} "
+                            f"declara {valor!r} y no {esperado!r}",
+                        )
+                        campos += 1
+                for parametro, valor in parametros.items():
+                    with self.subTest(parametro=parametro):
+                        self._no_vacio(
+                            valor,
+                            f"{identificador}.parametros_ejecucion.{parametro}",
+                        )
+
+        print(
+            "test_nueve_presupuestos_y_siete_parametros_sin_vacios: "
+            f"escenarios={len(listado)} presupuestos={len(listado)} "
+            f"parametros_obligatorios={len(PARAMETROS_OBLIGATORIOS)} "
+            f"campos={campos} vacios=0"
         )
