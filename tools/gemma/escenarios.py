@@ -19,15 +19,26 @@ Contrato:
   ascendente (`DEC-004`), con independencia del orden de declaración del JSON.
   Cada entrada declara ``id``, ``estado``, ``capas_cpu_moe``, ``contexto`` y
   ``presupuesto_vram`` (`RF-005`).
+- ``resolver_contexto_ajustado(escenario, vram_libre_mib,
+  consumo_kv_por_1024_mib=85.0)`` deriva el contexto efectivo en múltiplos de
+  1024 tokens a partir de la VRAM libre real, acotado por el valor nominal
+  declarado y sin aplicar suelo: devuelve el valor calculado, incluso si no
+  supera 4096 tokens, para que la validación lo rechace (`RF-009`, `DEC-008`).
+- ``validar_contexto_ajustado(escenario, tokens_resueltos)`` devuelve
+  ``(True, "")`` por encima de 4096 tokens y ``(False, motivo)`` cuando el
+  valor resuelto es menor o igual, con el valor y el identificador en el
+  motivo (`CB-003`).
 - ``validar_admisibilidad_escenario(escenario)`` devuelve ``(True, "")`` para
   los estados ``declarado`` y ``medido`` y ``(False, motivo)`` para
-  ``no_ejecutable`` y para ``aprobado`` sin aprobación registrada, al que se le
-  exige 1 medición nueva (`RF-011`, `CB-006`).
+  ``no_ejecutable``, para ``aprobado`` sin aprobación registrada, al que se le
+  exige 1 medición nueva, y para el contexto ajustado sin valor numérico
+  resuelto (`RF-011`, `RF-010`, `CB-006`).
 """
 
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -60,6 +71,20 @@ MOTIVO_APROBACION_AUSENTE = (
     "confirmación escrita del propietario"
 )
 
+# `C-1` y `RF-009`: tipo de contexto que se deriva de la VRAM libre real.
+TIPO_CONTEXTO_AJUSTADO = "ajustado"
+
+# `DEC-008`, `AMB-001` y `CB-003`: granularidad de la derivación, consumo de
+# caché KV por bloque de 1024 tokens y suelo mínimo del contexto resuelto.
+MULTIPLO_CONTEXTO_TOKENS = 1024
+CONSUMO_KV_POR_1024_MIB = 85.0
+SUELO_CONTEXTO_RESUELTO_TOKENS = 4096
+
+MOTIVO_CONTEXTO_NO_RESUELTO = (
+    "contexto ajustado sin valor numérico resuelto: exige 1 valor efectivo "
+    "medido o derivado antes de la selección"
+)
+
 
 def _requerido(contenedor, clave, contexto):
     """Devuelve ``contenedor[clave]`` o falla nombrando la clave ausente."""
@@ -79,6 +104,13 @@ def _entero(valor, campo):
     """Comprueba que 1 campo declara 1 entero —nunca 1 booleano— y lo devuelve."""
     if isinstance(valor, bool) or not isinstance(valor, int):
         raise ValueError(f"{campo}: se esperaba 1 entero y declara {valor!r}")
+    return valor
+
+
+def _numero(valor, campo):
+    """Comprueba que 1 campo declara 1 número —nunca 1 booleano— y lo devuelve."""
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+        raise ValueError(f"{campo}: se esperaba 1 número y declara {valor!r}")
     return valor
 
 
@@ -267,6 +299,97 @@ def listar_escenarios(catalogo):
     return sorted(listado, key=_clave_orden)
 
 
+def resolver_contexto_ajustado(
+    escenario,
+    vram_libre_mib,
+    consumo_kv_por_1024_mib=CONSUMO_KV_POR_1024_MIB,
+):
+    """Deriva el contexto efectivo de `RF-009` y `DEC-008` en múltiplos de 1024.
+
+    La VRAM disponible para la caché KV es la VRAM libre menos la parte del
+    presupuesto declarado que no corresponde a la caché —pesos, cómputo y
+    reserva—; el número de bloques de 1024 tokens es el cociente entero entre
+    esa VRAM y el consumo por bloque. El resultado nunca supera el valor
+    nominal declarado ni es negativo y no aplica suelo: si no supera
+    4096 tokens, devuelve el valor calculado para que la validación lo rechace
+    (`CB-003`).
+    """
+    contexto_error = "escenario"
+    _objeto(escenario, contexto_error)
+    libre = _numero(vram_libre_mib, "vram_libre_mib")
+    consumo = _numero(consumo_kv_por_1024_mib, "consumo_kv_por_1024_mib")
+    if consumo <= 0:
+        raise ValueError(
+            "consumo_kv_por_1024_mib: declara "
+            f"{consumo_kv_por_1024_mib!r} y no 1 consumo positivo"
+        )
+    contexto = _objeto(
+        _requerido(escenario, "contexto", contexto_error),
+        f"{contexto_error}.contexto",
+    )
+    base = _entero(
+        _requerido(contexto, "declarado_tokens", f"{contexto_error}.contexto"),
+        f"{contexto_error}.contexto.declarado_tokens",
+    )
+    presupuesto = _objeto(
+        _requerido(escenario, "presupuesto_vram", contexto_error),
+        f"{contexto_error}.presupuesto_vram",
+    )
+    total = _entero(
+        _requerido(presupuesto, "total_mib", f"{contexto_error}.presupuesto_vram"),
+        f"{contexto_error}.presupuesto_vram.total_mib",
+    )
+    desglose = _objeto(
+        _requerido(
+            presupuesto, "desglose", f"{contexto_error}.presupuesto_vram"
+        ),
+        f"{contexto_error}.presupuesto_vram.desglose",
+    )
+    cache_kv = _entero(
+        _requerido(
+            desglose, "cache_kv_mib", f"{contexto_error}.presupuesto_vram.desglose"
+        ),
+        f"{contexto_error}.presupuesto_vram.desglose.cache_kv_mib",
+    )
+    vram_kv = libre - (total - cache_kv)
+    bloques = math.floor(vram_kv / consumo)
+    derivado = max(bloques, 0) * MULTIPLO_CONTEXTO_TOKENS
+    return min(base, derivado)
+
+
+def validar_contexto_ajustado(escenario, tokens_resueltos):
+    """Veredicto de `CB-003` sobre el contexto resuelto, como ``(admisible, motivo)``."""
+    _objeto(escenario, "escenario")
+    tokens = _entero(tokens_resueltos, "tokens_resueltos")
+    if tokens > SUELO_CONTEXTO_RESUELTO_TOKENS:
+        return (True, "")
+    identificador = escenario.get("id")
+    referencia = (
+        f"escenario «{identificador}»"
+        if isinstance(identificador, str) and identificador
+        else "escenario sin identificador"
+    )
+    return (
+        False,
+        f"{referencia}: el contexto ajustado resuelto de {tokens} tokens no "
+        f"supera el suelo de {SUELO_CONTEXTO_RESUELTO_TOKENS} tokens (`CB-003`)",
+    )
+
+
+def _falta_contexto_resuelto(escenario):
+    """Indica si 1 escenario ajustado carece de valor de contexto numérico (`RF-010`)."""
+    contexto = escenario.get("contexto")
+    if not isinstance(contexto, dict):
+        return False
+    if contexto.get("tipo") != TIPO_CONTEXTO_AJUSTADO:
+        return False
+    for campo in ("declarado_tokens", "efectivo_tokens"):
+        valor = contexto.get(campo)
+        if isinstance(valor, bool) or not isinstance(valor, int) or valor <= 0:
+            return True
+    return False
+
+
 def validar_admisibilidad_escenario(escenario):
     """Admisibilidad de selección de `RF-011` y `CB-006` como ``(admisible, motivo)``."""
     _objeto(escenario, "escenario")
@@ -279,6 +402,8 @@ def validar_admisibilidad_escenario(escenario):
             return (False, MOTIVO_APROBACION_AUSENTE)
         return (True, "")
     if estado in ESTADOS_EJECUTABLES:
+        if _falta_contexto_resuelto(escenario):
+            return (False, MOTIVO_CONTEXTO_NO_RESUELTO)
         return (True, "")
     return (
         False,

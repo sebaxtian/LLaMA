@@ -4,7 +4,7 @@
 
 ## Progreso
 
-- Cerradas: 5 de 16 tareas.
+- Cerradas: 6 de 16 tareas.
 
 ## Tareas
 
@@ -71,8 +71,8 @@
 - **Archivos:** `tools/gemma/escenarios.py`.
 - **Estimación:** 20 min.
 - **Validación:** `python -m unittest tools.gemma.tests.test_escenarios.TestContextoAjustado` en verde con `OK`: valida derivación en múltiplos de 1024 tokens con valores base (8192, 16 384, 65 536 tokens), detección de contexto resuelto <= 4096 tokens e inadmisibilidad de selección para escenarios ajustados sin valor numérico.
-- **Evidencia:** Pendiente de ejecución de la tarea.
-- [ ] Completada.
+- **Evidencia:** `python -m unittest tools.gemma.tests.test_escenarios.TestContextoAjustado` imprimió `......`, 1 punto por cada una de las 6 pruebas de `TestContextoAjustado` —`test_valores_nominales_y_regla_derivacion`, `test_cien_por_ciento_ajustados_con_regla`, `test_resultado_siempre_multiplo_de_1024`, `test_menos_vram_decrece_sin_superar_la_base`, `test_contexto_resuelto_menor_o_igual_4096_aborta` y `test_escenario_ajustado_sin_valor_no_seleccionable`—, con el cierre literal `Ran 6 tests in 0.007s` y `OK`, sin fallos ni errores, y código de salida `0`. `python -m unittest tools.gemma.tests.test_escenarios` imprimió `.........................`, 1 punto por cada una de las 25 pruebas de la suite —las 7 de `TestCatalogoEstructura`, las 7 de `TestOrdenamientoEscenarios`, las 5 de `TestAdmisibilidadEscenarios` y las 6 de `TestContextoAjustado`—, con el cierre literal `Ran 25 tests in 0.020s` y `OK`, sin fallos ni errores, y código de salida `0`. Se completó `tools/gemma/escenarios.py` con el contrato `C-3` del contexto ajustado: `resolver_contexto_ajustado(escenario, vram_libre_mib, consumo_kv_por_1024_mib=85.0)` calcula la VRAM de la caché KV como `vram_libre_mib - (presupuesto_vram.total_mib - desglose.cache_kv_mib)`, deriva `bloques = floor(vram_kv / consumo_kv_por_1024_mib)`, devuelve `min(contexto.declarado_tokens, max(bloques, 0) * 1024)` y no aplica suelo, de modo que con 16 384 MiB libres alcanza los valores nominales de 8192, 16 384 y 65 536 tokens de `ESC-M0-CADJ`, `ESC-M6-CADJ` y `ESC-M9-CADJ`, decrece en múltiplos de 1024 al reducir la VRAM libre, nunca supera la base ni produce negativos y declara 0 tokens con la VRAM justa; `validar_contexto_ajustado(escenario, tokens_resueltos)` devuelve `(True, "")` por encima de 4096 tokens y `(False, motivo)` en 1024, 3072 y 4096 tokens, con el valor resuelto y el identificador del escenario en el motivo (`CB-003`); y `validar_admisibilidad_escenario` devuelve `(False, motivo)` cuando 1 escenario de contexto ajustado no declara valor numérico positivo en `declarado_tokens` o `efectivo_tokens`, con el término `contexto` en el motivo, sin alterar la admisibilidad de los 8 escenarios ejecutables del catálogo real (`RF-010`). Los únicos archivos modificados fueron `tools/gemma/escenarios.py` y `specs/018-catalogo-escenarios/tasks.md`; no se modificaron las pruebas, `catalogo.json` ni artefacto de contrato alguno, y no se ejecutó `git add` ni `git commit`.
+- [x] Completada.
 
 ### T-007
 
