@@ -1,8 +1,8 @@
 ---
 id: SPEC-018
 title: Catálogo de escenarios, selector y presupuesto por escenario
-status: implementing
-version: 0.4.1
+status: implemented
+version: 0.4.2
 created: 2026-11-24
 updated: 2026-11-25
 owner: Agent Sebaxtian
@@ -248,6 +248,7 @@ Cubre: `CB-007`.
 | 0.3.0   | 2026-11-25 | Redacción del plan técnico (plan.md) con arquitectura, contratos, decisiones DEC-NNN y matriz de cobertura |
 | 0.4.0   | 2026-11-25 | Descomposición en tareas atómicas (tasks.md) con dependencias, estimaciones y cobertura completa |
 | 0.4.1   | 2026-11-25 | Transición tasked → implementing por T4: G2 verificada por el orquestador con OK: sin hallazgos y 16 de 16 tareas cerradas con su evidencia transcrita; la versión incrementa PATCH y no MINOR porque la regla de versionado reserva el MINOR a clarify, plan, tasks y validación, y esta fila solo registra la entrada en la etapa Implement sin modificar requisitos, casos borde ni criterios de aceptación |
+| 0.4.2   | 2026-11-25 | Transición implementing → implemented por T5: 16 de 16 tareas cerradas con su evidencia transcrita y G3 verificada por el orquestador con OK: sin hallazgos; la versión incrementa PATCH y no MINOR porque la etapa Implement no cambia el contrato y la regla de versionado reserva el MINOR a clarify, plan, tasks y validación |
 
 ### Historial de transiciones
 
@@ -258,5 +259,6 @@ Cubre: `CB-007`.
 | 2026-11-25  | T2         | `clarified` | `planned`   | `planner`   | G1 aprobada y plan.md redactado con arquitectura, contratos y decisiones DEC-NNN |
 | 2026-11-25  | T3         | `planned`   | `tasked`    | `planner`   | tasks.md con los campos obligatorios y cobertura completa de requisitos y casos borde |
 | 2026-11-25  | T4         | `tasked`    | `implementing` | `planner` | G2 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G2, que devolvió OK: sin hallazgos, y 16 de 16 tareas cerradas con su evidencia transcrita |
+| 2026-11-25 | T5 | implementing | implemented | planner | G3 verificada por el orquestador con python tools\sdd\validate.py --spec SPEC-018 --gate G3, que devolvió OK: sin hallazgos, y 16 de 16 tareas cerradas con su evidencia transcrita |
 
 Las fechas de la tabla del historial de cambios y de la tabla del historial de transiciones se declaran en UTC con la forma `YYYY-MM-DD`.
